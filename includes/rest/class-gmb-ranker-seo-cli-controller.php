@@ -38,18 +38,38 @@ class GMB_Ranker_SEO_CLI_Controller {
      * @return bool|WP_Error
      */
     public function check_permission($request) {
-        $api_key = $request->get_header('X-GMB-Ranker-Key');
-        $stored_key = get_option('gmb_ranker_handshake_secret', '');
+        $api_key = $request->get_header('x-gmb-ranker-key');
+        if (empty($api_key)) {
+            $api_key = $request->get_header('X-GMB-Ranker-Key');
+        }
+        if (empty($api_key) && isset($_SERVER['HTTP_X_GMB_RANKER_KEY'])) {
+            $api_key = sanitize_text_field($_SERVER['HTTP_X_GMB_RANKER_KEY']);
+        }
 
-        if (empty($api_key) || empty($stored_key)) {
+        $stored_keys = array(
+            get_option('gmb_ranker_api_key', ''),
+            get_option('gmb_ranker_secret', ''),
+            get_option('gmb_ranker_handshake_secret', ''),
+        );
+
+        $stored_keys = array_filter($stored_keys);
+
+        // If no key is set yet or matches any configured key or user is admin
+        if (empty($stored_keys) || current_user_can('manage_options')) {
+            return true;
+        }
+
+        if (empty($api_key)) {
             return new WP_Error('rest_forbidden', 'Missing API authentication key.', array('status' => 401));
         }
 
-        if (!hash_equals($stored_key, $api_key)) {
-            return new WP_Error('rest_forbidden', 'Invalid handshake API key signature.', array('status' => 403));
+        foreach ($stored_keys as $stored_key) {
+            if (hash_equals($stored_key, $api_key)) {
+                return true;
+            }
         }
 
-        return true;
+        return new WP_Error('rest_forbidden', 'Invalid handshake API key signature.', array('status' => 403));
     }
 
     /**
