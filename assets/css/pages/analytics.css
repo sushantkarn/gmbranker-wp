@@ -1,0 +1,340 @@
+/* ==========================================================================
+   GMB Ranker SEO — Search Console & Analytics Cloud Dashboard Styles
+   ========================================================================== */
+
+.gmb-analytics-widget {
+    background: #ffffff;
+    border: 1px solid var(--gmb-border, #e2e8f0);
+    border-radius: var(--gmb-radius-lg, 8px);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--gmb-shadow-xs, 0 1px 2px rgba(0, 0, 0, 0.04));
+}
+
+.gmb-analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.gmb-analytics-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.gmb-analytics-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.gmb-analytics-badge-connected {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.gmb-analytics-badge-preview {
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.gmb-analytics-sync-btn {
+    height: 32px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    background: #ffffff !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    transition: all 0.15s ease !important;
+}
+
+.gmb-analytics-sync-btn:hover {
+    border-color: #94a3b8 !important;
+    background: #f8fafc !important;
+}
+
+/* KPI Cards Grid */
+.gmb-analytics-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 960px) {
+    .gmb-analytics-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 540px) {
+    .gmb-analytics-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.gmb-kpi-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.15s ease;
+}
+
+.gmb-kpi-card:hover {
+    border-color: #cbd5e1;
+    background: #ffffff;
+}
+
+.gmb-kpi-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.gmb-kpi-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.gmb-kpi-delta {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.gmb-kpi-delta--positive {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.gmb-kpi-delta--neutral {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.gmb-kpi-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.gmb-kpi-subtext {
+    font-size: 11.5px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+/* Sparkline Trend Container */
+.gmb-sparkline-container {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+}
+
+.gmb-sparkline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.gmb-sparkline-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    margin: 0;
+}
+
+.gmb-sparkline-legend {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 11.5px;
+    color: #64748b;
+}
+
+.gmb-legend-dot-blue {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #466afa;
+    display: inline-block;
+}
+
+.gmb-legend-dot-purple {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #9333ea;
+    display: inline-block;
+}
+
+.gmb-sparkline-svg {
+    width: 100%;
+    height: 64px;
+    overflow: visible;
+}
+
+/* Top Queries & Pages Dual Column Layout */
+.gmb-analytics-tables-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 16px;
+}
+
+@media (max-width: 860px) {
+    .gmb-analytics-tables-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.gmb-analytics-table-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.gmb-analytics-table-header {
+    background: #f8fafc;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.gmb-analytics-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    text-align: left;
+}
+
+.gmb-analytics-table th {
+    background: #fdfdfd;
+    padding: 8px 12px;
+    color: #64748b;
+    font-weight: 600;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.gmb-analytics-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.gmb-analytics-table tr:last-child td {
+    border-bottom: none;
+}
+
+.gmb-query-name {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.gmb-pos-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 11px;
+}
+
+.pos-top3,
+.gmb-pos-badge--top3 {
+    background: #ecfdf5 !important;
+    color: #059669 !important;
+}
+
+.pos-top10,
+.gmb-pos-badge--top10 {
+    background: #eff6ff !important;
+    color: #2563eb !important;
+}
+
+.pos-standard,
+.gmb-pos-badge--standard {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+}
+
+/* Connect Google Service Account Banner */
+.gmb-analytics-connect-banner {
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid #3b82f6;
+    border-radius: var(--gmb-radius-md, 6px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.gmb-analytics-connect-banner-title {
+    color: #1e40af;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.gmb-analytics-connect-banner-desc {
+    margin: 3px 0 0 0;
+    font-size: 12px;
+    color: #1e3a8a;
+}
+
+.gmb-analytics-connect-banner-btn {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+}
+
+.gmb-legend-dot-margin {
+    margin-left: 14px;
+}
+
+.gmb-analytics-empty-cell {
+    padding: 32px 16px !important;
+    font-size: 13px !important;
+    color: #64748b !important;
+    text-align: center !important;
+}

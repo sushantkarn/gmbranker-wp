@@ -1,0 +1,180 @@
+# Copyright (C) 2026 GMB Ranker Team
+# This file is distributed under the GPL-2.0+.
+msgid ""
+msgstr ""
+"Project-Id-Version: GMB Ranker SEO & Automation 2.1.0\n"
+"Report-Msgid-Bugs-To: https://gmbranker.org/support\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-09-01T20:38:00+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.10.0\n"
+"X-Domain: gmb-ranker-seo-automation\n\n"
+
+#: includes/admin/views/wizard.php
+msgid "You do not have sufficient permissions to access the setup wizard."
+msgstr ""
+
+#: includes/admin/views/wizard.php
+msgid "Smart SEO & Instant Indexing Autopilot"
+msgstr ""
+
+#: includes/admin/views/titles-meta.php
+msgid "- Price Range -"
+msgstr ""
+
+#: includes/admin/views/titles-meta.php
+msgid "- Select Page -"
+msgstr ""
+
+#: includes/admin/ajax/class-gmb-ranker-seo-ajax-admin.php
+msgid "Invalid JSON syntax. Please check or re-upload your Google Service Account key file."
+msgstr ""
+
+#: includes/admin/ajax/class-gmb-ranker-seo-ajax-admin.php
+msgid "Service Account JSON is missing client_email, private_key, or type is not service_account."
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Google Preferred Source Settings"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Google Preferred Source"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Add to Preferred Sources"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Google Preferred Source Button"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Boost your E-E-A-T and organic visibility in Google Search by encouraging readers to set your site as a preferred source."
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Enable Button"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Target Domain"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "The domain you want users to prefer. (Must match your domain level, e.g., %s)"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Button Text"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Display on Post Types"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Select which content types should automatically have the button appended."
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Auto Insertion"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Insert at Start of Post Content"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Insert at End of Post Content"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Manual Placement Only (Use Shortcode/Widget)"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Button Theme"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Google Minimalist (White)"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Google Primary (Blue)"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Google Dark Mode (Charcoal)"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Button Size"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Small"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Medium"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Large"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Custom CSS"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Override classes like .gps-btn, .gps-icon, or .gps-btn-container to match your theme perfectly."
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "Save Configuration"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "How to Display Manually"
+msgstr ""
+
+#: includes/modules/preferred-source/class-google-preferred-source.php
+msgid "If you selected \"Manual Placement Only\", you can display the button anywhere using:"
+msgstr ""
+
+#: includes/modules/toc/class-gmb-ranker-seo-toc.php
+msgid "Table of Contents"
+msgstr ""
+
+#: includes/modules/security/class-gmb-ranker-seo-security.php
+msgid "REST API restricted to authenticated users."
+msgstr ""
+
+#: includes/modules/instant-indexing/class-gmb-ranker-seo-instant-indexing.php
+msgid "Google: Update URL"
+msgstr ""
+
+#: includes/modules/instant-indexing/class-gmb-ranker-seo-instant-indexing.php
+msgid "Google: Status"
+msgstr ""
+
+#: includes/modules/instant-indexing/class-gmb-ranker-seo-instant-indexing.php
+msgid "IndexNow: Submit"
+msgstr ""
+
+#: includes/modules/instant-indexing/class-gmb-ranker-seo-instant-indexing.php
+msgid "Instant Indexing: Google Update"
+msgstr ""
+
+#: includes/modules/instant-indexing/class-gmb-ranker-seo-instant-indexing.php
+msgid "Instant Indexing: IndexNow Submit"
+msgstr ""
+

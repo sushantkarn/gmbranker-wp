@@ -1,0 +1,94 @@
+/* ==========================================================================
+   GMB Ranker SEO — Titles & Meta Styles
+   ========================================================================== */
+
+.gmb-type-selector {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.gmb-type-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--gmb-border, #cbd5e1);
+    background: #ffffff;
+    color: var(--gmb-text-body, #1e293b);
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.gmb-type-btn.active,
+.gmb-type-btn.is-active {
+    border-color: var(--gmb-primary, #466afa) !important;
+    background: var(--gmb-primary, #466afa) !important;
+    color: #ffffff !important;
+}
+
+.gmb-type-btn:hover:not(.active) {
+    border-color: var(--gmb-primary, #466afa);
+    color: var(--gmb-primary, #466afa);
+}
+
+.gmb-type-btn input[type="radio"] {
+    display: none !important;
+}
+
+/* Robots Checkbox Panel & Rows */
+.gmb-robots-wrap {
+    display: none;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--gmb-border-divider, #f1f5f9);
+}
+
+.gmb-robots-wrap.is-active,
+.gmb-robots-wrap.active {
+    display: block;
+}
+
+.gmb-robots-row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 18px;
+}
+
+.gmb-robots-row:last-child {
+    margin-bottom: 0;
+}
+
+.gmb-advanced-robots-row {
+    display: flex;
+    align-items: flex-start;
+    padding-top: 14px;
+    border-top: 1px solid var(--gmb-border-divider, #f1f5f9);
+}
+
+.gmb-advanced-robots-inputs {
+    flex-grow: 1;
+    text-align: left;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.gmb-input-num-100 {
+    width: 100px !important;
+    padding: 5px 8px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+    font-size: 12.5px !important;
+}
+
+.gmb-select-120 {
+    width: 120px !important;
+    padding: 5px 8px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+    font-size: 12.5px !important;
+}

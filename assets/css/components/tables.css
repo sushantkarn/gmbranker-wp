@@ -1,0 +1,173 @@
+/* ==========================================================================
+   GMB Ranker SEO — Standardized Table Component System
+   ========================================================================== */
+
+.gmb-table,
+.rm-wrap table.wp-list-table,
+.gmb-admin-wrap table.wp-list-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--gmb-bg-card, #ffffff);
+    border: 1px solid var(--gmb-border, #e2e8f0);
+    border-radius: var(--gmb-radius-lg, 8px);
+    overflow: hidden;
+    margin: var(--gmb-space-md, 12px) 0;
+    box-shadow: var(--gmb-shadow-xs, 0 1px 2px rgba(0, 0, 0, 0.04));
+}
+
+.gmb-table th,
+.rm-wrap table.wp-list-table th,
+.gmb-admin-wrap table.wp-list-table th {
+    background: var(--gmb-bg-subtle, #f8fafc);
+    color: var(--gmb-text-secondary, #334155);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--gmb-border, #e2e8f0);
+    line-height: 1.4;
+}
+
+.gmb-table td,
+.rm-wrap table.wp-list-table td,
+.gmb-admin-wrap table.wp-list-table td {
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--gmb-text-body, #1e293b);
+    border-bottom: 1px solid var(--gmb-border-divider, #f1f5f9);
+    vertical-align: middle;
+}
+
+.gmb-table tbody tr:last-child td,
+.rm-wrap table.wp-list-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.gmb-table tbody tr:hover,
+.rm-wrap table.wp-list-table tbody tr:hover {
+    background: var(--gmb-bg-canvas, #f8fafc);
+}
+
+.gmb-table--compact td,
+.gmb-table--compact th {
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+/* Free / Borderless Clean Table Style */
+.gmb-table--clean,
+.gmb-table--free {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-collapse: collapse !important;
+    margin: 16px 0 24px 0 !important;
+}
+
+.gmb-table--clean thead th,
+.gmb-table--free thead th {
+    background: transparent !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--gmb-border, #e2e8f0) !important;
+    color: var(--gmb-text-secondary, #64748b) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    padding: 12px 14px !important;
+}
+
+.gmb-table--clean thead th:first-child,
+.gmb-table--free thead th:first-child {
+    padding-left: 4px !important;
+}
+
+.gmb-table--clean thead th:last-child,
+.gmb-table--free thead th:last-child {
+    padding-right: 4px !important;
+}
+
+.gmb-table--clean tbody td,
+.gmb-table--free tbody td {
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--gmb-border-divider, #f1f5f9) !important;
+    padding: 14px 14px !important;
+    font-size: 13.5px !important;
+    color: var(--gmb-text-body, #334155) !important;
+    background: transparent !important;
+    vertical-align: middle !important;
+}
+
+.gmb-table--clean tbody td:first-child,
+.gmb-table--free tbody td:first-child {
+    padding-left: 4px !important;
+}
+
+.gmb-table--clean tbody td:last-child,
+.gmb-table--free tbody td:last-child {
+    padding-right: 4px !important;
+}
+
+.gmb-table--clean tbody tr:hover td,
+.gmb-table--free tbody tr:hover td {
+    background: #f8fafc !important;
+}
+
+.gmb-table--clean tbody tr.gmb-table-row--highlight td,
+.gmb-table--free tbody tr.gmb-table-row--highlight td {
+    background: #f0fdf4 !important;
+    border-bottom: 1px solid #dcfce7 !important;
+}
+
+.gmb-table--clean tbody tr.gmb-table-row--highlight td:first-child,
+.gmb-table--free tbody tr.gmb-table-row--highlight td:first-child {
+    padding-left: 12px !important;
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+
+.gmb-table--clean tbody tr.gmb-table-row--highlight td:last-child,
+.gmb-table--free tbody tr.gmb-table-row--highlight td:last-child {
+    padding-right: 12px !important;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+/* Row Action Links */
+.gmb-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.gmb-row-actions a {
+    color: var(--gmb-primary, #466afa);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.gmb-row-actions a:hover {
+    text-decoration: underline;
+}
+
+.gmb-row-actions a.gmb-action-danger {
+    color: var(--gmb-danger, #dc2626);
+}
+
+.gmb-row-action--primary { color: #2563eb; font-weight: 600; }
+.gmb-row-action--muted { color: #475569; }
+.gmb-row-action--success { color: #16a34a; font-weight: 600; }
+.gmb-row-action--danger { color: #dc2626; font-weight: 600; }
+
+.gmb-table-cell--success { color: #16a34a; font-weight: 600; }
+.gmb-table-cell--danger { color: #dc2626; font-weight: 600; }
+.gmb-table-cell--warning { color: #d97706; font-weight: 600; }
+

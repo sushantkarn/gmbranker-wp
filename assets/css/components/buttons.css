@@ -1,0 +1,259 @@
+/* ==========================================================================
+   GMB Ranker SEO — Standardized Button Component System
+   ========================================================================== */
+
+.gmb-btn,
+.gmb-admin-wrap .button,
+.rm-wrap .button,
+.gmb-modal-backdrop .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: var(--gmb-font-sans, inherit);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    padding: 6px 14px;
+    border-radius: var(--gmb-radius-md, 6px);
+    border: 1px solid var(--gmb-border-control, #cbd5e1);
+    background: var(--gmb-bg-card, #ffffff);
+    color: var(--gmb-text-body, #1e293b);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all var(--gmb-transition-fast, 0.15s ease);
+    box-shadow: var(--gmb-shadow-xs, 0 1px 2px rgba(0,0,0,0.04));
+    height: auto;
+    vertical-align: middle;
+}
+
+.gmb-btn:hover,
+.gmb-admin-wrap .button:hover,
+.rm-wrap .button:hover,
+.gmb-modal-backdrop .button:hover {
+    background: var(--gmb-bg-subtle, #f1f5f9);
+    border-color: var(--gmb-border-control-hover, #94a3b8);
+    color: var(--gmb-text-main, #0f172a);
+}
+
+.gmb-btn:focus-visible,
+.gmb-admin-wrap .button:focus,
+.rm-wrap .button:focus {
+    outline: none;
+    box-shadow: var(--gmb-shadow-focus);
+}
+
+/* Primary Button Variant */
+.gmb-btn--primary,
+.gmb-btn-primary,
+.gmb-admin-wrap .button-primary,
+.rm-wrap .button-primary,
+.gmb-modal-backdrop .button-primary,
+.gps-settings-wrap .button-primary {
+    background: var(--gmb-primary, #466afa);
+    border-color: var(--gmb-primary, #466afa);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.gmb-btn--primary:hover,
+.gmb-btn-primary:hover,
+.gmb-admin-wrap .button-primary:hover,
+.rm-wrap .button-primary:hover,
+.gmb-modal-backdrop .button-primary:hover,
+.gps-settings-wrap .button-primary:hover {
+    background: var(--gmb-primary-hover, #3b5de7);
+    border-color: var(--gmb-primary-hover, #3b5de7);
+    color: #ffffff;
+}
+
+/* Danger Button Variant */
+.gmb-btn--danger {
+    background: var(--gmb-danger, #dc2626);
+    border-color: var(--gmb-danger, #dc2626);
+    color: #ffffff;
+}
+
+.gmb-btn--danger:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+    color: #ffffff;
+}
+
+/* Outline / Ghost Button Variant */
+.gmb-btn--ghost {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    color: var(--gmb-text-muted, #64748b);
+}
+
+.gmb-btn--ghost:hover {
+    background: var(--gmb-bg-subtle, #f1f5f9);
+    color: var(--gmb-text-main, #0f172a);
+}
+
+.gmb-btn--outline-primary {
+    background: #ffffff;
+    border: 1px solid var(--gmb-border-control, #cbd5e1);
+    color: var(--gmb-primary, #466afa);
+    font-weight: 500;
+}
+
+.gmb-btn--outline-primary:hover {
+    background: var(--gmb-primary-light, #eff6ff);
+    border-color: var(--gmb-primary, #466afa);
+    color: var(--gmb-primary, #466afa);
+}
+
+.gmb-btn--secondary {
+    background: #ffffff;
+    border: 1px solid var(--gmb-border-control, #cbd5e1);
+    color: var(--gmb-text-main, #1e293b);
+    font-weight: 600;
+    padding: 7px 20px;
+    height: auto;
+    font-size: 13px;
+    border-radius: var(--gmb-radius-md, 6px);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--gmb-transition-fast, 0.15s ease);
+}
+
+.gmb-btn--secondary:hover {
+    background: var(--gmb-bg-subtle, #f1f5f9);
+    border-color: var(--gmb-border-control-hover, #94a3b8);
+    color: var(--gmb-text-main, #0f172a);
+}
+
+
+/* Size Modifiers */
+.gmb-btn--sm,
+.gmb-admin-wrap .button-small,
+.rm-wrap .button-small,
+.gmb-modal-backdrop .button-small {
+    font-size: 11.5px;
+    padding: 3px 8px;
+    border-radius: var(--gmb-radius-sm, 4px);
+}
+
+.gmb-btn--lg {
+    font-size: 14.5px;
+    padding: 10px 22px;
+    border-radius: var(--gmb-radius-lg, 8px);
+}
+
+.gmb-btn--full {
+    width: 100%;
+}
+
+/* Color Blueprint Variants */
+.gmb-btn--success {
+    background: #059669 !important;
+    border-color: #059669 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.gmb-btn--success:hover {
+    background: #047857 !important;
+    border-color: #047857 !important;
+}
+
+.gmb-btn--purple {
+    background: #7c3aed !important;
+    border-color: #7c3aed !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.gmb-btn--purple:hover {
+    background: #6d28d9 !important;
+    border-color: #6d28d9 !important;
+}
+
+.gmb-btn--orange {
+    background: #ea580c !important;
+    border-color: #ea580c !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.gmb-btn--orange:hover {
+    background: #c2410c !important;
+    border-color: #c2410c !important;
+}
+
+.gmb-btn--upload {
+    height: 38px;
+    padding: 0 16px;
+    font-weight: 600;
+}
+
+.gmb-btn-test-validator {
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    font-weight: 600;
+    background: #ffffff;
+    color: var(--gmb-text-main, #1e293b);
+    border: 1px solid var(--gmb-border-control, #cbd5e1);
+    border-radius: var(--gmb-radius-md, 6px);
+    cursor: pointer;
+    transition: all var(--gmb-transition-fast, 0.15s ease);
+}
+
+.gmb-btn-test-validator:hover {
+    background: var(--gmb-bg-subtle, #f8fafc);
+    border-color: var(--gmb-border-control-hover, #94a3b8);
+}
+
+/* Snippet Variable Suggestion Tags (.gmb-var-tag, .gmb-tag-insert-pill) */
+.gmb-var-tags-wrap {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 580px;
+}
+
+.gmb-var-tag,
+.gmb-tag-insert-pill {
+    display: inline-flex;
+    align-items: center;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--gmb-radius-sm, 4px);
+    padding: 3px 8px;
+    font-size: 11.5px;
+    color: #475569;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: var(--gmb-font-mono, monospace);
+    transition: all var(--gmb-transition-fast, 0.15s ease);
+    user-select: none;
+    margin-right: 4px;
+    margin-top: 6px;
+    margin-bottom: 2px;
+    line-height: 1.4;
+    text-decoration: none;
+    vertical-align: middle;
+}
+
+.gmb-var-tag:hover,
+.gmb-tag-insert-pill:hover {
+    background: #e2e8f0;
+    color: var(--gmb-primary, #466afa);
+    border-color: #cbd5e1;
+}
+
+.gmb-var-tag:active,
+.gmb-tag-insert-pill:active {
+    transform: scale(0.97);
+}
+

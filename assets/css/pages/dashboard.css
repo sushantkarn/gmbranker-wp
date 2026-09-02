@@ -1,0 +1,209 @@
+/* ==========================================================================
+   GMB Ranker SEO — Dashboard Screen Stylesheet
+   ========================================================================== */
+
+.gmb-dashboard-hero {
+    background: linear-gradient(135deg, var(--gmb-primary, #466afa) 0%, #3150d8 100%);
+    color: #ffffff;
+    border-radius: var(--gmb-radius-lg, 8px);
+    padding: 24px;
+    margin-bottom: var(--gmb-space-xl, 20px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gmb-dashboard-hero h2 {
+    color: #ffffff;
+    font-size: 20px;
+    margin: 0 0 6px 0;
+}
+
+.gmb-dashboard-hero p {
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    font-size: 13.5px;
+}
+
+.gmb-stat-widget {
+    background: var(--gmb-bg-card, #ffffff);
+    border: 1px solid var(--gmb-border, #e2e8f0);
+    border-radius: var(--gmb-radius-lg, 8px);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.gmb-stat-widget__value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--gmb-text-main, #0f172a);
+    margin: 4px 0;
+}
+
+.gmb-stat-widget__label {
+    font-size: 12px;
+    color: var(--gmb-text-muted, #64748b);
+    font-weight: 500;
+}
+
+/* Dashboard Filter Bar & Filter Pills */
+.gmb-modules-filter-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 0;
+}
+
+.gmb-mod-filter-pill {
+    background: #ffffff;
+    color: var(--gmb-text-secondary, #475569);
+    border: 1px solid var(--gmb-border-control, #cbd5e1);
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--gmb-transition-fast, 0.15s ease);
+}
+
+.gmb-mod-filter-pill:hover {
+    border-color: var(--gmb-primary, #466afa);
+    color: var(--gmb-primary, #466afa);
+}
+
+.gmb-mod-filter-pill.active {
+    background: var(--gmb-primary, #466afa);
+    color: #ffffff;
+    border-color: var(--gmb-primary, #466afa);
+}
+
+.rm-logo-img {
+    width: 38px;
+    height: 38px;
+    display: block;
+    flex-shrink: 0;
+}
+
+.rm-header-badge {
+    background: #eff6ff;
+    color: #2563eb;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #bfdbfe;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    margin-left: 4px;
+}
+
+.rm-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+
+/* Settings Form Rows & Subtab Panels */
+.gmb-settings-panel-header {
+    text-align: center;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--gmb-border-divider, #f1f5f9);
+    padding-bottom: 20px;
+}
+
+.gmb-settings-panel-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gmb-text-main, #1e293b);
+    margin: 0 0 8px 0;
+}
+
+.gmb-settings-panel-header p {
+    font-size: 13.5px;
+    color: var(--gmb-text-muted, #64748b);
+    margin: 0;
+}
+
+.gmb-settings-row {
+    display: flex;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--gmb-border-divider, #f1f5f9);
+    align-items: flex-start;
+}
+
+.gmb-settings-label-col {
+    width: 220px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--gmb-text-main, #1e293b);
+    padding-top: 4px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    text-align: left;
+}
+
+.gmb-settings-input-col {
+    flex-grow: 1;
+    text-align: left;
+}
+
+.gmb-settings-footer,
+.gmb-settings-footer-actions,
+.gmb-form-actions,
+.gmb-card-footer {
+    background: #f8fafc;
+    border-top: 1px solid var(--gmb-border, #e2e8f0);
+    padding: 16px 24px;
+    margin: 24px -32px -24px -32px;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 12px !important;
+    border-bottom-left-radius: var(--gmb-radius-lg, 8px);
+    border-bottom-right-radius: var(--gmb-radius-lg, 8px);
+}
+
+.gmb-settings-footer.justify-end,
+.gmb-settings-footer-actions.justify-end {
+    justify-content: flex-end !important;
+}
+
+.gmb-settings-footer input[type="submit"],
+.gmb-settings-footer button[type="submit"],
+.gmb-settings-footer .button-primary,
+.gmb-settings-footer .gmb-btn--primary,
+.gmb-settings-footer .gmb-btn-primary,
+.gmb-settings-footer-actions input[type="submit"],
+.gmb-settings-footer-actions button[type="submit"],
+.gmb-settings-footer-actions .button-primary,
+.gmb-settings-footer-actions .gmb-btn--primary,
+.gmb-settings-footer-actions .gmb-btn-primary {
+    margin-left: auto !important;
+    margin-right: 0 !important;
+}
+
+.gmb-settings-footer .gmb-btn--ghost,
+.gmb-settings-footer .gmb-btn--secondary:first-child,
+.gmb-settings-footer-actions .gmb-btn--ghost,
+.gmb-settings-footer-actions .gmb-btn--secondary:first-child {
+    margin-right: auto !important;
+    margin-left: 0 !important;
+}
+
+.gmb-code-snippet {
+    margin: 8px 0 0 0;
+    font-size: 11.5px;
+    color: var(--gmb-text-muted, #64748b);
+    background: #f8fafc;
+    border: 1px dashed var(--gmb-border, #e2e8f0);
+    padding: 6px 10px;
+    border-radius: var(--gmb-radius-sm, 4px);
+    display: inline-block;
+    font-family: var(--gmb-font-mono, monospace);
+}
+
+

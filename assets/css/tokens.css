@@ -1,0 +1,167 @@
+/* ==========================================================================
+   GMB Ranker SEO — Master Design Tokens (Unified System)
+   Inspired by Linear, Stripe, Notion, and Modern WordPress Admin
+   ========================================================================== */
+
+:root {
+    /* --------------------------------------------------------------------------
+       1. SPACING (Strict 8px Baseline Grid)
+       -------------------------------------------------------------------------- */
+    --gmb-space-0:               0px;
+    --gmb-space-1:               4px;   /* 0.5 unit */
+    --gmb-space-2:               8px;   /* 1.0 unit */
+    --gmb-space-3:               12px;  /* 1.5 units */
+    --gmb-space-4:               16px;  /* 2.0 units */
+    --gmb-space-5:               20px;  /* 2.5 units */
+    --gmb-space-6:               24px;  /* 3.0 units */
+    --gmb-space-7:               28px;  /* 3.5 units */
+    --gmb-space-8:               32px;  /* 4.0 units */
+    --gmb-space-10:              40px;  /* 5.0 units */
+    --gmb-space-12:              48px;  /* 6.0 units */
+    --gmb-space-16:              64px;  /* 8.0 units */
+    --gmb-space-20:              80px;  /* 10.0 units */
+
+    /* --------------------------------------------------------------------------
+       2. BORDER RADII (12px Baseline Curve)
+       -------------------------------------------------------------------------- */
+    --gmb-radius-2xs:            2px;
+    --gmb-radius-xs:             4px;
+    --gmb-radius-sm:             6px;
+    --gmb-radius-md:             8px;
+    --gmb-radius-lg:             12px;  /* Primary Card Radius */
+    --gmb-radius-xl:             16px;  /* Modals & Hero Cards */
+    --gmb-radius-2xl:            24px;
+    --gmb-radius-full:           9999px; /* Pill & Badge Radius */
+
+    /* --------------------------------------------------------------------------
+       3. ELEVATION & LAYERED AMBIENT SHADOWS (Linear / Stripe Style)
+       -------------------------------------------------------------------------- */
+    --gmb-shadow-xs:             0 1px 2px 0 rgba(15, 23, 42, 0.04);
+    --gmb-shadow-sm:             0 1px 3px 0 rgba(15, 23, 42, 0.07), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
+    --gmb-shadow-md:             0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+    --gmb-shadow-lg:             0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+    --gmb-shadow-xl:             0 20px 25px -5px rgba(15, 23, 42, 0.10), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+    --gmb-shadow-modal:          0 25px 50px -12px rgba(15, 23, 42, 0.25);
+    --gmb-shadow-focus:          0 0 0 3px rgba(79, 70, 229, 0.22);
+    --gmb-shadow-focus-danger:   0 0 0 3px rgba(225, 29, 72, 0.20);
+    --gmb-shadow-focus-success:  0 0 0 3px rgba(5, 150, 105, 0.20);
+
+    /* --------------------------------------------------------------------------
+       4. TYPOGRAPHY SCALE & FONT SYSTEM
+       -------------------------------------------------------------------------- */
+    --gmb-font-sans:             -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", -apple-system, sans-serif;
+    --gmb-font-mono:             ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+
+    --gmb-text-2xs:              10.5px;
+    --gmb-text-xs:               12px;
+    --gmb-text-sm:               13px;
+    --gmb-text-base:             14px;
+    --gmb-text-md:               15px;
+    --gmb-text-lg:               16px;
+    --gmb-text-xl:               18px;
+    --gmb-text-2xl:              22px;
+    --gmb-text-3xl:              28px;
+
+    --gmb-weight-regular:        400;
+    --gmb-weight-medium:         500;
+    --gmb-weight-semibold:       600;
+    --gmb-weight-bold:           700;
+
+    --gmb-leading-none:          1;
+    --gmb-leading-tight:         1.25;
+    --gmb-leading-snug:          1.375;
+    --gmb-leading-normal:        1.5;
+    --gmb-leading-relaxed:       1.625;
+
+    /* --------------------------------------------------------------------------
+       5. COLOR SYSTEM (Semantic & Slate Palette)
+       -------------------------------------------------------------------------- */
+    /* Primary Brand: Electric Indigo */
+    --gmb-primary:               #4f46e5;
+    --gmb-primary-hover:         #4338ca;
+    --gmb-primary-active:        #3730a3;
+    --gmb-primary-light:         #eef2ff;
+    --gmb-primary-subtle:        #f5f7ff;
+    --gmb-primary-border:        #c7d2fe;
+    --gmb-primary-text:          #4338ca;
+
+    /* Slate Neutral Surfaces & Typography */
+    --gmb-bg-canvas:             #f8fafc;
+    --gmb-bg-card:               #ffffff;
+    --gmb-bg-subtle:             #f1f5f9;
+    --gmb-bg-hover:              #f8fafc;
+    --gmb-bg-active:             #f1f5f9;
+    --gmb-bg-dark:               #0f172a;
+
+    --gmb-text-main:             #0f172a;
+    --gmb-text-body:             #1e293b;
+    --gmb-text-secondary:        #334155;
+    --gmb-text-muted:            #64748b;
+    --gmb-text-subtle:           #94a3b8;
+    --gmb-text-inverse:          #ffffff;
+
+    --gmb-border:                #e2e8f0;
+    --gmb-border-subtle:         #f1f5f9;
+    --gmb-border-card:           #e2e8f0;
+    --gmb-border-control:        #cbd5e1;
+    --gmb-border-control-hover:  #94a3b8;
+    --gmb-border-divider:        #f1f5f9;
+
+    /* Success: Emerald */
+    --gmb-success:               #059669;
+    --gmb-success-hover:         #047857;
+    --gmb-success-bg:            #ecfdf5;
+    --gmb-success-border:        #a7f3d0;
+    --gmb-success-text:          #065f46;
+
+    /* Warning: Amber */
+    --gmb-warning:               #d97706;
+    --gmb-warning-hover:         #b45309;
+    --gmb-warning-bg:            #fffbeb;
+    --gmb-warning-border:        #fde68a;
+    --gmb-warning-text:          #92400e;
+
+    /* Danger: Rose / Crimson */
+    --gmb-danger:                #e11d48;
+    --gmb-danger-hover:          #be123c;
+    --gmb-danger-bg:             #fff1f2;
+    --gmb-danger-border:         #fecdd3;
+    --gmb-danger-text:           #9f1239;
+
+    /* Info: Ocean Sky */
+    --gmb-info:                  #0284c7;
+    --gmb-info-hover:            #0369a1;
+    --gmb-info-bg:               #f0f9ff;
+    --gmb-info-border:           #bae6fd;
+    --gmb-info-text:             #075985;
+
+    /* --------------------------------------------------------------------------
+       6. TRANSITIONS & ANIMATION TIMINGS
+       -------------------------------------------------------------------------- */
+    --gmb-transition-fast:       0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --gmb-transition-normal:     0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --gmb-transition-slow:       0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* --------------------------------------------------------------------------
+       7. RESPONSIVE BREAKPOINTS
+       -------------------------------------------------------------------------- */
+    --gmb-bp-sm:                 640px;
+    --gmb-bp-md:                 768px;
+    --gmb-bp-lg:                 1024px;
+    --gmb-bp-xl:                 1280px;
+}
+
+/* Base resets applied to all plugin containers */
+.gmb-admin-wrap,
+.gmb-seo-meta-container {
+    box-sizing: border-box;
+    font-family: var(--gmb-font-sans);
+    color: var(--gmb-text-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.gmb-admin-wrap *,
+.gmb-seo-meta-container * {
+    box-sizing: border-box;
+}

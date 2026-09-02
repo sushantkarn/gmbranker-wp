@@ -1,0 +1,356 @@
+/* ==========================================================================
+   GMB Ranker SEO — Status & Tools / Importer Styles
+   ========================================================================== */
+
+/* Main Container */
+.gmb-tools-container {
+    background: #ffffff;
+    border: 1px solid var(--gmb-border, #e2e8f0);
+    border-radius: var(--gmb-radius-lg, 8px);
+    padding: 24px 28px;
+    box-shadow: var(--gmb-shadow-xs, 0 1px 2px rgba(0, 0, 0, 0.04));
+}
+
+/* Sub-Navigation Tabs */
+.gmb-tools-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--gmb-border-divider, #e2e8f0);
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.gmb-tools-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.gmb-tools-tab-btn:hover {
+    color: #1e293b;
+    background: #f1f5f9;
+}
+
+.gmb-tools-tab-btn.active {
+    color: #ffffff !important;
+    background: var(--gmb-primary, #466afa) !important;
+    border-color: var(--gmb-primary, #466afa) !important;
+    box-shadow: 0 1px 3px rgba(70, 106, 250, 0.25);
+}
+
+.gmb-tools-tab-btn svg {
+    width: 15px;
+    height: 15px;
+}
+
+/* Subtab Panels Display */
+.gmb-tools-content-panel {
+    display: none;
+}
+
+.gmb-tools-content-panel.active {
+    display: block;
+}
+
+/* Import & Export Grid Layout */
+.gmb-importer-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 20px;
+    align-items: stretch;
+}
+
+@media (max-width: 960px) {
+    .gmb-importer-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.gmb-importer-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.gmb-importer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background: #ffffff;
+    transition: border-color 0.15s ease;
+}
+
+.gmb-importer-row:hover {
+    border-color: #cbd5e1;
+}
+
+.gmb-backup-restore-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.gmb-tool-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.gmb-tool-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 10px;
+}
+
+/* File Picker Box */
+.gmb-file-picker-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.gmb-file-picker-label {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.gmb-file-picker-label:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+/* Database Tool Card */
+.gmb-db-tool-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    transition: all 0.15s ease;
+}
+
+.gmb-db-tool-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* System Status Table */
+.gmb-status-table {
+    width: 100%;
+    font-size: 12.5px;
+    border-collapse: collapse;
+}
+
+.gmb-status-table tr {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.gmb-status-table tr:last-child {
+    border-bottom: none;
+}
+
+.gmb-status-table td {
+    padding: 8px 0;
+    vertical-align: middle;
+}
+
+.gmb-importer-badge-detect {
+    font-size: 11.5px;
+    background: #eff6ff;
+    color: #2563eb;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    border: 1px solid #bfdbfe;
+}
+
+.gmb-importer-icon {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+}
+
+.gmb-importer-title {
+    font-size: 13px;
+    color: #0f172a;
+    display: block;
+}
+
+.gmb-btn-importer-action {
+    height: 32px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+}
+
+.gmb-importer-note-box {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-top: 14px;
+    font-size: 12px;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gmb-importer-note-bullet {
+    color: #2563eb;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.gmb-btn-backup-export {
+    height: 36px !important;
+    padding: 0 16px !important;
+    font-size: 12.5px !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.gmb-restore-filename-text {
+    font-size: 12px;
+    color: #64748b;
+    flex-grow: 1;
+    min-width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gmb-btn-restore-submit {
+    height: 34px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+}
+
+.gmb-db-tool-title {
+    margin: 0 0 4px 0 !important;
+    font-size: 13.5px !important;
+}
+
+.gmb-db-tool-desc {
+    margin: 0 !important;
+    font-size: 12px !important;
+}
+
+.gmb-db-tool-btn {
+    flex-shrink: 0 !important;
+    height: 32px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+}
+
+.gmb-env-card-header {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 8px;
+}
+
+.gmb-td-site-url {
+    padding: 6px 0 !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    text-align: right !important;
+    word-break: break-all !important;
+}
+
+.gmb-version-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 600px;
+}
+
+.gmb-version-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.gmb-version-card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.gmb-version-card-sub {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.gmb-version-pill {
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    padding: 4px 14px !important;
+}
+
+.gmb-version-desc {
+    font-size: 12.5px;
+    color: #334155;
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+.gmb-version-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.gmb-btn-version-link {
+    font-size: 12px !important;
+    text-decoration: none !important;
+}
+
+.gmb-btn-version-cloud {
+    font-size: 12px !important;
+    color: #2563eb !important;
+    text-decoration: none !important;
+}

@@ -1,0 +1,161 @@
+/* ==========================================================================
+   GMB Ranker SEO — Notices, Banners & Alerts
+   ========================================================================== */
+
+.gmb-alert,
+.gmb-notice {
+    padding: 12px 16px;
+    border-radius: var(--gmb-radius-md, 6px);
+    border: 1px solid var(--gmb-border, #e2e8f0);
+    background: var(--gmb-bg-card, #ffffff);
+    margin: var(--gmb-space-md, 12px) 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.gmb-alert--info {
+    background: var(--gmb-info-bg, #f0f9ff);
+    border-color: var(--gmb-info-border, #7dd3fc);
+    color: var(--gmb-info-text, #0369a1);
+}
+
+.gmb-alert--success {
+    background: var(--gmb-success-bg, #f0fdf4);
+    border-color: var(--gmb-success-border, #86efac);
+    color: var(--gmb-success-text, #15803d);
+}
+
+.gmb-alert--warning {
+    background: var(--gmb-warning-bg, #fffbeb);
+    border-color: var(--gmb-warning-border, #fcd34d);
+    color: var(--gmb-warning-text, #b45309);
+}
+
+.gmb-alert--danger {
+    background: var(--gmb-danger-bg, #fef2f2);
+    border-color: var(--gmb-danger-border, #fca5a5);
+    color: var(--gmb-danger-text, #b91c1c);
+}
+
+/* Callout Banners */
+.gmb-callout {
+    margin-bottom: 24px;
+    padding: 14px 18px;
+    border-radius: var(--gmb-radius-lg, 8px);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+    box-sizing: border-box;
+    font-size: 13.5px;
+    font-weight: 500;
+}
+
+.gmb-callout.gmb-flex-between {
+    justify-content: space-between !important;
+}
+
+.gmb-callout svg,
+.gmb-callout .gmb-icon-img {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    min-height: 20px !important;
+    max-width: 20px !important;
+    max-height: 20px !important;
+    flex-shrink: 0;
+    display: block;
+}
+
+.gmb-callout--info {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid var(--gmb-primary, #466afa);
+    color: #1e40af;
+}
+
+.gmb-callout--subtle {
+    background: var(--gmb-bg-subtle, #f8fafc);
+    border: 1px solid var(--gmb-border, #e2e8f0);
+    border-left: 4px solid var(--gmb-primary, #466afa);
+    color: var(--gmb-text-body, #1e293b);
+}
+
+.gmb-callout--danger {
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    border-left: 4px solid var(--gmb-danger, #dc2626);
+    color: #e11d48;
+}
+
+.gmb-callout--success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-left: 4px solid var(--gmb-success, #16a34a);
+    color: #15803d;
+}
+
+.gmb-callout--warning {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-left: 4px solid var(--gmb-warning, #d97706);
+    color: #b45309;
+}
+
+.gmb-callout-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--gmb-radius-md, 6px);
+    flex-shrink: 0;
+}
+
+.gmb-callout-icon--blue {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.gmb-callout-icon--indigo {
+    background: #e0e7ff;
+    color: #466afa;
+}
+
+.gmb-callout-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1e3a8a;
+}
+
+.gmb-callout-desc {
+    font-size: 12px;
+    color: #3b82f6;
+    margin-top: 2px;
+}
+
+.gmb-callout-desc--subtle {
+    font-size: 12.5px;
+    color: var(--gmb-text-muted, #475569);
+}
+
+.gmb-callout-btn {
+    background: #ffffff;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+    font-weight: 600;
+    font-size: 12px;
+    height: 32px;
+    line-height: 30px;
+    padding: 0 12px;
+    border-radius: var(--gmb-radius-md, 6px);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    margin-left: auto;
+}
+

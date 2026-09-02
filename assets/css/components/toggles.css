@@ -1,0 +1,137 @@
+/* ==========================================================================
+   GMB Ranker SEO — Standardized Toggle Switch Component
+   ========================================================================== */
+
+.gmb-switch,
+.rm-switch,
+.wiz-switch,
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 40px !important;
+    height: 22px !important;
+    vertical-align: middle;
+    margin: 0;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.gmb-switch input,
+.gmb-switch .gmb-switch__input,
+.rm-switch input,
+.wiz-switch input,
+.switch input {
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: absolute !important;
+    pointer-events: none !important;
+    border: none !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+}
+
+.gmb-switch input::before,
+.gmb-switch input::after,
+.rm-switch input::before,
+.rm-switch input::after,
+.wiz-switch input::before,
+.wiz-switch input::after,
+.switch input::before,
+.switch input::after {
+    display: none !important;
+    content: none !important;
+}
+
+.gmb-slider,
+.gmb-switch__slider,
+.rm-slider,
+.wiz-slider,
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--gmb-border-control, #cbd5e1);
+    transition: background-color var(--gmb-transition-fast, 0.15s ease);
+    border-radius: 9999px !important;
+    box-sizing: border-box;
+}
+
+.gmb-slider::before,
+.gmb-switch__slider::before,
+.rm-slider::before,
+.wiz-slider::before,
+.wiz-slider:before,
+.slider::before {
+    position: absolute;
+    content: "";
+    height: 16px !important;
+    width: 16px !important;
+    left: 3px !important;
+    top: 3px !important;
+    bottom: 3px !important;
+    background-color: #ffffff !important;
+    transition: transform var(--gmb-transition-fast, 0.15s ease) !important;
+    border-radius: 50% !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18) !important;
+    box-sizing: border-box;
+}
+
+.gmb-switch input:checked + .gmb-slider,
+.gmb-switch input:checked + .gmb-switch__slider,
+.rm-switch input:checked + .rm-slider,
+.wiz-switch input:checked + .wiz-slider,
+.switch input:checked + .slider {
+    background-color: var(--gmb-primary, #4f46e5) !important;
+}
+
+.gmb-switch input:focus + .gmb-slider,
+.gmb-switch input:focus + .gmb-switch__slider,
+.rm-switch input:focus + .rm-slider,
+.wiz-switch input:focus + .wiz-slider,
+.switch input:focus + .slider {
+    box-shadow: var(--gmb-shadow-focus);
+}
+
+.gmb-switch input:checked + .gmb-slider::before,
+.gmb-switch input:checked + .gmb-switch__slider::before,
+.rm-switch input:checked + .rm-slider::before,
+.wiz-switch input:checked + .wiz-slider::before,
+.wiz-switch input:checked + .wiz-slider:before,
+.switch input:checked + .slider::before {
+    transform: translateX(18px) !important;
+}
+
+.rm-slider.is-disabled,
+.gmb-slider.is-disabled,
+.gmb-switch__slider.is-disabled,
+.wiz-slider.is-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.gmb-switch--sm {
+    width: 32px !important;
+    height: 18px !important;
+}
+
+.gmb-switch--sm .gmb-slider::before {
+    height: 12px !important;
+    width: 12px !important;
+    left: 3px !important;
+    top: 3px !important;
+    bottom: 3px !important;
+}
+
+.gmb-switch--sm input:checked + .gmb-slider::before {
+    transform: translateX(14px) !important;
+}
+

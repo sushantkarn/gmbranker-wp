@@ -1,0 +1,210 @@
+/* ==========================================================================
+   GMB Ranker SEO — Public Frontend Component Stylesheet
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Table of Contents (.gmb-toc-box)
+   -------------------------------------------------------------------------- */
+.gmb-toc-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 24px 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    box-sizing: border-box;
+}
+
+.gmb-toc-box *,
+.gmb-toc-box *::before,
+.gmb-toc-box *::after {
+    box-sizing: border-box;
+}
+
+.gmb-toc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+}
+
+.gmb-toc-title {
+    font-weight: 700;
+    font-size: 16px;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.gmb-toc-icon {
+    width: 18px;
+    height: 18px;
+    color: #466afa;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.gmb-toc-toggle {
+    background: none;
+    border: none;
+    color: #466afa;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+    transition: opacity 0.15s ease;
+}
+
+.gmb-toc-toggle:hover {
+    opacity: 0.8;
+}
+
+.gmb-toc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: block;
+}
+
+.gmb-toc-box.gmb-toc-collapsed .gmb-toc-list {
+    display: none;
+}
+
+.gmb-toc-item {
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.gmb-toc-item a {
+    color: #475569;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.gmb-toc-item a:hover {
+    color: #466afa;
+}
+
+/* Indentation by Heading Level */
+.gmb-toc-item.level-2 { padding-left: 0; }
+.gmb-toc-item.level-3 { padding-left: 16px; }
+.gmb-toc-item.level-4 { padding-left: 32px; }
+.gmb-toc-item.level-5 { padding-left: 48px; }
+.gmb-toc-item.level-6 { padding-left: 64px; }
+
+
+/* --------------------------------------------------------------------------
+   HTML Sitemap (.gmb-html-sitemap-container)
+   -------------------------------------------------------------------------- */
+.gmb-html-sitemap-container {
+    margin: 24px 0;
+    font-family: inherit;
+}
+
+.gmb-html-sitemap-section {
+    margin-bottom: 24px;
+}
+
+.gmb-html-sitemap-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 12px 0;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 6px;
+}
+
+.gmb-html-sitemap-list {
+    list-style: disc;
+    padding-left: 20px;
+    line-height: 1.8;
+    margin: 0;
+}
+
+.gmb-html-sitemap-link {
+    color: #466afa;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.gmb-html-sitemap-link:hover {
+    text-decoration: underline;
+}
+
+
+/* --------------------------------------------------------------------------
+   Google Preferred Source Button (.gps-btn-container)
+   -------------------------------------------------------------------------- */
+.gps-btn-container {
+    margin: 20px 0;
+    display: inline-block;
+}
+
+.gps-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13.5px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: 1px solid #dadce0;
+    background: #ffffff;
+    color: #3c4043;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1);
+}
+
+.gps-btn:hover {
+    background: #f8f9fa;
+    box-shadow: 0 1px 3px rgba(60, 64, 67, 0.2);
+    color: #202124;
+}
+
+.gps-btn.theme-google_blue {
+    background: #1a73e8;
+    color: #ffffff;
+    border-color: #1a73e8;
+}
+
+.gps-btn.theme-google_blue:hover {
+    background: #1557b0;
+    border-color: #1557b0;
+    color: #ffffff;
+}
+
+.gps-btn.theme-google_dark {
+    background: #202124;
+    color: #ffffff;
+    border-color: #3c4043;
+}
+
+.gps-btn.theme-google_dark:hover {
+    background: #303134;
+    border-color: #5f6368;
+    color: #ffffff;
+}
+
+.gps-btn.size-small {
+    padding: 5px 12px;
+    font-size: 12px;
+}
+
+.gps-btn.size-large {
+    padding: 12px 22px;
+    font-size: 15px;
+}
+
+.gps-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}

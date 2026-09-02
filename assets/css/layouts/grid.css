@@ -1,0 +1,85 @@
+/* ==========================================================================
+   GMB Ranker SEO — Standardized CSS Grid Layouts
+   ========================================================================== */
+
+.gmb-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--gmb-space-lg, 16px);
+}
+
+.gmb-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--gmb-space-lg, 16px);
+}
+
+.gmb-grid-4,
+.rm-grid,
+.rm-modules-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--gmb-space-lg, 16px);
+}
+
+/* Responsive Grid Breakpoints */
+@media (max-width: 1400px) {
+    .gmb-grid-4,
+    .rm-grid,
+    .rm-modules-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 1024px) {
+    .gmb-grid-4,
+    .gmb-grid-3,
+    .rm-grid,
+    .rm-modules-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .gmb-grid-4,
+    .gmb-grid-3,
+    .gmb-grid-2,
+    .rm-grid,
+    .rm-modules-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Flex Layout Utilities */
+.gmb-flex {
+    display: flex;
+}
+
+.gmb-flex-gap-sm {
+    display: flex;
+    gap: 8px;
+}
+
+.gmb-flex-gap-md {
+    display: flex;
+    gap: 12px;
+}
+
+.gmb-flex-center-gap-sm {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gmb-flex-center-gap-md {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.gmb-flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+

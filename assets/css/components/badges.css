@@ -1,0 +1,156 @@
+/* ==========================================================================
+   GMB Ranker SEO — Badges, Pills, Tags & Status Indicators
+   ========================================================================== */
+
+.gmb-badge,
+.gmb-tag,
+.rm-logo-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-family: var(--gmb-font-sans, inherit);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 3px 8px;
+    border-radius: var(--gmb-radius-pill, 9999px);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    background: var(--gmb-primary-light, #eff6ff);
+    color: var(--gmb-primary, #466afa);
+    border: 1px solid var(--gmb-primary-border, #bfdbfe);
+}
+
+.gmb-badge--success,
+.gmb-tag--active {
+    background: var(--gmb-success-bg, #f0fdf4);
+    color: var(--gmb-success-text, #15803d);
+    border-color: var(--gmb-success-border, #86efac);
+}
+
+.gmb-badge--warning {
+    background: var(--gmb-warning-bg, #fffbeb);
+    color: var(--gmb-warning-text, #b45309);
+    border-color: var(--gmb-warning-border, #fcd34d);
+}
+
+.gmb-badge--danger,
+.gmb-tag--inactive {
+    background: var(--gmb-danger-bg, #fef2f2);
+    color: var(--gmb-danger-text, #b91c1c);
+    border-color: var(--gmb-danger-border, #fca5a5);
+}
+
+.gmb-badge--neutral {
+    background: var(--gmb-bg-subtle, #f1f5f9);
+    color: var(--gmb-text-secondary, #334155);
+    border-color: var(--gmb-border, #e2e8f0);
+}
+
+/* Publish Box SEO Score Badges */
+.gmb-publish-score-badge {
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: var(--gmb-radius-sm, 4px);
+    display: inline-block;
+}
+
+.gmb-publish-score-badge.red {
+    background-color: var(--gmb-danger-bg, #fef2f2);
+    color: var(--gmb-danger, #ef4444);
+}
+
+.gmb-publish-score-badge.orange {
+    background-color: var(--gmb-warning-bg, #fffbeb);
+    color: var(--gmb-warning, #d97706);
+}
+
+.gmb-publish-score-badge.green {
+    background-color: var(--gmb-success-bg, #f0fdf4);
+    color: var(--gmb-success, #16a34a);
+}
+
+/* Snippet Variable Suggestion Tags (.gmb-var-tag) */
+.gmb-var-tags-wrap {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: 480px;
+}
+
+.gmb-var-tag {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 11px;
+    color: #475569;
+    cursor: pointer;
+    font-weight: 400;
+    font-family: var(--gmb-font-mono, monospace);
+    transition: all var(--gmb-transition-fast, 0.15s ease);
+}
+
+.gmb-var-tag:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+/* Post Listing Table Columns (SEO Score & Focus Keyword) */
+.gmb-score-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 3px 10px !important;
+    border-radius: var(--gmb-radius-full, 9999px) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    border: 1px solid transparent !important;
+    letter-spacing: 0.01em !important;
+    font-family: var(--gmb-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
+    box-sizing: border-box !important;
+}
+
+.gmb-score-badge strong {
+    font-weight: 700 !important;
+    margin-right: 2px !important;
+}
+
+.gmb-score-badge--good {
+    background: var(--gmb-success-bg, #ecfdf5) !important;
+    color: var(--gmb-success-text, #059669) !important;
+    border-color: var(--gmb-success-border, #a7f3d0) !important;
+}
+
+.gmb-score-badge--ok {
+    background: var(--gmb-warning-bg, #fffbeb) !important;
+    color: var(--gmb-warning-text, #d97706) !important;
+    border-color: var(--gmb-warning-border, #fde68a) !important;
+}
+
+.gmb-score-badge--poor {
+    background: var(--gmb-danger-bg, #fff1f2) !important;
+    color: var(--gmb-danger-text, #e11d48) !important;
+    border-color: var(--gmb-danger-border, #fecdd3) !important;
+}
+
+.gmb-focus-kw-tag {
+    display: inline-block !important;
+    padding: 2px 8px !important;
+    background: var(--gmb-bg-subtle, #f1f5f9) !important;
+    color: var(--gmb-text-body, #334155) !important;
+    border-radius: var(--gmb-radius-xs, 4px) !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    border: 1px solid var(--gmb-border, #e2e8f0) !important;
+    max-width: 180px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
