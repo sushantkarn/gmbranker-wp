@@ -1,8 +1,8 @@
 # GMB Ranker SEO Automation WordPress Plugin
 
-[![WordPress Version](https://img.shields.io/badge/WordPress-%3E%3D%205.6-blue.svg)](https://wordpress.org)
+[![WordPress Version](https://img.shields.io/badge/WordPress-%3E%3D%205.8-blue.svg)](https://wordpress.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/Version-2.1.0-blue.svg)](https://github.com/sushantkarn/gmbranker-wp)
+[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](https://github.com/sushantkarn/gmbranker-wp)
 
 A lightweight, standalone WordPress connector plugin that bridges your website's database and pages with the **GMB Ranker Engine**. It allows you to run zero-config SEO experiments, inject internal links, publish sitemaps, manage redirects, and automate search indexing.
 
