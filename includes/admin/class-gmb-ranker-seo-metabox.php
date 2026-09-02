@@ -290,8 +290,9 @@ class GMB_Ranker_SEO_Metabox {
         }
 
         if (isset($_POST['gmb_seo_schema'])) {
-            update_post_meta($post_id, '_gmb_ranker_seo_schema', $_POST['gmb_seo_schema']);
-            update_post_meta($post_id, '_gmb_ranker_json_ld', $_POST['gmb_seo_schema']);
+            $schema_clean = wp_unslash($_POST['gmb_seo_schema']);
+            update_post_meta($post_id, '_gmb_ranker_seo_schema', $schema_clean);
+            update_post_meta($post_id, '_gmb_ranker_json_ld', $schema_clean);
         }
 
         // Facebook (OpenGraph)
