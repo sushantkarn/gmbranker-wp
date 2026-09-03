@@ -101,6 +101,33 @@ body.post-new-php #wpwrap {
   padding: 14px 24px;
   width: 100%;
   box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.gmb-btn--ai-post {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+  transition: all 0.2s ease;
+}
+
+.gmb-btn--ai-post:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  color: #ffffff;
 }
 
 .gmb-seo-tabs {
@@ -2719,6 +2746,79 @@ body.post-new-php #wpwrap {
 }
 
 /* Dynamic FAQ & Builder Items */
+/* Single Post AI Optimizer Modal & Results Grid */
+.gmb-modal-lg {
+  max-width: 860px !important;
+  width: 90% !important;
+}
+
+.gmb-ai-results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .gmb-ai-results-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gmb-ai-meta-column,
+.gmb-ai-links-column {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.gmb-ai-loading-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.gmb-ai-loading-text {
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.gmb-links-list-box {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 10px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.gmb-link-item-row {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.gmb-ai-tips-ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  color: #334155;
+}
+
+.gmb-ai-tips-ul li {
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #15803d;
+  font-weight: 600;
+}
+
 .gmb-faq-item-row {
   background: #f8fafc;
   border: 1px solid #e2e8f0;

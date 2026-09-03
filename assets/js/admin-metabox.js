@@ -6,6 +6,162 @@
   "use strict";
 
   $(document).ready(function () {
+
+    // ==========================================
+    // Single Page AI SEO Auto-Fix Handler
+    // ==========================================
+    $(document).on("click", "#gmb-ai-optimize-post-btn", function (e) {
+      e.preventDefault();
+      var $btn = $(this);
+      var $modal = $("#gmb-ai-post-seo-modal");
+      var $loading = $("#gmb-ai-post-modal-loading");
+      var $content = $("#gmb-ai-post-modal-content");
+      var $applyBtn = $("#gmb-ai-post-apply-btn");
+
+      $modal.css("display", "flex").addClass("active");
+      $loading.css("display", "flex");
+      $content.addClass("gmb-hidden");
+      $applyBtn.prop("disabled", true);
+
+      // Extract title & content
+      var postTitle = $("#title").val() || "";
+      if (!postTitle && wp && wp.data && wp.data.select && wp.data.select("core/editor")) {
+        postTitle = wp.data.select("core/editor").getEditedPostAttribute("title") || "";
+      }
+
+      var postContent = "";
+      if (typeof tinymce !== "undefined" && tinymce.get("content") && !tinymce.get("content").isHidden()) {
+        postContent = tinymce.get("content").getContent();
+      } else if ($("#content").length) {
+        postContent = $("#content").val();
+      } else if (wp && wp.data && wp.data.select && wp.data.select("core/editor")) {
+        postContent = wp.data.select("core/editor").getEditedPostAttribute("content") || "";
+      }
+
+      var postId = $("#post_ID").val() || 0;
+      var curFocus = $("#gmb_seo_focus_keyword").val() || "";
+      var curTitle = $("#gmb_seo_title").val() || "";
+      var curDesc = $("#gmb_seo_description").val() || "";
+
+      $.ajax({
+        url: gmbMetaboxData.ajaxUrl,
+        type: "POST",
+        data: {
+          action: "gmb_ai_analyze_and_fix_post_seo",
+          nonce: gmbMetaboxData.nonce,
+          post_id: postId,
+          title: postTitle,
+          content: postContent,
+          post_type: gmbMetaboxData.postType || "post",
+          focus_keyword: curFocus,
+          seo_title: curTitle,
+          meta_description: curDesc
+        },
+        success: function (res) {
+          $loading.css("display", "none");
+          if (!res.success || !res.data) {
+            alert("AI analysis failed: " + (res.data || "Unknown error"));
+            $modal.css("display", "none").removeClass("active");
+            return;
+          }
+
+          var data = res.data;
+          $content.removeClass("gmb-hidden");
+          $applyBtn.prop("disabled", false);
+
+          $("#gmb-ai-res-focus").val(data.focus_keyword || "");
+          $("#gmb-ai-res-title").val(data.seo_title || "");
+          $("#gmb-ai-res-desc").val(data.meta_description || "");
+          $("#gmb-ai-res-slug").val(data.suggested_slug || "");
+          if (data.schema_type) {
+            $("#gmb-ai-res-schema").val(data.schema_type);
+          }
+
+          // Internal links
+          var linksHtml = "";
+          if (data.internal_links && data.internal_links.length > 0) {
+            data.internal_links.forEach(function (l, i) {
+              linksHtml += '<div class="gmb-link-item-row"><label><input type="checkbox" class="gmb-ai-link-check" data-url="' + l.url + '" data-anchor="' + l.anchor + '" checked /> <strong>' + l.anchor + '</strong> &rarr; <code>' + l.url + '</code></label></div>';
+            });
+          } else {
+            linksHtml = '<p class="gmb-text-muted-xs">No explicit internal links matched.</p>';
+          }
+          $("#gmb-ai-internal-links-box").html(linksHtml);
+
+          // Tips list
+          var tipsHtml = "";
+          if (data.optimization_tips && data.optimization_tips.length > 0) {
+            data.optimization_tips.forEach(function (t) {
+              tipsHtml += '<li>&check; ' + t + '</li>';
+            });
+          }
+          $("#gmb-ai-tips-list").html(tipsHtml);
+        },
+        error: function (xhr, status, err) {
+          $loading.css("display", "none");
+          alert("AJAX Error: " + err);
+          $modal.css("display", "none").removeClass("active");
+        }
+      });
+    });
+
+    $(document).on("click", "#gmb-ai-post-modal-close, #gmb-ai-post-modal-cancel", function (e) {
+      e.preventDefault();
+      $("#gmb-ai-post-seo-modal").css("display", "none").removeClass("active");
+    });
+
+    $(document).on("click", "#gmb-ai-post-apply-btn", function (e) {
+      e.preventDefault();
+      var focusKw = $("#gmb-ai-res-focus").val().trim();
+      var seoTitle = $("#gmb-ai-res-title").val().trim();
+      var metaDesc = $("#gmb-ai-res-desc").val().trim();
+      var slug = $("#gmb-ai-res-slug").val().trim();
+      var schema = $("#gmb-ai-res-schema").val();
+
+      // Apply Focus Keyword
+      if (focusKw) {
+        $("#gmb_seo_focus_keyword").val(focusKw).trigger("input").trigger("change");
+      }
+
+      // Apply SEO Title
+      if (seoTitle) {
+        $("#gmb_seo_title").val(seoTitle).trigger("input").trigger("change");
+      }
+
+      // Apply Meta Description
+      if (metaDesc) {
+        $("#gmb_seo_description").val(metaDesc).trigger("input").trigger("change");
+      }
+
+      // Apply Slug
+      if (slug && $("#post_name").length) {
+        $("#post_name").val(slug);
+      }
+
+      // Apply Schema
+      if (schema && $("#gmb_seo_schema_preset").length) {
+        $("#gmb_seo_schema_preset").val(schema).trigger("change");
+      }
+
+      // Apply internal links into editor
+      $(".gmb-ai-link-check:checked").each(function () {
+        var anchor = $(this).attr("data-anchor");
+        var url = $(this).attr("data-url");
+        if (anchor && url) {
+          var linkTag = '<a href="' + url + '">' + anchor + '</a>';
+          if (typeof tinymce !== "undefined" && tinymce.get("content") && !tinymce.get("content").isHidden()) {
+            var bodyHtml = tinymce.get("content").getContent();
+            if (bodyHtml.indexOf(url) === -1) {
+              tinymce.get("content").setContent(bodyHtml + '<p>Learn more about <a href="' + url + '">' + anchor + '</a>.</p>');
+            }
+          }
+        }
+      });
+
+      $("#gmb-ai-post-seo-modal").css("display", "none").removeClass("active");
+      alert("✨ AI Recommendations successfully applied to page SEO settings!");
+    });
+
     // ==========================================
     // 1. Metabox Main Tab Switching
     // ==========================================

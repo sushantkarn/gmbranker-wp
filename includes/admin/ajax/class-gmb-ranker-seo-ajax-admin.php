@@ -41,6 +41,7 @@ class GMB_Ranker_SEO_Ajax_Admin {
         add_action('wp_ajax_gmb_ai_suggest_404_redirects', array($this, 'ajax_ai_suggest_404_redirects'));
         add_action('wp_ajax_gmb_apply_ai_redirects', array($this, 'ajax_apply_ai_redirects'));
         add_action('wp_ajax_gmb_test_outbound_webhook', array($this, 'ajax_test_outbound_webhook'));
+        add_action('wp_ajax_gmb_ai_analyze_and_fix_post_seo', array($this, 'ajax_ai_analyze_and_fix_post_seo'));
     }
 
     public function ajax_auto_fix_display_names() {
@@ -1342,5 +1343,125 @@ class GMB_Ranker_SEO_Ajax_Admin {
             wp_send_json_error('Endpoint returned HTTP error code: ' . $code);
         }
     }
-}
 
+    public function ajax_ai_analyze_and_fix_post_seo() {
+        $this->enforce_ajax_csrf_protection();
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+        $title = isset($_POST['title']) ? sanitize_text_field(wp_unslash($_POST['title'])) : '';
+        $content_raw = isset($_POST['content']) ? wp_unslash($_POST['content']) : '';
+        $content_clean = wp_strip_all_tags($content_raw);
+        $post_type = isset($_POST['post_type']) ? sanitize_text_field(wp_unslash($_POST['post_type'])) : 'post';
+
+        $cur_focus = isset($_POST['focus_keyword']) ? sanitize_text_field(wp_unslash($_POST['focus_keyword'])) : '';
+        $cur_seo_title = isset($_POST['seo_title']) ? sanitize_text_field(wp_unslash($_POST['seo_title'])) : '';
+        $cur_meta_desc = isset($_POST['meta_description']) ? sanitize_textarea_field(wp_unslash($_POST['meta_description'])) : '';
+
+        if (empty($title) && empty($content_clean)) {
+            wp_send_json_error('Please enter a Post Title or Content body before running AI analysis.');
+        }
+
+        // Fetch live pages for internal link suggestions
+        $live_pages = array();
+        $other_posts = get_posts(array(
+            'post_type'      => array('page', 'post', 'service', 'services', 'product', 'case_studies'),
+            'post_status'    => 'publish',
+            'posts_per_page' => 40,
+            'exclude'        => array($post_id),
+        ));
+
+        foreach ($other_posts as $p) {
+            $link = get_permalink($p->ID);
+            $path = wp_parse_url($link, PHP_URL_PATH) ?: '/';
+            $live_pages[] = array(
+                'title' => get_the_title($p->ID),
+                'url'   => $path,
+            );
+        }
+
+        $site_name = get_bloginfo('name');
+        $ai_data = null;
+
+        if (class_exists('GMB_Ranker_SEO_AI_Provider')) {
+            $system_prompt = "You are a world-class SEO Master Strategist. Analyze the given WordPress page title, content body, and available site pages. Generate high-converting, Google-optimized SEO recommendations.\n" .
+            "Return ONLY a raw valid JSON object with keys:\n" .
+            "- focus_keyword (string, 2-4 word primary keyword)\n" .
+            "- seo_title (string, 50-60 characters incorporating focus keyword and brand)\n" .
+            "- meta_description (string, 140-155 characters with clear call to action and focus keyword)\n" .
+            "- suggested_slug (string, clean hyphenated URL slug)\n" .
+            "- schema_type (string: Article, WebPage, AboutPage, Service, Product, LocalBusiness)\n" .
+            "- internal_links (array of objects with keys: anchor, url, context_sentence)\n" .
+            "- external_links (array of objects with keys: anchor, url, reasoning)\n" .
+            "- optimization_tips (array of strings explaining fixes made)\n" .
+            "Do NOT wrap in markdown or commentary.";
+
+            $user_prompt = "Page Title: " . $title . "\nContent Body Snippet:\n" . mb_substr($content_clean, 0, 2500) . "\n\nSite Name: " . $site_name . "\nAvailable Internal Pages:\n" . wp_json_encode($live_pages);
+
+            $messages = array(
+                array('role' => 'system', 'content' => $system_prompt),
+                array('role' => 'user', 'content' => $user_prompt)
+            );
+
+            $res = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages, 0.3);
+            if (!is_wp_error($res) && !empty($res['choices'][0]['message']['content'])) {
+                $raw = trim($res['choices'][0]['message']['content']);
+                $raw = preg_replace('/^```(?:json)?/i', '', $raw);
+                $raw = preg_replace('/```$/', '', $raw);
+                $raw = trim($raw);
+                $decoded = json_decode($raw, true);
+
+                if (is_array($decoded) && !empty($decoded['focus_keyword'])) {
+                    $ai_data = $decoded;
+                }
+            }
+        }
+
+        // Algorithmic Fallback Generator if AI is offline or key missing
+        if (empty($ai_data)) {
+            $words = explode(' ', strtolower(preg_replace('/[^a-zA-Z0-9 ]/', '', $title)));
+            $words = array_filter($words, function($w) { return strlen($w) > 3; });
+            $focus = !empty($words) ? implode(' ', array_slice($words, 0, 3)) : $title;
+
+            $seo_title = $title . ' — ' . $site_name;
+            $meta_desc = !empty($content_clean) ? mb_substr($content_clean, 0, 150) . '...' : 'Discover ' . $title . ' at ' . $site_name . '. Learn more about our services and solutions.';
+            $slug = sanitize_title($title);
+
+            $schema = ($post_type === 'page') ? (stripos($title, 'about') !== false ? 'AboutPage' : 'WebPage') : 'Article';
+
+            $internal_links = array();
+            foreach ($live_pages as $lp) {
+                if (stripos($content_clean, $lp['title']) !== false) {
+                    $internal_links[] = array(
+                        'anchor' => $lp['title'],
+                        'url'    => $lp['url'],
+                        'context_sentence' => 'Auto-matched keyword in content'
+                    );
+                    if (count($internal_links) >= 3) break;
+                }
+            }
+
+            $ai_data = array(
+                'focus_keyword'       => ucwords($focus),
+                'seo_title'           => $seo_title,
+                'meta_description'    => $meta_desc,
+                'suggested_slug'      => $slug,
+                'schema_type'         => $schema,
+                'internal_links'      => $internal_links,
+                'external_links'      => array(
+                    array('anchor' => 'Learn more on Wikipedia', 'url' => 'https://en.wikipedia.org/wiki/' . urlencode($title), 'reasoning' => 'High authority external reference')
+                ),
+                'optimization_tips'   => array(
+                    'Focus keyword automatically generated from title',
+                    'Meta Title and Description optimized for search snippet standards',
+                    'Internal link suggestions matched against published site pages'
+                )
+            );
+        }
+
+        wp_send_json_success($ai_data);
+    }
+
+}
