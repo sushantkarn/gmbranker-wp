@@ -1,12 +1,12 @@
 <?php
 /**
- * GMB Ranker SEO — Dynamic AI Content & Intent Intelligence Orchestrator
+ * GMB Ranker SEO — Enterprise Dynamic AI Content & Intent Intelligence Orchestrator
  *
  * 100% dynamic, repository-driven Content AI orchestration layer.
- * Completely eliminates static hardcoded templates, switch-based archetype dictionaries,
- * and hardcoded outline arrays. Orchestrates AI Provider completions (OpenRouter, Groq, Ollama)
- * to dynamically plan and generate search-intent-aligned long-form content, briefs, outlines,
- * and metadata based on target query semantics, entities, site context, and SEO audit results.
+ * Completely eliminates hardcoded intent dictionaries, static outline fallbacks, and regex archetype matching.
+ * Orchestrates AI Provider completions (OpenRouter, Groq, Ollama) to dynamically plan,
+ * structure, and generate search-intent-aligned long-form content, briefs, outlines, and metadata
+ * based on target query semantics, entities, site context, and SEO audit results.
  *
  * @package GMB_Ranker_SEO_Automation
  */
@@ -30,7 +30,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
             $raw   = trim($title . ' ' . $keyword);
             $clean = preg_replace('/[^\w\s]/u', ' ', $raw);
             $words = array_values(array_filter(explode(' ', strtolower($clean)), function($w) {
-                return strlen($w) > 2 && !in_array($w, array('and', 'the', 'for', 'with', 'over', 'from', 'this', 'that', 'your', 'about', 'guide'), true);
+                return strlen($w) > 2;
             }));
 
             $target_kw = ucwords(trim($keyword ?: $title));
@@ -48,28 +48,40 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
         }
 
         /**
-         * Detect Search Intent & Topic Focus Dynamically
+         * Detect Search Intent & Topic Focus Dynamically via AI or Semantic Inference
          *
          * @param string $title
          * @param string $keyword
          * @return string
          */
         public static function classify_intent_and_niche($title, $keyword) {
-            $text = strtolower($title . ' ' . $keyword);
-
-            if (preg_match('/(vs|versus|compare|comparison|over|difference)/i', $text)) {
-                return 'COMPARISON';
-            } elseif (preg_match('/(how to|step by step|procedure|guide|setup|instructions)/i', $text)) {
-                return 'PROCEDURAL';
-            } elseif (preg_match('/(what is|definition|meaning|explain|overview|understanding)/i', $text)) {
-                return 'EXPLAINER';
-            } elseif (preg_match('/(best|top|choose|selecting|review|pricing|cost|checklist)/i', $text)) {
-                return 'SELECTION';
-            } elseif (preg_match('/(service|services|consulting|agency|provider|specialist)/i', $text)) {
-                return 'SERVICE';
+            $target = trim($title . ' ' . $keyword);
+            if (empty($target)) {
+                return 'DYNAMIC_INFORMATIONAL';
             }
 
-            return 'GENERAL_INFORMATIONAL';
+            if (class_exists('GMB_Ranker_SEO_AI_Provider')) {
+                $messages = array(
+                    array(
+                        'role'    => 'system',
+                        'content' => 'You are an SEO intent classifier. Classify the user search intent for the target topic into one word (e.g. INFORMATIONAL, COMPARISON, PROCEDURAL, COMMERCIAL, SERVICE). Return ONLY the one-word intent.',
+                    ),
+                    array(
+                        'role'    => 'user',
+                        'content' => 'Topic: ' . $target,
+                    ),
+                );
+
+                $ai_intent = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages, 0.3);
+                if (!empty($ai_intent) && !is_wp_error($ai_intent)) {
+                    $clean_intent = strtoupper(trim(wp_strip_all_tags($ai_intent)));
+                    if (strlen($clean_intent) >= 3 && strlen($clean_intent) <= 25) {
+                        return $clean_intent;
+                    }
+                }
+            }
+
+            return 'DYNAMIC_INFORMATIONAL';
         }
 
         /**
@@ -97,7 +109,6 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 'home_url'        => $entities['home_url'],
                 'existing_words'  => $word_count,
                 'post_id'         => $post_id,
-                'is_thin_content' => ($word_count < 300),
             );
         }
 
@@ -112,12 +123,11 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
             $kw     = $brief['target_keyword'];
             $intent = $brief['search_intent'];
 
-            // Query AI Provider for dynamic outline planning if available
             if (class_exists('GMB_Ranker_SEO_AI_Provider')) {
                 $messages = array(
                     array(
                         'role'    => 'system',
-                        'content' => 'You are an SEO content strategist. Generate 4 to 6 concise, topic-specific H2 section headings for an article on the target topic. Return ONLY a plain bulleted list (- Heading) with no extra text.',
+                        'content' => 'You are a senior enterprise SEO content strategist. Construct a dynamic, topic-specific H2 outline tailored strictly to the input topic and search intent. Return ONLY a plain bulleted list (- Heading) with no extra intro/outro text or markdown code blocks.',
                     ),
                     array(
                         'role'    => 'user',
@@ -131,27 +141,21 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                     $headings = array();
                     foreach ($lines as $line) {
                         $clean = trim(preg_replace('/^[\-\*\d\.]+\s*/', '', $line));
-                        if (!empty($clean) && strlen($clean) > 5) {
+                        if (!empty($clean) && strlen($clean) > 3) {
                             $headings[] = wp_strip_all_tags($clean);
                         }
                     }
-                    if (count($headings) >= 3) {
+                    if (!empty($headings)) {
                         return $headings;
                     }
                 }
             }
 
-            // Dynamic Contextual Fallback Headings (Topic-Derived, No Static Archetype Arrays)
-            return array(
-                sprintf(__('Overview & Core Principles of %s', 'gmb-ranker-seo-automation'), $target),
-                sprintf(__('Key Considerations & Requirements for %s', 'gmb-ranker-seo-automation'), $kw),
-                sprintf(__('Implementation & Strategic Execution Plan', 'gmb-ranker-seo-automation')),
-                sprintf(__('Evaluation & Next Steps', 'gmb-ranker-seo-automation')),
-            );
+            return array();
         }
 
         /**
-         * Sanitize Common AI Clichés and Overused Phrases
+         * Sanitize Output
          *
          * @param string $content
          * @return string
@@ -161,16 +165,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 return '';
             }
 
-            $cliches = array(
-                '/in today\'s fast-paced world,?/i' => 'Currently,',
-                '/whether you are [^,\.]+,?/i'      => '',
-                '/look no further,?/i'             => '',
-                '/it is important to note that/i'   => 'Notably,',
-                '/in conclusion,?/i'                => 'Summary:',
-                '/when it comes to/i'               => 'Regarding',
-            );
-
-            return preg_replace(array_keys($cliches), array_values($cliches), $content);
+            return wp_kses_post($content);
         }
 
         /**
@@ -185,12 +180,11 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
             $target = !empty($title) ? $title : $keyword;
             $kw     = !empty($keyword) ? $keyword : $title;
 
-            // Attempt AI completion if Provider available
             if (class_exists('GMB_Ranker_SEO_AI_Provider')) {
                 $messages = array(
                     array(
                         'role'    => 'system',
-                        'content' => 'You are an SEO expert. Write a compelling, click-worthy Meta Description between 120 and 155 characters for the given topic and keyword. Do not wrap in quotes or markdown. Do not include AI clichés.',
+                        'content' => 'You are an SEO expert. Write a compelling, click-worthy Meta Description between 120 and 155 characters for the given topic and keyword. Do not wrap in quotes or markdown.',
                     ),
                     array(
                         'role'    => 'user',
@@ -207,7 +201,6 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 }
             }
 
-            // Contextual extraction fallback without static clichés
             if (!empty($content_summary)) {
                 $clean_summary = wp_strip_all_tags($content_summary);
                 if (mb_strlen($clean_summary) >= 120) {
@@ -215,11 +208,11 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 }
             }
 
-            return mb_substr(sprintf('%s — Learn about key requirements, options, and best practices for %s.', $target, $kw), 0, 155);
+            return '';
         }
 
         /**
-         * Orchestrate Dynamic AI Content Generation (No Hardcoded Switch Fallbacks)
+         * Orchestrate Dynamic AI Content Generation (No Hardcoded Fallbacks)
          *
          * @param string $title
          * @param string $keyword
@@ -234,8 +227,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
             $ai_draft = '';
             $is_ai_success = false;
 
-            // Orchestrate completion request through canonical AI Provider
-            if (class_exists('GMB_Ranker_SEO_AI_Provider')) {
+            if (class_exists('GMB_Ranker_SEO_AI_Provider') && !empty($outline)) {
                 $outline_str = implode("\n- ", $outline);
                 $messages = array(
                     array(
@@ -256,9 +248,12 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 );
 
                 $ai_response = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages, 0.7);
-                if (!empty($ai_response) && !is_wp_error($ai_response) && mb_strlen(wp_strip_all_tags($ai_response)) > 100) {
-                    $ai_draft = self::sanitize_ai_cliches(wp_kses_post($ai_response));
-                    $is_ai_success = true;
+                if (!empty($ai_response) && !is_wp_error($ai_response)) {
+                    $clean_resp = trim(wp_strip_all_tags($ai_response));
+                    if (mb_strlen($clean_resp) > 100) {
+                        $ai_draft = wp_kses_post($ai_response);
+                        $is_ai_success = true;
+                    }
                 }
             }
 
