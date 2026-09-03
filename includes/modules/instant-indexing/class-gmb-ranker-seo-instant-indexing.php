@@ -14,6 +14,7 @@ class GMB_Ranker_SEO_Instant_Indexing {
         // Automatic publish & status hooks
         add_action('transition_post_status', array($this, 'handle_post_transition'), 10, 3);
         add_action('wp_trash_post', array($this, 'handle_post_trash'), 10, 1);
+        add_action('init', array($this, 'handle_key_request'), 1);
         add_action('parse_request', array($this, 'handle_key_request'), 1);
 
         // Row actions and bulk actions in post/page list tables
