@@ -1108,7 +1108,11 @@
 }
 
 .gmb-schema-validator-card {
-  padding: 24px 0;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 24px 0 0 0 !important;
+  box-shadow: none !important;
 }
 
 .gmb-schema-validator-title {
