@@ -7,23 +7,34 @@
 
   $(document).ready(function () {
 
-    // ==========================================
-    // Single Page AI SEO Auto-Fix Handler
+// ==========================================
+    // Single Page AI SEO Auto-Fix Handler (Redirection-Style Table Modal)
     // ==========================================
     $(document).on("click", "#gmb-ai-optimize-post-btn", function (e) {
       e.preventDefault();
       var $btn = $(this);
       var $modal = $("#gmb-ai-post-seo-modal");
+
+      if (!$modal.length) {
+        alert("AI Modal element not found. Please refresh the page.");
+        return;
+      }
+
+      // Move modal to body to guarantee root overlay
+      $modal.appendTo("body");
+      $modal.css("display", "flex").addClass("active");
+
       var $loading = $("#gmb-ai-post-modal-loading");
       var $content = $("#gmb-ai-post-modal-content");
+      var $tbody = $("#gmb-ai-post-suggestions-tbody");
       var $applyBtn = $("#gmb-ai-post-apply-btn");
 
-      $modal.css("display", "flex").addClass("active");
       $loading.css("display", "flex");
       $content.addClass("gmb-hidden");
+      $tbody.empty();
       $applyBtn.prop("disabled", true);
 
-      // Extract title & content
+      // Extract title & content safely
       var postTitle = $("#title").val() || "";
       if (!postTitle && typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.select("core/editor")) {
         postTitle = wp.data.select("core/editor").getEditedPostAttribute("title") || "";
@@ -69,33 +80,69 @@
           $content.removeClass("gmb-hidden");
           $applyBtn.prop("disabled", false);
 
-          $("#gmb-ai-res-focus").val(data.focus_keyword || "");
-          $("#gmb-ai-res-title").val(data.seo_title || "");
-          $("#gmb-ai-res-desc").val(data.meta_description || "");
-          $("#gmb-ai-res-slug").val(data.suggested_slug || "");
-          if (data.schema_type) {
-            $("#gmb-ai-res-schema").val(data.schema_type);
-          }
+          var rowsHtml = "";
 
-          // Internal links
-          var linksHtml = "";
+          // Row 1: Focus Keyword
+          rowsHtml += '<tr>' +
+            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="focus" checked /></td>' +
+            '<td><strong>Focus Keyword</strong></td>' +
+            '<td><input type="text" id="gmb-ai-input-focus" value="' + (data.focus_keyword || "") + '" class="gmb-integration-input gmb-input-sm" /></td>' +
+            '<td><span class="gmb-status-pill gmb-status-pill--success">Fix Needed</span></td>' +
+            '</tr>';
+
+          // Row 2: SEO Title
+          rowsHtml += '<tr>' +
+            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="title" checked /></td>' +
+            '<td><strong>SEO Title</strong></td>' +
+            '<td><input type="text" id="gmb-ai-input-title" value="' + (data.seo_title || "") + '" class="gmb-integration-input gmb-input-sm" /></td>' +
+            '<td><span class="gmb-status-pill gmb-status-pill--success">Fix Needed</span></td>' +
+            '</tr>';
+
+          // Row 3: Meta Description
+          rowsHtml += '<tr>' +
+            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="desc" checked /></td>' +
+            '<td><strong>Meta Description</strong></td>' +
+            '<td><textarea id="gmb-ai-input-desc" rows="2" class="gmb-integration-input gmb-input-sm">' + (data.meta_description || "") + '</textarea></td>' +
+            '<td><span class="gmb-status-pill gmb-status-pill--success">Fix Needed</span></td>' +
+            '</tr>';
+
+          // Row 4: URL Slug
+          rowsHtml += '<tr>' +
+            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="slug" checked /></td>' +
+            '<td><strong>URL Slug</strong></td>' +
+            '<td><input type="text" id="gmb-ai-input-slug" value="' + (data.suggested_slug || "") + '" class="gmb-integration-input gmb-input-sm" /></td>' +
+            '<td><span class="gmb-status-pill gmb-status-pill--primary">Optimized</span></td>' +
+            '</tr>';
+
+          // Row 5: Schema Blueprint
+          var schemaVal = data.schema_type || "WebPage";
+          rowsHtml += '<tr>' +
+            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="schema" checked /></td>' +
+            '<td><strong>Schema Preset</strong></td>' +
+            '<td><select id="gmb-ai-input-schema" class="gmb-integration-select gmb-input-sm">' +
+              '<option value="WebPage"' + (schemaVal === 'WebPage' ? ' selected' : '') + '>WebPage</option>' +
+              '<option value="Article"' + (schemaVal === 'Article' ? ' selected' : '') + '>Article</option>' +
+              '<option value="AboutPage"' + (schemaVal === 'AboutPage' ? ' selected' : '') + '>AboutPage</option>' +
+              '<option value="Service"' + (schemaVal === 'Service' ? ' selected' : '') + '>Service</option>' +
+              '<option value="LocalBusiness"' + (schemaVal === 'LocalBusiness' ? ' selected' : '') + '>LocalBusiness</option>' +
+              '<option value="Product"' + (schemaVal === 'Product' ? ' selected' : '') + '>Product</option>' +
+            '</select></td>' +
+            '<td><span class="gmb-status-pill gmb-status-pill--primary">Recommended</span></td>' +
+            '</tr>';
+
+          // Internal Links Rows
           if (data.internal_links && data.internal_links.length > 0) {
-            data.internal_links.forEach(function (l, i) {
-              linksHtml += '<div class="gmb-link-item-row"><label><input type="checkbox" class="gmb-ai-link-check" data-url="' + l.url + '" data-anchor="' + l.anchor + '" checked /> <strong>' + l.anchor + '</strong> &rarr; <code>' + l.url + '</code></label></div>';
+            data.internal_links.forEach(function (l) {
+              rowsHtml += '<tr>' +
+                '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check gmb-ai-link-check" data-factor="link" data-anchor="' + l.anchor + '" data-url="' + l.url + '" checked /></td>' +
+                '<td><strong>Internal Link</strong></td>' +
+                '<td>Link "<strong>' + l.anchor + '</strong>" &rarr; <code>' + l.url + '</code></td>' +
+                '<td><span class="gmb-status-pill gmb-status-pill--success">Match Found</span></td>' +
+                '</tr>';
             });
-          } else {
-            linksHtml = '<p class="gmb-text-muted-xs">No explicit internal links matched.</p>';
           }
-          $("#gmb-ai-internal-links-box").html(linksHtml);
 
-          // Tips list
-          var tipsHtml = "";
-          if (data.optimization_tips && data.optimization_tips.length > 0) {
-            data.optimization_tips.forEach(function (t) {
-              tipsHtml += '<li>&check; ' + t + '</li>';
-            });
-          }
-          $("#gmb-ai-tips-list").html(tipsHtml);
+          $tbody.html(rowsHtml);
         },
         error: function (xhr, status, err) {
           $loading.css("display", "none");
@@ -105,52 +152,75 @@
       });
     });
 
+    // Select All Checkbox Handler
+    $(document).on("change", "#gmb-ai-post-select-all", function () {
+      var isChecked = $(this).is(":checked");
+      $(".gmb-ai-post-check").prop("checked", isChecked);
+    });
+
     $(document).on("click", "#gmb-ai-post-modal-close, #gmb-ai-post-modal-cancel", function (e) {
       e.preventDefault();
       $("#gmb-ai-post-seo-modal").css("display", "none").removeClass("active");
     });
 
+    // Apply Selected Recommendations Button Handler
     $(document).on("click", "#gmb-ai-post-apply-btn", function (e) {
       e.preventDefault();
-      var focusKw = $("#gmb-ai-res-focus").val().trim();
-      var seoTitle = $("#gmb-ai-res-title").val().trim();
-      var metaDesc = $("#gmb-ai-res-desc").val().trim();
-      var slug = $("#gmb-ai-res-slug").val().trim();
-      var schema = $("#gmb-ai-res-schema").val();
+
+      var applyFocus = $('.gmb-ai-post-check[data-factor="focus"]').is(":checked");
+      var applyTitle = $('.gmb-ai-post-check[data-factor="title"]').is(":checked");
+      var applyDesc = $('.gmb-ai-post-check[data-factor="desc"]').is(":checked");
+      var applySlug = $('.gmb-ai-post-check[data-factor="slug"]').is(":checked");
+      var applySchema = $('.gmb-ai-post-check[data-factor="schema"]').is(":checked");
 
       // Apply Focus Keyword
-      if (focusKw) {
-        $("#gmb_seo_focus_keyword").val(focusKw).trigger("input").trigger("change").trigger("keyup");
+      if (applyFocus) {
+        var focusKw = $("#gmb-ai-input-focus").val().trim();
+        if (focusKw) {
+          $("#gmb_seo_focus_keyword").val(focusKw).trigger("input").trigger("change").trigger("keyup");
+        }
       }
 
       // Apply SEO Title
-      if (seoTitle) {
-        $("#gmb_seo_title").val(seoTitle).trigger("input").trigger("change").trigger("keyup");
+      if (applyTitle) {
+        var seoTitle = $("#gmb-ai-input-title").val().trim();
+        if (seoTitle) {
+          $("#gmb_seo_title").val(seoTitle).trigger("input").trigger("change").trigger("keyup");
+        }
       }
 
       // Apply Meta Description
-      if (metaDesc) {
-        $("#gmb_seo_description").val(metaDesc).trigger("input").trigger("change").trigger("keyup");
+      if (applyDesc) {
+        var metaDesc = $("#gmb-ai-input-desc").val().trim();
+        if (metaDesc) {
+          $("#gmb_seo_description").val(metaDesc).trigger("input").trigger("change").trigger("keyup");
+        }
       }
 
-      // Apply Slug (Classic + Gutenberg)
-      if (slug) {
-        if ($("#post_name").length) {
-          $("#post_name").val(slug);
-        }
-        if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
-          try {
-            wp.data.dispatch("core/editor").editPost({ slug: slug });
-          } catch(err) {}
+      // Apply Slug
+      if (applySlug) {
+        var slug = $("#gmb-ai-input-slug").val().trim();
+        if (slug) {
+          if ($("#post_name").length) {
+            $("#post_name").val(slug);
+          }
+          if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
+            try {
+              wp.data.dispatch("core/editor").editPost({ slug: slug });
+            } catch(err) {}
+          }
         }
       }
 
       // Apply Schema
-      if (schema && $("#gmb_seo_schema_preset").length) {
-        $("#gmb_seo_schema_preset").val(schema).trigger("change");
+      if (applySchema) {
+        var schema = $("#gmb-ai-input-schema").val();
+        if (schema && $("#gmb_seo_schema_preset").length) {
+          $("#gmb_seo_schema_preset").val(schema).trigger("change");
+        }
       }
 
-      // Smart In-Text & Contextual Internal Link Insertion (Classic + Gutenberg)
+      // Apply checked internal links
       var linksToInsert = [];
       $(".gmb-ai-link-check:checked").each(function () {
         var anchor = $(this).attr("data-anchor");

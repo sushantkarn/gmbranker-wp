@@ -35,6 +35,9 @@ class GMB_Ranker_SEO_Metabox {
         add_action('edit_user_profile', array($this, 'render_user_profile_seo_fields'));
         add_action('personal_options_update', array($this, 'save_user_profile_seo_fields'));
         add_action('edit_user_profile_update', array($this, 'save_user_profile_seo_fields'));
+
+        // Single Post AI SEO Modal Footer Hook
+        add_action('admin_footer', array($this, 'render_ai_post_modal'));
     }
 
     /**
@@ -484,5 +487,54 @@ class GMB_Ranker_SEO_Metabox {
         if (isset($_POST['gmb_author_same_as'])) {
             update_user_meta($user_id, 'gmb_author_same_as', sanitize_textarea_field(wp_unslash($_POST['gmb_author_same_as'])));
         }
+    }
+
+    /**
+     * Render Single Post AI SEO Auto-Fix Modal in admin_footer
+     */
+    public function render_ai_post_modal() {
+        $screen = get_current_screen();
+        if (!$screen || ($screen->base !== 'post' && $screen->base !== 'page')) {
+            return;
+        }
+        ?>
+        <!-- Single Page AI SEO Optimizer Modal (Root Level Overlay) -->
+        <div id="gmb-ai-post-seo-modal" class="gmb-modal-overlay">
+            <div class="gmb-modal-container gmb-modal-lg">
+                <div class="gmb-modal-header">
+                    <h3 class="gmb-modal-title">✨ AI SEO Master Strategist — Auto-Fix Page</h3>
+                    <button type="button" class="gmb-modal-close" id="gmb-ai-post-modal-close">&times;</button>
+                </div>
+                <div class="gmb-modal-body">
+                    <div id="gmb-ai-post-modal-loading" class="gmb-ai-loading-box">
+                        <div class="gmb-spinner"></div>
+                        <p class="gmb-ai-loading-text">Analyzing page content, title, headings, and site URLs with AI...</p>
+                    </div>
+                    <div id="gmb-ai-post-modal-content" class="gmb-hidden">
+                        <p class="gmb-text-muted gmb-mb-12">Below are the AI-recommended SEO optimizations for this page. Uncheck or edit any items before applying.</p>
+                        <div class="gmb-table-wrap gmb-ai-table-scroll">
+                            <table class="gmb-data-table gmb-table-compact">
+                                <thead>
+                                    <tr>
+                                        <th class="gmb-th-checkbox"><input type="checkbox" id="gmb-ai-post-select-all" checked /></th>
+                                        <th style="width: 140px;">SEO Factor</th>
+                                        <th>AI Recommended Optimization</th>
+                                        <th style="width: 120px;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="gmb-ai-post-suggestions-tbody">
+                                    <!-- Populated dynamically via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="gmb-modal-footer">
+                    <button type="button" class="button gmb-btn-secondary" id="gmb-ai-post-modal-cancel">Cancel</button>
+                    <button type="button" class="button button-primary gmb-btn--primary" id="gmb-ai-post-apply-btn" disabled>✨ Apply Selected AI Optimizations</button>
+                </div>
+            </div>
+        </div>
+        <?php
     }
 }
