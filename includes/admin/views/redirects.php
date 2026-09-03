@@ -271,7 +271,7 @@ if (!defined('ABSPATH')) exit;
                                             <tr>
                                                 <th class="gmb-th-404-url">URL / Requested Path</th>
                                                 <th class="gmb-th-404-ref">Referrer</th>
-                                                <th class="gmb-text-center">Date/Time</th>
+                                                <th class="gmb-text-center gmb-th-404-date">Date/Time</th>
                                                 <th class="gmb-th-actions">Actions</th>
                                             </tr>
                                         </thead>
@@ -289,7 +289,7 @@ if (!defined('ABSPATH')) exit;
                                                     <td class="gmb-td-dest">
                                                         <?php echo esc_html($log_ref); ?>
                                                     </td>
-                                                    <td class="gmb-td-center">
+                                                    <td class="gmb-td-center gmb-td-404-date">
                                                         <?php echo esc_html(human_time_diff($log_time, time()) . ' ago'); ?>
                                                     </td>
                                                     <td class="gmb-td-actions">

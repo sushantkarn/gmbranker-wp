@@ -546,14 +546,27 @@
 .gmb-th-actions {
   padding: 10px 12px;
   text-align: right;
+  white-space: nowrap !important;
 }
 
 .gmb-th-404-url {
-  width: 45%;
+  width: 40%;
 }
 
 .gmb-th-404-ref {
   width: 25%;
+}
+
+.gmb-th-404-date,
+.gmb-td-404-date {
+  white-space: nowrap !important;
+  width: 120px !important;
+  text-align: center !important;
+}
+
+.gmb-td-actions {
+  white-space: nowrap !important;
+  text-align: right !important;
 }
 
 .gmb-td-source {
