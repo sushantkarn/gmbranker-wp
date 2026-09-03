@@ -181,6 +181,7 @@ class GMB_Ranker_SEO_Settings_Registry {
      */
     protected function register_sitemaps_settings() {
         $sitemap_options = array(
+            'gmb_ranker_module_sitemaps'            => 'sanitize_text_field',
             'gmb_ranker_sitemap_exclude_slugs'      => 'sanitize_text_field',
             'gmb_sitemap_items_per_page'             => 'absint',
             'gmb_sitemap_include_images'             => 'sanitize_text_field',

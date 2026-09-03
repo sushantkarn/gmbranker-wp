@@ -104,6 +104,7 @@ if (!defined('ABSPATH')) exit;
                                                 </div>
                                                 <div class="gmb-settings-input-col">
                                                     <label class="gmb-switch">
+                                                        <input type="hidden" name="gmb_ranker_module_sitemaps" value="0" />
                                                         <input type="checkbox" name="gmb_ranker_module_sitemaps" value="1" <?php checked('1', get_option('gmb_ranker_module_sitemaps', '1')); ?> />
                                                         <span class="gmb-slider round"></span>
                                                     </label>
@@ -129,6 +130,7 @@ if (!defined('ABSPATH')) exit;
                                                 </div>
                                                 <div class="gmb-settings-input-col">
                                                     <label class="gmb-switch">
+                                                        <input type="hidden" name="gmb_sitemap_include_images" value="0" />
                                                         <input type="checkbox" name="gmb_sitemap_include_images" value="1" <?php checked('1', get_option('gmb_sitemap_include_images', '1')); ?> />
                                                         <span class="gmb-slider round"></span>
                                                     </label>
@@ -143,6 +145,7 @@ if (!defined('ABSPATH')) exit;
                                                 </div>
                                                 <div class="gmb-settings-input-col">
                                                     <label class="gmb-switch">
+                                                        <input type="hidden" name="gmb_sitemap_include_featured_images" value="0" />
                                                         <input type="checkbox" name="gmb_sitemap_include_featured_images" value="1" <?php checked('1', get_option('gmb_sitemap_include_featured_images', '1')); ?> />
                                                         <span class="gmb-slider round"></span>
                                                     </label>
@@ -157,6 +160,7 @@ if (!defined('ABSPATH')) exit;
                                                 </div>
                                                 <div class="gmb-settings-input-col">
                                                     <label class="gmb-switch">
+                                                        <input type="hidden" name="gmb_sitemap_ping_search_engines" value="0" />
                                                         <input type="checkbox" name="gmb_sitemap_ping_search_engines" value="1" <?php checked('1', get_option('gmb_sitemap_ping_search_engines', '1')); ?> />
                                                         <span class="gmb-slider round"></span>
                                                     </label>
@@ -250,6 +254,7 @@ if (!defined('ABSPATH')) exit;
                                                             <div class="gmb-text-muted gmb-text-xs">Add <?php echo esc_html(strtolower($pt_obj->labels->name)); ?> to XML sitemap index</div>
                                                         </div>
                                                         <label class="gmb-switch">
+                                                            <input type="hidden" name="gmb_sitemap_include_pt_<?php echo esc_attr($pt_name); ?>" value="0" />
                                                             <input type="checkbox" name="gmb_sitemap_include_pt_<?php echo esc_attr($pt_name); ?>" value="1" <?php checked($is_inc, true); ?> />
                                                             <span class="gmb-slider round"></span>
                                                         </label>
@@ -261,6 +266,7 @@ if (!defined('ABSPATH')) exit;
                                                             <div class="gmb-text-muted gmb-text-xs">Add image tags for this post type</div>
                                                         </div>
                                                         <label class="gmb-switch">
+                                                            <input type="hidden" name="gmb_sitemap_images_pt_<?php echo esc_attr($pt_name); ?>" value="0" />
                                                             <input type="checkbox" name="gmb_sitemap_images_pt_<?php echo esc_attr($pt_name); ?>" value="1" <?php checked($is_img, true); ?> />
                                                             <span class="gmb-slider round"></span>
                                                         </label>
@@ -311,6 +317,7 @@ if (!defined('ABSPATH')) exit;
                                                             <div class="gmb-text-muted gmb-text-xs">Add <?php echo esc_html(strtolower($tax_obj->labels->name)); ?> to XML sitemap index</div>
                                                         </div>
                                                         <label class="gmb-switch">
+                                                            <input type="hidden" name="gmb_sitemap_include_tax_<?php echo esc_attr($tax_name); ?>" value="0" />
                                                             <input type="checkbox" name="gmb_sitemap_include_tax_<?php echo esc_attr($tax_name); ?>" value="1" <?php checked($is_inc, true); ?> />
                                                             <span class="gmb-slider round"></span>
                                                         </label>
@@ -322,6 +329,7 @@ if (!defined('ABSPATH')) exit;
                                                             <div class="gmb-text-muted gmb-text-xs">Include terms with 0 assigned posts</div>
                                                         </div>
                                                         <label class="gmb-switch">
+                                                            <input type="hidden" name="gmb_sitemap_empty_tax_<?php echo esc_attr($tax_name); ?>" value="0" />
                                                             <input type="checkbox" name="gmb_sitemap_empty_tax_<?php echo esc_attr($tax_name); ?>" value="1" <?php checked($is_empty, true); ?> />
                                                             <span class="gmb-slider round"></span>
                                                         </label>
@@ -351,6 +359,7 @@ if (!defined('ABSPATH')) exit;
                                                 </div>
                                                 <div class="gmb-settings-input-col">
                                                     <label class="gmb-switch">
+                                                        <input type="hidden" name="gmb_sitemap_include_authors" value="0" />
                                                         <input type="checkbox" name="gmb_sitemap_include_authors" value="1" <?php checked('1', get_option('gmb_sitemap_include_authors', '0')); ?> />
                                                         <span class="gmb-slider round"></span>
                                                     </label>
@@ -385,6 +394,7 @@ if (!defined('ABSPATH')) exit;
                                                 </div>
                                                 <div class="gmb-settings-input-col">
                                                     <label class="gmb-switch">
+                                                        <input type="hidden" name="gmb_sitemap_html_enable" value="0" />
                                                         <input type="checkbox" name="gmb_sitemap_html_enable" value="1" <?php checked('1', get_option('gmb_sitemap_html_enable', '1')); ?> />
                                                         <span class="gmb-slider round"></span>
                                                     </label>
