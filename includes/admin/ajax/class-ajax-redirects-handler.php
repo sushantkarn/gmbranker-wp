@@ -102,48 +102,60 @@ if (!class_exists('GMB_Ranker_SEO_Ajax_Redirects_Handler')) {
         public function handle_add_redirect_rule() {
             $this->verify_ajax_security();
 
+            $id_raw     = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])) : '';
             $source_raw = isset($_POST['source']) ? wp_unslash($_POST['source']) : '';
-            $target_raw = isset($_POST['target']) ? wp_unslash($_POST['target']) : '';
+            $target_raw = isset($_POST['destination']) ? wp_unslash($_POST['destination']) : (isset($_POST['target']) ? wp_unslash($_POST['target']) : '');
             $code_raw   = isset($_POST['code']) ? intval(wp_unslash($_POST['code'])) : 301;
-            $type_raw   = isset($_POST['type']) ? sanitize_text_field(wp_unslash($_POST['type'])) : 'exact';
+            $type_raw   = isset($_POST['match_type']) ? sanitize_text_field(wp_unslash($_POST['match_type'])) : (isset($_POST['type']) ? sanitize_text_field(wp_unslash($_POST['type'])) : 'exact');
+            $status_raw = isset($_POST['status']) ? sanitize_text_field(wp_unslash($_POST['status'])) : 'active';
+            $note_raw   = isset($_POST['note']) ? sanitize_text_field(wp_unslash($_POST['note'])) : '';
 
-            $source = trim(sanitize_text_field($source_raw));
+            $source = class_exists('GMB_Ranker_SEO_Redirect_Registry') ? GMB_Ranker_SEO_Redirect_Registry::validate_source_url($source_raw) : sanitize_text_field($source_raw);
             if (empty($source)) {
                 wp_send_json_error(array('message' => 'Source URL or path is required.'), 400);
             }
 
-            $target = $this->validate_redirect_target($target_raw);
-            if (!$target) {
-                wp_send_json_error(array('message' => 'Target URL is invalid or unsafe.'), 400);
+            $code   = in_array($code_raw, array(301, 302, 307, 308, 410, 451), true) ? $code_raw : 301;
+            $target = class_exists('GMB_Ranker_SEO_Redirect_Registry') ? GMB_Ranker_SEO_Redirect_Registry::validate_destination_url($target_raw, $code) : $this->validate_redirect_target($target_raw);
+            
+            if ($target === false && !in_array($code, array(410, 451), true)) {
+                wp_send_json_error(array('message' => 'Destination URL is invalid or unsafe.'), 400);
             }
 
-            $code = in_array($code_raw, self::$allowed_status_codes, true) ? $code_raw : 301;
-            $type = in_array($type_raw, self::$allowed_types, true) ? $type_raw : 'exact';
+            if (class_exists('GMB_Ranker_SEO_Redirect_Registry') && GMB_Ranker_SEO_Redirect_Registry::is_redirect_loop($source, $target)) {
+                wp_send_json_error(array('message' => 'Redirect loop detected. Source and destination URLs must be different.'), 400);
+            }
 
-            // Check for duplicate source rules
-            $existing_rules = $this->repository->get_all_rules();
-            foreach ($existing_rules as $rule) {
-                if (isset($rule['source']) && strcasecmp(trim($rule['source'], '/'), trim($source, '/')) === 0) {
-                    wp_send_json_error(array('message' => 'A redirect rule for this source path already exists.'), 400);
+            $type = in_array($type_raw, array('exact', 'contains', 'start', 'end', 'regex'), true) ? $type_raw : 'exact';
+
+            if ($type === 'regex' && class_exists('GMB_Ranker_SEO_Redirect_Registry')) {
+                if (!GMB_Ranker_SEO_Redirect_Registry::validate_regex_pattern($source)) {
+                    wp_send_json_error(array('message' => 'Invalid or unsafe regular expression pattern supplied.'), 400);
                 }
             }
 
+            $rule_id = !empty($id_raw) ? $id_raw : ('rule_' . substr(md5(uniqid(wp_rand(), true)), 0, 8));
+
             $rule = array(
-                'id'         => 'rule_' . substr(md5(uniqid(wp_rand(), true)), 0, 8),
-                'source'     => $source,
-                'target'     => $target,
-                'code'       => $code,
-                'type'       => $type,
-                'hits'       => 0,
-                'enabled'    => 1,
-                'created_at' => current_time('mysql'),
+                'id'          => $rule_id,
+                'source'      => $source,
+                'destination' => $target,
+                'target'      => $target,
+                'code'        => $code,
+                'match_type'  => $type,
+                'type'        => $type,
+                'status'      => $status_raw === 'inactive' ? 'inactive' : 'active',
+                'enabled'     => $status_raw === 'inactive' ? 0 : 1,
+                'note'        => $note_raw,
+                'hits'        => 0,
+                'created_at'  => current_time('mysql'),
             );
 
             $saved = $this->repository->save_rule($rule);
             if ($saved) {
-                wp_send_json_success(array('message' => 'Redirect rule added successfully.', 'rule' => $rule));
+                wp_send_json_success(array('message' => 'Redirect rule saved successfully.', 'rule' => $rule));
             } else {
-                wp_send_json_error(array('message' => 'Failed to save redirect rule to options.'), 500);
+                wp_send_json_error(array('message' => 'Failed to save redirect rule.'), 500);
             }
         }
 

@@ -501,25 +501,68 @@ class GMB_Ranker_SEO_Admin {
     /**
      * Handle download export of redirection rules
      */
+    /**
+     * Handle download export of redirection rules (JSON & CSV with OWASP CSV Formula Injection Protection)
+     */
     public function handle_export_redirects_download() {
-        if (isset($_GET['page']) && $_GET['page'] === 'gmb-ranker-redirects' && isset($_GET['action']) && $_GET['action'] === 'export_redirects') {
-            check_admin_referer('gmb_export_redirects_nonce');
-            if (!current_user_can('manage_options')) {
-                wp_die('Unauthorized user capability.');
+        $page   = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+        $action = isset($_GET['gmb_action']) ? sanitize_text_field(wp_unslash($_GET['gmb_action'])) : (isset($_GET['action']) ? sanitize_text_field(wp_unslash($_GET['action'])) : '');
+
+        if ($page === 'gmb-ranker-redirects' && in_array($action, array('export_redirects', 'export_redirects_json', 'export_redirects_csv'), true)) {
+            $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash($_GET['_wpnonce'])) : '';
+            if (!wp_verify_nonce($nonce, 'gmb_export_redirects_nonce')) {
+                // Also accept admin nonce fallback
+                if (!wp_verify_nonce($nonce, 'gmb_admin_ajax_nonce') && !check_admin_referer('gmb_export_redirects_nonce', '_wpnonce', false)) {
+                    wp_die(esc_html__('Security check failed for export action.', 'gmb-ranker-seo-automation'), 403);
+                }
             }
 
-            $rules = get_option('gmb_ranker_redirects_rules', array());
-            $json = wp_json_encode($rules, JSON_PRETTY_PRINT);
+            if (!current_user_can('manage_options')) {
+                wp_die(esc_html__('Unauthorized user capability.', 'gmb-ranker-seo-automation'), 403);
+            }
 
-            header('Content-Description: File Transfer');
-            header('Content-Type: application/json; charset=utf-8');
-            header('Content-Disposition: attachment; filename=gmb-ranker-redirects-export-' . gmdate('Y-m-d') . '.json');
-            header('Expires: 0');
-            header('Cache-Control: must-revalidate');
-            header('Pragma: public');
-            header('Content-Length: ' . strlen($json));
-            echo $json;
-            exit;
+            $vm = class_exists('GMB_Ranker_SEO_Redirect_Registry') ? GMB_Ranker_SEO_Redirect_Registry::get_view_model() : array();
+            $rules = isset($vm['rules']) ? $vm['rules'] : array();
+
+            if ($action === 'export_redirects_csv') {
+                header('Content-Description: File Transfer');
+                header('Content-Type: text/csv; charset=utf-8');
+                header('Content-Disposition: attachment; filename=gmb-ranker-redirects-export-' . gmdate('Y-m-d') . '.csv');
+                header('Expires: 0');
+                header('Cache-Control: must-revalidate');
+                header('Pragma: public');
+
+                $output = fopen('php://output', 'w');
+                // CSV Header Row
+                fputcsv($output, array('ID', 'Source URL', 'Destination URL', 'Redirect Code', 'Match Type', 'Status', 'Hits', 'Note'));
+
+                foreach ($rules as $r) {
+                    fputcsv($output, array(
+                        GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['id']),
+                        GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['source']),
+                        GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['destination']),
+                        intval($r['code']),
+                        GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['match_type']),
+                        GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['status']),
+                        intval($r['hits']),
+                        GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['note']),
+                    ));
+                }
+                fclose($output);
+                exit;
+            } else {
+                $json = wp_json_encode($rules, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+                header('Content-Description: File Transfer');
+                header('Content-Type: application/json; charset=utf-8');
+                header('Content-Disposition: attachment; filename=gmb-ranker-redirects-export-' . gmdate('Y-m-d') . '.json');
+                header('Expires: 0');
+                header('Cache-Control: must-revalidate');
+                header('Pragma: public');
+                header('Content-Length: ' . strlen($json));
+                echo $json;
+                exit;
+            }
         }
     }
 
