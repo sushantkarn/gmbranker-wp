@@ -1,6 +1,9 @@
 <?php
 /**
- * Admin Router & Controller for GMB Ranker SEO Automation
+ * Admin Router & Orchestration Controller for GMB Ranker SEO Automation
+ *
+ * Serves as a thin admin orchestration layer managing menu registration,
+ * asset loading, lifecycle hook wiring, and view routing delegation.
  *
  * @package GMB_Ranker_SEO_Automation
  */
@@ -30,8 +33,12 @@ class GMB_Ranker_SEO_Admin {
      */
     public function __construct() {
         // Initialize AJAX Controllers
-        $this->ajax_admin = new GMB_Ranker_SEO_Ajax_Admin();
-        $this->ajax_wizard = new GMB_Ranker_SEO_Ajax_Wizard();
+        if (class_exists('GMB_Ranker_SEO_Ajax_Admin')) {
+            $this->ajax_admin = new GMB_Ranker_SEO_Ajax_Admin();
+        }
+        if (class_exists('GMB_Ranker_SEO_Ajax_Wizard')) {
+            $this->ajax_wizard = new GMB_Ranker_SEO_Ajax_Wizard();
+        }
 
         // Enforce CSRF protection globally for GMB Ranker AJAX requests
         if (defined('DOING_AJAX') && DOING_AJAX) {
@@ -43,7 +50,7 @@ class GMB_Ranker_SEO_Admin {
             }
         }
 
-        // Admin Menus & Settings
+        // Admin Menus & Settings Lifecycle
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_filter('custom_menu_order', '__return_true');
         add_filter('menu_order', array($this, 'reorder_admin_menu'), 999);
@@ -63,7 +70,7 @@ class GMB_Ranker_SEO_Admin {
      */
     public static function enforce_ajax_csrf_protection() {
         if (!current_user_can('edit_posts') && !current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'Unauthorized capabilities.'), 403);
+            wp_send_json_error(array('message' => __('Unauthorized capabilities.', 'gmb-ranker-seo-automation')), 403);
         }
         $nonce = isset($_REQUEST['nonce']) ? sanitize_text_field(wp_unslash($_REQUEST['nonce'])) : (isset($_REQUEST['_wpnonce']) ? sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])) : '');
         $valid_nonces = array(
@@ -87,7 +94,7 @@ class GMB_Ranker_SEO_Admin {
             }
         }
         if (!$verified) {
-            wp_send_json_error(array('message' => 'CSRF validation security check failed.'), 403);
+            wp_send_json_error(array('message' => __('CSRF validation security check failed.', 'gmb-ranker-seo-automation')), 403);
         }
     }
 
@@ -96,16 +103,18 @@ class GMB_Ranker_SEO_Admin {
      */
     public function add_admin_menu() {
         $logo_path = dirname(dirname(dirname(__FILE__))) . '/assets/gmb-ranker-logo.svg';
-        $icon_url = 'dashicons-performance';
+        $icon_url  = 'dashicons-performance';
         if (file_exists($logo_path)) {
             $svg_content = file_get_contents($logo_path);
-            $icon_url = 'data:image/svg+xml;base64,' . base64_encode($svg_content);
+            $icon_url    = 'data:image/svg+xml;base64,' . base64_encode($svg_content);
         }
 
+        $main_cap = 'manage_options';
+
         add_menu_page(
-            'GMB Ranker',
-            'GMB Ranker',
-            'manage_options',
+            __('GMB Ranker', 'gmb-ranker-seo-automation'),
+            __('GMB Ranker', 'gmb-ranker-seo-automation'),
+            $main_cap,
             'gmb-ranker-automation',
             array($this, 'render_settings_page'),
             $icon_url,
@@ -114,19 +123,19 @@ class GMB_Ranker_SEO_Admin {
 
         add_submenu_page(
             'gmb-ranker-automation',
-            'Dashboard',
-            'Dashboard',
-            'manage_options',
+            __('Dashboard', 'gmb-ranker-seo-automation'),
+            __('Dashboard', 'gmb-ranker-seo-automation'),
+            $main_cap,
             'gmb-ranker-automation',
             array($this, 'render_settings_page')
         );
 
-        if (get_option('gmb_ranker_module_analytics', '1') !== '0') {
+        if (get_option('gmb_ranker_module_analytics', '1') !== '0' && get_option('gmb_ranker_module_analytics', '1') !== 'off') {
             add_submenu_page(
                 'gmb-ranker-automation',
-                'Performance & Analytics',
-                'Performance',
-                'manage_options',
+                __('Performance & Analytics', 'gmb-ranker-seo-automation'),
+                __('Performance', 'gmb-ranker-seo-automation'),
+                $main_cap,
                 'gmb-ranker-analytics',
                 array($this, 'render_settings_page')
             );
@@ -134,63 +143,63 @@ class GMB_Ranker_SEO_Admin {
 
         add_submenu_page(
             'gmb-ranker-automation',
-            'General Settings',
-            'General Settings',
-            'manage_options',
+            __('General Settings', 'gmb-ranker-seo-automation'),
+            __('General Settings', 'gmb-ranker-seo-automation'),
+            $main_cap,
             'gmb-ranker-settings',
             array($this, 'render_settings_page')
         );
 
-        if (get_option('gmb_ranker_module_metadata', '1') !== '0') {
+        if (get_option('gmb_ranker_module_metadata', '1') !== '0' && get_option('gmb_ranker_module_metadata', '1') !== 'off') {
             add_submenu_page(
                 'gmb-ranker-automation',
-                'Titles & Meta',
-                'Titles & Meta',
-                'manage_options',
+                __('Titles & Meta', 'gmb-ranker-seo-automation'),
+                __('Titles & Meta', 'gmb-ranker-seo-automation'),
+                $main_cap,
                 'gmb-ranker-metadata',
                 array($this, 'render_settings_page')
             );
         }
 
-        if (get_option('gmb_ranker_module_sitemaps', '1') !== '0') {
+        if (get_option('gmb_ranker_module_sitemaps', '1') !== '0' && get_option('gmb_ranker_module_sitemaps', '1') !== 'off') {
             add_submenu_page(
                 'gmb-ranker-automation',
-                'Sitemap Settings',
-                'Sitemap Settings',
-                'manage_options',
+                __('Sitemap Settings', 'gmb-ranker-seo-automation'),
+                __('Sitemap Settings', 'gmb-ranker-seo-automation'),
+                $main_cap,
                 'gmb-ranker-sitemaps',
                 array($this, 'render_settings_page')
             );
         }
 
-        if (get_option('gmb_ranker_module_schema', '1') !== '0') {
+        if (get_option('gmb_ranker_module_schema', '1') !== '0' && get_option('gmb_ranker_module_schema', '1') !== 'off') {
             add_submenu_page(
                 'gmb-ranker-automation',
-                'Schema Settings',
-                'Schema Settings',
-                'manage_options',
+                __('Schema Settings', 'gmb-ranker-seo-automation'),
+                __('Schema Settings', 'gmb-ranker-seo-automation'),
+                $main_cap,
                 'gmb-ranker-schema',
                 array($this, 'render_settings_page')
             );
         }
 
-        if (get_option('gmb_ranker_module_redirects', '1') !== '0') {
+        if (get_option('gmb_ranker_module_redirects', '1') !== '0' && get_option('gmb_ranker_module_redirects', '1') !== 'off') {
             add_submenu_page(
                 'gmb-ranker-automation',
-                'Redirections',
-                'Redirections',
-                'manage_options',
+                __('Redirections', 'gmb-ranker-seo-automation'),
+                __('Redirections', 'gmb-ranker-seo-automation'),
+                $main_cap,
                 'gmb-ranker-redirects',
                 array($this, 'render_settings_page')
             );
         }
 
-        if (get_option('gmb_ranker_module_instant_indexing', '1') !== '0') {
+        if (get_option('gmb_ranker_module_instant_indexing', '1') !== '0' && get_option('gmb_ranker_module_instant_indexing', '1') !== 'off') {
             add_submenu_page(
                 'gmb-ranker-automation',
-                'Instant Indexing',
-                'Instant Indexing',
-                'manage_options',
+                __('Instant Indexing', 'gmb-ranker-seo-automation'),
+                __('Instant Indexing', 'gmb-ranker-seo-automation'),
+                $main_cap,
                 'gmb-ranker-instant-indexing',
                 array($this, 'render_settings_page')
             );
@@ -198,36 +207,36 @@ class GMB_Ranker_SEO_Admin {
 
         add_submenu_page(
             'gmb-ranker-automation',
-            'Integrations',
-            'Integrations',
-            'manage_options',
+            __('Integrations', 'gmb-ranker-seo-automation'),
+            __('Integrations', 'gmb-ranker-seo-automation'),
+            $main_cap,
             'gmb-ranker-integrations',
             array($this, 'render_settings_page')
         );
 
         add_submenu_page(
             'gmb-ranker-automation',
-            'Status & Tools',
-            'Status & Tools',
-            'manage_options',
+            __('Status & Tools', 'gmb-ranker-seo-automation'),
+            __('Status & Tools', 'gmb-ranker-seo-automation'),
+            $main_cap,
             'gmb-ranker-importer',
             array($this, 'render_settings_page')
         );
 
         add_submenu_page(
             'gmb-ranker-automation',
-            'Help & Support',
-            'Help & Support',
-            'manage_options',
+            __('Help & Support', 'gmb-ranker-seo-automation'),
+            __('Help & Support', 'gmb-ranker-seo-automation'),
+            $main_cap,
             'gmb-ranker-help',
             array($this, 'render_settings_page')
         );
 
         add_submenu_page(
             'gmb-ranker-automation',
-            'Setup Wizard',
-            'Setup Wizard',
-            'manage_options',
+            __('Setup Wizard', 'gmb-ranker-seo-automation'),
+            __('Setup Wizard', 'gmb-ranker-seo-automation'),
+            $main_cap,
             'gmb-ranker-wizard',
             array($this, 'render_settings_page')
         );
@@ -241,7 +250,7 @@ class GMB_Ranker_SEO_Admin {
      */
     public function reorder_admin_menu(array $menu_order) {
         $gmb_slug = 'gmb-ranker-automation';
-        $gmb_key = array_search($gmb_slug, $menu_order, true);
+        $gmb_key  = array_search($gmb_slug, $menu_order, true);
         if ($gmb_key !== false) {
             unset($menu_order[$gmb_key]);
             $menu_order = array_values($menu_order);
@@ -290,7 +299,9 @@ class GMB_Ranker_SEO_Admin {
      * Register all plugin settings with WordPress Settings API
      */
     public function register_settings() {
-        GMB_Ranker_SEO_Settings_Registry::get_instance()->register_all_settings();
+        if (class_exists('GMB_Ranker_SEO_Settings_Registry')) {
+            GMB_Ranker_SEO_Settings_Registry::get_instance()->register_all_settings();
+        }
     }
 
     /**
@@ -299,7 +310,7 @@ class GMB_Ranker_SEO_Admin {
      * @param string $hook
      */
     public function enqueue_admin_assets($hook) {
-        $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+        $page        = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
         $is_gmb_page = (is_string($page) && (strpos($page, 'gmb-ranker') !== false || strpos($page, 'gmb_') !== false || strpos($page, 'gmb-') !== false)) 
                        || (is_string($hook) && (strpos($hook, 'gmb-ranker') !== false || strpos($hook, 'gmb-') !== false));
         
@@ -307,11 +318,11 @@ class GMB_Ranker_SEO_Admin {
             return;
         }
 
-        $ver = defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '2.1.0';
+        $ver        = defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '2.1.0';
         $assets_dir = dirname(dirname(dirname(__FILE__))) . '/assets/';
-        $base_url = plugins_url('assets/', dirname(dirname(__FILE__)));
-        $js_ver = file_exists($assets_dir . 'js/admin-dashboard.js') ? filemtime($assets_dir . 'js/admin-dashboard.js') : $ver;
-        $css_ver = file_exists($assets_dir . 'css/admin-dashboard.css') ? filemtime($assets_dir . 'css/admin-dashboard.css') : $ver;
+        $base_url   = plugins_url('assets/', dirname(dirname(__FILE__)));
+        $js_ver     = file_exists($assets_dir . 'js/admin-dashboard.js') ? filemtime($assets_dir . 'js/admin-dashboard.js') : $ver;
+        $css_ver    = file_exists($assets_dir . 'css/admin-dashboard.css') ? filemtime($assets_dir . 'css/admin-dashboard.css') : $ver;
 
         // 1. Master Design Tokens
         wp_enqueue_style('gmb-ranker-tokens', $base_url . 'css/tokens.css', array(), $css_ver);
@@ -345,6 +356,7 @@ class GMB_Ranker_SEO_Admin {
 
         wp_enqueue_script('gmb-ranker-admin-js', $base_url . 'js/admin-dashboard.js', array('jquery'), $js_ver, true);
         wp_enqueue_script('gmb-ranker-admin-app-js', $base_url . 'js/admin/admin-app.js', array('jquery', 'gmb-ranker-admin-js'), $js_ver, true);
+        
         $localized_data = array(
             'ajax_url'            => admin_url('admin-ajax.php'),
             'nonce'               => wp_create_nonce('gmb_seo_save_nonce'),
@@ -368,14 +380,13 @@ class GMB_Ranker_SEO_Admin {
         }
 
         $current_page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : 'gmb-ranker-automation';
-        $current_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])) : '';
+        $current_tab  = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])) : '';
         if ($current_page === 'gmb-ranker-settings' && empty($current_tab)) {
             $current_tab = 'settings';
         }
 
         // Build global view context arguments
-        $api_key = get_option('gmb_ranker_api_key', '');
-        
+        $api_key              = get_option('gmb_ranker_api_key', '');
         $mod_metadata         = get_option('gmb_ranker_module_metadata', '1') !== '0' ? '1' : '0';
         $mod_sitemaps         = get_option('gmb_ranker_module_sitemaps', '1') !== '0' ? '1' : '0';
         $mod_redirects        = get_option('gmb_ranker_module_redirects', '1') !== '0' ? '1' : '0';
@@ -408,12 +419,6 @@ class GMB_Ranker_SEO_Admin {
         $redirects_rules      = get_option('gmb_ranker_redirects_rules', array());
         if (!is_array($redirects_rules)) {
             $redirects_rules = array();
-        } else {
-            $sanitized = self::sanitize_redirects_rules($redirects_rules);
-            if ($sanitized !== $redirects_rules) {
-                $redirects_rules = $sanitized;
-                update_option('gmb_ranker_redirects_rules', $redirects_rules);
-            }
         }
         $logs_404             = get_option('gmb_ranker_404_logs', array());
 
@@ -473,7 +478,9 @@ class GMB_Ranker_SEO_Admin {
         );
 
         // Output Layout Header
-        GMB_Ranker_SEO_Helpers::render_view('layout/header.php', $view_args);
+        if (class_exists('GMB_Ranker_SEO_Helpers')) {
+            GMB_Ranker_SEO_Helpers::render_view('layout/header.php', $view_args);
+        }
 
         // Render Active Page View
         $view_map = array(
@@ -492,15 +499,16 @@ class GMB_Ranker_SEO_Admin {
         );
 
         $view_file = isset($view_map[$current_page]) ? $view_map[$current_page] : 'dashboard.php';
-        GMB_Ranker_SEO_Helpers::render_view($view_file, $view_args);
+        if (class_exists('GMB_Ranker_SEO_Helpers')) {
+            GMB_Ranker_SEO_Helpers::render_view($view_file, $view_args);
+        }
 
         // Output Layout Footer & Modals
-        GMB_Ranker_SEO_Helpers::render_view('layout/footer.php', $view_args);
+        if (class_exists('GMB_Ranker_SEO_Helpers')) {
+            GMB_Ranker_SEO_Helpers::render_view('layout/footer.php', $view_args);
+        }
     }
 
-    /**
-     * Handle download export of redirection rules
-     */
     /**
      * Handle download export of redirection rules (JSON & CSV with OWASP CSV Formula Injection Protection)
      */
@@ -511,7 +519,6 @@ class GMB_Ranker_SEO_Admin {
         if ($page === 'gmb-ranker-redirects' && in_array($action, array('export_redirects', 'export_redirects_json', 'export_redirects_csv'), true)) {
             $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash($_GET['_wpnonce'])) : '';
             if (!wp_verify_nonce($nonce, 'gmb_export_redirects_nonce')) {
-                // Also accept admin nonce fallback
                 if (!wp_verify_nonce($nonce, 'gmb_admin_ajax_nonce') && !check_admin_referer('gmb_export_redirects_nonce', '_wpnonce', false)) {
                     wp_die(esc_html__('Security check failed for export action.', 'gmb-ranker-seo-automation'), 403);
                 }
@@ -521,7 +528,7 @@ class GMB_Ranker_SEO_Admin {
                 wp_die(esc_html__('Unauthorized user capability.', 'gmb-ranker-seo-automation'), 403);
             }
 
-            $vm = class_exists('GMB_Ranker_SEO_Redirect_Registry') ? GMB_Ranker_SEO_Redirect_Registry::get_view_model() : array();
+            $vm    = class_exists('GMB_Ranker_SEO_Redirect_Registry') ? GMB_Ranker_SEO_Redirect_Registry::get_view_model() : array();
             $rules = isset($vm['rules']) ? $vm['rules'] : array();
 
             if ($action === 'export_redirects_csv') {
@@ -538,14 +545,14 @@ class GMB_Ranker_SEO_Admin {
 
                 foreach ($rules as $r) {
                     fputcsv($output, array(
-                        GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['id']),
-                        GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['source']),
-                        GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['destination']),
+                        class_exists('GMB_Ranker_SEO_Redirect_Registry') ? GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['id']) : $r['id'],
+                        class_exists('GMB_Ranker_SEO_Redirect_Registry') ? GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['source']) : $r['source'],
+                        class_exists('GMB_Ranker_SEO_Redirect_Registry') ? GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['destination']) : $r['destination'],
                         intval($r['code']),
-                        GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['match_type']),
-                        GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['status']),
+                        class_exists('GMB_Ranker_SEO_Redirect_Registry') ? GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['match_type']) : $r['match_type'],
+                        class_exists('GMB_Ranker_SEO_Redirect_Registry') ? GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['status']) : $r['status'],
                         intval($r['hits']),
-                        GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['note']),
+                        class_exists('GMB_Ranker_SEO_Redirect_Registry') ? GMB_Ranker_SEO_Redirect_Registry::sanitize_csv_field($r['note']) : $r['note'],
                     ));
                 }
                 fclose($output);
@@ -573,7 +580,7 @@ class GMB_Ranker_SEO_Admin {
         if (isset($_GET['page']) && $_GET['page'] === 'gmb-ranker-importer' && isset($_GET['action']) && $_GET['action'] === 'export_settings') {
             check_admin_referer('gmb_export_settings_nonce');
             if (!current_user_can('manage_options')) {
-                wp_die('Unauthorized user capability.');
+                wp_die(esc_html__('Unauthorized user capability.', 'gmb-ranker-seo-automation'), 403);
             }
 
             global $wpdb;
@@ -606,10 +613,12 @@ class GMB_Ranker_SEO_Admin {
 
         if ($is_wizard) {
             if (!current_user_can('manage_options')) {
-                wp_die('Unauthorized user capability.');
+                wp_die(esc_html__('Unauthorized user capability.', 'gmb-ranker-seo-automation'), 403);
             }
 
-            include GMB_RANKER_SEO_PATH . 'includes/admin/views/wizard.php';
+            if (defined('GMB_RANKER_SEO_PATH')) {
+                include GMB_RANKER_SEO_PATH . 'includes/admin/views/wizard.php';
+            }
             exit;
         }
     }
@@ -632,7 +641,7 @@ class GMB_Ranker_SEO_Admin {
             return array();
         }
         $allowed = array('index', 'noindex', 'nofollow', 'noarchive', 'noimageindex', 'nosnippet', 'noodp', 'notranslate');
-        $clean = array();
+        $clean   = array();
         foreach ($input as $val) {
             $val = sanitize_key((string)$val);
             if (in_array($val, $allowed, true)) {
@@ -652,17 +661,16 @@ class GMB_Ranker_SEO_Admin {
         if (!is_array($input)) {
             return array();
         }
-        $clean = array();
+        $clean        = array();
         $seen_sources = array();
         foreach ($input as $rule) {
             if (is_array($rule)) {
-                $src = isset($rule['source']) ? sanitize_text_field(wp_unslash($rule['source'])) : '';
+                $src  = isset($rule['source']) ? sanitize_text_field(wp_unslash($rule['source'])) : '';
                 $dest = isset($rule['destination']) ? sanitize_text_field(wp_unslash($rule['destination'])) : (isset($rule['target']) ? sanitize_text_field(wp_unslash($rule['target'])) : '');
                 
                 if (!empty($src)) {
                     $src_key = strtolower(rtrim(trim($src), '/'));
                     if (isset($seen_sources[$src_key])) {
-                        // If previous entry had empty destination and this one has destination, update it
                         $prev_idx = $seen_sources[$src_key];
                         if (empty($clean[$prev_idx]['destination']) && !empty($dest)) {
                             $clean[$prev_idx]['destination'] = $dest;
@@ -670,7 +678,7 @@ class GMB_Ranker_SEO_Admin {
                         continue;
                     }
 
-                    $idx = count($clean);
+                    $idx                    = count($clean);
                     $seen_sources[$src_key] = $idx;
 
                     $clean[] = array(
@@ -729,7 +737,7 @@ class GMB_Ranker_SEO_Admin {
 
         // If that fails, unslash and decode (WordPress options.php slashes input)
         if (!is_array($decoded) && function_exists('wp_unslash')) {
-            $unslashed = wp_unslash($trimmed);
+            $unslashed    = wp_unslash($trimmed);
             $test_decoded = json_decode($unslashed, true);
             if (is_array($test_decoded)) {
                 $decoded = $test_decoded;
