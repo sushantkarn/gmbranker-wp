@@ -508,8 +508,10 @@ if (!defined('ABSPATH')) exit;
                                                                 
                                                                 <?php
                                                                 $catalog_schemas = array(
+                                                                    array('type' => 'AggregateRating', 'name' => 'Aggregate Rating', 'icon_key' => 'aggregaterating'),
                                                                     array('type' => 'Article', 'name' => 'Article', 'icon_key' => 'article'),
                                                                     array('type' => 'Book', 'name' => 'Book', 'icon_key' => 'book'),
+                                                                    array('type' => 'BreadcrumbList', 'name' => 'Breadcrumbs', 'icon_key' => 'breadcrumblist'),
                                                                     array('type' => 'Carousel', 'name' => 'Carousel', 'icon_key' => 'carousel'),
                                                                     array('type' => 'Course', 'name' => 'Course', 'icon_key' => 'course'),
                                                                     array('type' => 'Dataset', 'name' => 'Dataset', 'icon_key' => 'dataset'),
@@ -519,15 +521,19 @@ if (!defined('ABSPATH')) exit;
                                                                     array('type' => 'HowTo', 'name' => 'HowTo', 'icon_key' => 'howto'),
                                                                     array('type' => 'JobPosting', 'name' => 'Job Posting', 'icon_key' => 'jobposting'),
                                                                     array('type' => 'LocalBusiness', 'name' => 'Local Business', 'icon_key' => 'localbusiness'),
+                                                                    array('type' => 'MedicalClinic', 'name' => 'Medical Clinic', 'icon_key' => 'medicalclinic'),
                                                                     array('type' => 'Movie', 'name' => 'Movie', 'icon_key' => 'movie'),
                                                                     array('type' => 'Music', 'name' => 'Music', 'icon_key' => 'music'),
+                                                                    array('type' => 'Organization', 'name' => 'Organization', 'icon_key' => 'organization'),
                                                                     array('type' => 'Person', 'name' => 'Person', 'icon_key' => 'person'),
                                                                     array('type' => 'Product', 'name' => 'Product', 'icon_key' => 'product'),
                                                                     array('type' => 'Recipe', 'name' => 'Recipe', 'icon_key' => 'recipe'),
                                                                     array('type' => 'Restaurant', 'name' => 'Restaurant', 'icon_key' => 'restaurant'),
+                                                                    array('type' => 'Review', 'name' => 'Review', 'icon_key' => 'review'),
                                                                     array('type' => 'Service', 'name' => 'Service', 'icon_key' => 'service'),
                                                                     array('type' => 'SoftwareApplication', 'name' => 'Software Application', 'icon_key' => 'softwareapplication'),
                                                                     array('type' => 'Video', 'name' => 'Video', 'icon_key' => 'video'),
+                                                                    array('type' => 'WebPage', 'name' => 'Web Page', 'icon_key' => 'webpage'),
                                                                 );
 
                                                                 foreach ($catalog_schemas as $cs) :
