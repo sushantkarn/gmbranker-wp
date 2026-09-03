@@ -1453,10 +1453,11 @@ class GMB_Ranker_SEO_Ajax_Admin {
                 }
             }
 
-            // High-intent Focus Keyword
-            $kw_parts = array_slice($filtered_words, 0, 3);
-            $focus = !empty($kw_parts) ? ucwords(implode(' ', $kw_parts)) : $title;
-            if (stripos($title, 'medication') !== false) {
+            // High-intent Focus Keyword present in content/title
+            $focus = !empty($filtered_words) ? ucwords(implode(' ', array_slice($filtered_words, 0, 2))) : $title;
+            if (stripos($title, 'elderly parent') !== false || stripos($content_clean, 'elderly parent') !== false) {
+                $focus = 'Elderly Parent Home Care';
+            } elseif (stripos($title, 'medication') !== false) {
                 $focus = 'Medication Management at Home';
             }
 

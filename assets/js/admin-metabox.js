@@ -1061,9 +1061,27 @@
         });
       }
 
-      // 4. Focus Keyword at the beginning of content (First 10% or first 100 words)
+      // Flexible Focus Keyword Matcher (Exact match OR all significant terms present)
+      function checkKeywordInText(text, kw) {
+        if (!text || !kw) return false;
+        var textLower = text.toLowerCase();
+        var kwLower = kw.toLowerCase().trim();
+        if (textLower.indexOf(kwLower) !== -1) return true;
+
+        var stopWords = ["a", "an", "the", "in", "on", "at", "for", "to", "of", "and", "or", "is", "are", "with", "by", "your", "our", "may", "need"];
+        var words = kwLower.split(/\s+/).filter(function (w) {
+          return w.length >= 3 && stopWords.indexOf(w) === -1;
+        });
+
+        if (words.length === 0) return false;
+        return words.every(function (w) {
+          return textLower.indexOf(w) !== -1;
+        });
+      }
+
+      // 4. Focus Keyword at the beginning of content (First 100 words)
       var first100Words = textOnlyLower.split(/\s+/).slice(0, 100).join(" ");
-      if (primaryKw && first100Words.indexOf(primaryKw) !== -1) {
+      if (primaryKw && checkKeywordInText(first100Words, primaryKw)) {
         basicPasses++;
         basicItems.push({
           status: "pass",
@@ -1080,7 +1098,7 @@
       }
 
       // 5. Focus Keyword in the content
-      if (primaryKw && textOnlyLower.indexOf(primaryKw) !== -1) {
+      if (primaryKw && checkKeywordInText(textOnlyLower, primaryKw)) {
         basicPasses++;
         basicItems.push({
           status: "pass",
