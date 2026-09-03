@@ -438,6 +438,106 @@ function initGmbAdminApp() {
 
   // Complete 20-Type Schema.org Blueprints
   const gmb_schema_blueprints = {
+    Review: JSON.stringify(
+      {
+        "@context": "https://schema.org",
+        "@type": "Review",
+        itemReviewed: {
+          "@type": "Thing",
+          name: "%title%",
+        },
+        reviewRating: {
+          "@type": "Rating",
+          ratingValue: "5",
+          bestRating: "5",
+          worstRating: "1",
+        },
+        author: {
+          "@type": "Person",
+          name: "%author%",
+        },
+        reviewBody: "%excerpt%",
+      },
+      null,
+      2,
+    ),
+    AggregateRating: JSON.stringify(
+      {
+        "@context": "https://schema.org",
+        "@type": "AggregateRating",
+        itemReviewed: {
+          "@type": "Thing",
+          name: "%title%",
+        },
+        ratingValue: "4.9",
+        bestRating: "5",
+        ratingCount: "128",
+        reviewCount: "94",
+      },
+      null,
+      2,
+    ),
+    Organization: JSON.stringify(
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        name: "%sitename%",
+        url: "%siteurl%",
+        logo: "%featured_image%",
+        sameAs: ["%siteurl%"],
+      },
+      null,
+      2,
+    ),
+    WebPage: JSON.stringify(
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        name: "%title%",
+        description: "%excerpt%",
+        url: "%url%",
+      },
+      null,
+      2,
+    ),
+    BreadcrumbList: JSON.stringify(
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: "%siteurl%",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "%title%",
+            item: "%url%",
+          },
+        ],
+      },
+      null,
+      2,
+    ),
+    MedicalClinic: JSON.stringify(
+      {
+        "@context": "https://schema.org",
+        "@type": "MedicalClinic",
+        name: "%sitename%",
+        url: "%siteurl%",
+        telephone: "%phone%",
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: "%street%",
+          addressLocality: "%locality%",
+        },
+      },
+      null,
+      2,
+    ),
     Article: JSON.stringify(
       {
         "@context": "https://schema.org",
