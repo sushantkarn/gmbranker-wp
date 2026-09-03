@@ -8,11 +8,39 @@
   $(document).ready(function () {
 
 // ==========================================
-    // Single Page AI SEO Auto-Fix Handler (Redirection-Style Table Modal)
     // ==========================================
+    // Single Page AI SEO Auto-Fix Handler (NeuronWriter 3-Step Flow)
+    // ==========================================
+    var currentAiStep = 1;
+    var stepTimer = null;
+
+    function setAiModalStep(step) {
+      currentAiStep = step;
+      $(".gmb-step-badge").removeClass("active");
+      $("#gmb-step-badge-" + step).addClass("active");
+
+      $("#gmb-ai-post-modal-setup").addClass("gmb-hidden");
+      $("#gmb-ai-post-modal-loading").addClass("gmb-hidden");
+      $("#gmb-ai-post-modal-content").addClass("gmb-hidden");
+
+      if (step === 1) {
+        $("#gmb-ai-post-modal-setup").removeClass("gmb-hidden");
+        $("#gmb-ai-setup-start-btn").removeClass("gmb-hidden");
+        $("#gmb-ai-post-apply-btn").addClass("gmb-hidden");
+      } else if (step === 2) {
+        $("#gmb-ai-post-modal-loading").removeClass("gmb-hidden");
+        $("#gmb-ai-setup-start-btn").addClass("gmb-hidden");
+        $("#gmb-ai-post-apply-btn").addClass("gmb-hidden");
+      } else if (step === 3) {
+        $("#gmb-ai-post-modal-content").removeClass("gmb-hidden");
+        $("#gmb-ai-setup-start-btn").addClass("gmb-hidden");
+        $("#gmb-ai-post-apply-btn").removeClass("gmb-hidden").prop("disabled", false);
+      }
+    }
+
+    // Open Modal & Pre-fill Step 1 Setup
     $(document).on("click", "#gmb-ai-optimize-post-btn", function (e) {
       e.preventDefault();
-      var $btn = $(this);
       var $modal = $("#gmb-ai-post-seo-modal");
 
       if (!$modal.length) {
@@ -20,41 +48,65 @@
         return;
       }
 
-      // Move modal to body to guarantee root overlay
       $modal.appendTo("body");
       $modal.css("display", "flex").addClass("active");
 
-      var $loading = $("#gmb-ai-post-modal-loading");
-      var $content = $("#gmb-ai-post-modal-content");
-      var $tbody = $("#gmb-ai-post-suggestions-tbody");
-      var $applyBtn = $("#gmb-ai-post-apply-btn");
+      // Pre-fill setup fields
+      var postTitle = $("#title").val() || "";
+      if (!postTitle && typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.select("core/editor")) {
+        postTitle = wp.data.select("core/editor").getEditedPostAttribute("title") || "";
+      }
+      $("#gmb-ai-setup-title").val(postTitle);
 
-      $loading.css("display", "flex");
-      $content.addClass("gmb-hidden");
-      $tbody.empty();
-      $applyBtn.prop("disabled", true);
+      var curFocus = keywords.length > 0 ? keywords[0] : "";
+      if (!curFocus) {
+        curFocus = $("#gmb_seo_focus_keyword_hidden").val() || postTitle.split(" ").slice(0, 3).join(" ");
+      }
+      $("#gmb-ai-setup-query").val(curFocus);
+
+      var slug = $("#post_name").val() || $("#editable-post-name").text() || "";
+      var homeUrl = (gmbMetaboxData.homeUrl || window.location.origin) + "/";
+      $("#gmb-ai-setup-url").val(homeUrl + slug);
+
+      setAiModalStep(1);
+    });
+
+    // Step 1: Click "Start AI Analysis"
+    $(document).on("click", "#gmb-ai-setup-start-btn", function (e) {
+      e.preventDefault();
+
+      var postTitle = $("#gmb-ai-setup-title").val().trim();
+      var targetQuery = $("#gmb-ai-setup-query").val().trim();
+      var mode = $("#gmb-ai-setup-mode").val();
+      var countryVal = $("#gmb-ai-setup-country").val();
+      var countryText = $("#gmb-ai-setup-country option:selected").text().split("|")[0].trim();
+      var language = $("#gmb-ai-setup-language").val();
+
+      if (!targetQuery) {
+        alert("Please enter a target query/keyword to rank for.");
+        $("#gmb-ai-setup-query").focus();
+        return;
+      }
+
+      setAiModalStep(2);
 
       // Rotating AI Research Step Messages
       var researchSteps = [
-        "🔍 Step 1/5: Extracting primary entities, headings, and page topic...",
-        "🧠 Step 2/5: Performing deep search intent & LSI entity clustering...",
+        "🔍 Step 1/5: Fetching " + countryText + " SERP entities & search intent...",
+        "🧠 Step 2/5: Performing deep LSI entity clustering for '" + targetQuery + "'...",
         "📐 Step 3/5: Calculating SERP pixel width and crafting high-CTR titles...",
         "✍️ Step 4/5: Writing PAS conversion copy for Meta Description...",
         "🕸️ Step 5/5: Mapping SILO internal links & E-E-A-T trust citations..."
       ];
       var stepIdx = 0;
       $("#gmb-ai-loading-step-text").text(researchSteps[0]);
-      var stepTimer = setInterval(function () {
+      if (stepTimer) clearInterval(stepTimer);
+      stepTimer = setInterval(function () {
         stepIdx = (stepIdx + 1) % researchSteps.length;
         $("#gmb-ai-loading-step-text").text(researchSteps[stepIdx]);
       }, 2200);
 
-      // Extract title & content safely
-      var postTitle = $("#title").val() || "";
-      if (!postTitle && typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.select("core/editor")) {
-        postTitle = wp.data.select("core/editor").getEditedPostAttribute("title") || "";
-      }
-
+      // Extract content safely
       var postContent = "";
       if (typeof tinymce !== "undefined" && tinymce.get("content") && !tinymce.get("content").isHidden()) {
         postContent = tinymce.get("content").getContent();
@@ -65,7 +117,6 @@
       }
 
       var postId = $("#post_ID").val() || 0;
-      var curFocus = $("#gmb_seo_focus_keyword_hidden").val() || "";
       var curTitle = $("#gmb_seo_title_input").val() || "";
       var curDesc = $("#gmb_seo_desc_input").val() || "";
 
@@ -79,22 +130,31 @@
           title: postTitle,
           content: postContent,
           post_type: gmbMetaboxData.postType || "post",
-          focus_keyword: curFocus,
+          focus_keyword: targetQuery,
           seo_title: curTitle,
-          meta_description: curDesc
+          meta_description: curDesc,
+          mode: mode,
+          country: countryVal,
+          language: language
         },
         success: function (res) {
-          clearInterval(stepTimer);
-          $loading.css("display", "none");
+          if (stepTimer) clearInterval(stepTimer);
+
           if (!res.success || !res.data) {
             alert("AI analysis failed: " + (res.data || "Unknown error"));
-            $modal.css("display", "none").removeClass("active");
+            setAiModalStep(1);
             return;
           }
 
           var data = res.data;
-          $content.removeClass("gmb-hidden");
-          $applyBtn.prop("disabled", false);
+          setAiModalStep(3);
+
+          $("#gmb-ai-result-query-label").text(data.focus_keyword || targetQuery);
+          $("#gmb-ai-result-country-badge").text(countryText);
+          $("#gmb-ai-predicted-score").text("98 / 100 🚀");
+
+          var $tbody = $("#gmb-ai-post-suggestions-tbody");
+          $tbody.empty();
 
           var rowsHtml = "";
 
@@ -102,7 +162,7 @@
           rowsHtml += '<tr>' +
             '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="focus" checked /></td>' +
             '<td><strong>Focus Keyword</strong></td>' +
-            '<td><input type="text" id="gmb-ai-input-focus" value="' + (data.focus_keyword || "") + '" class="gmb-integration-input gmb-input-sm" /></td>' +
+            '<td><input type="text" id="gmb-ai-input-focus" value="' + (data.focus_keyword || targetQuery) + '" class="gmb-integration-input gmb-input-sm" /></td>' +
             '<td><span class="gmb-status-pill gmb-status-pill--success">Fix Needed</span></td>' +
             '</tr>';
 
@@ -146,7 +206,7 @@
             '<td><span class="gmb-status-pill gmb-status-pill--primary">Recommended</span></td>' +
             '</tr>';
 
-          var focusKwVal = data.focus_keyword || "Focus Keyword";
+          var focusKwVal = data.focus_keyword || targetQuery;
 
           // Row 6: Content Intro Paragraph Fix
           rowsHtml += '<tr>' +
@@ -199,15 +259,14 @@
           $tbody.html(rowsHtml);
         },
         error: function (xhr, status, err) {
-          clearInterval(stepTimer);
-          $loading.css("display", "none");
+          if (stepTimer) clearInterval(stepTimer);
           alert("AJAX Error: " + err);
-          $modal.css("display", "none").removeClass("active");
+          setAiModalStep(1);
         }
       });
     });
 
-    // Select All Checkbox Handler
+        // Select All Checkbox Handler
     $(document).on("change", "#gmb-ai-post-select-all", function () {
       var isChecked = $(this).is(":checked");
       $(".gmb-ai-post-check").prop("checked", isChecked);

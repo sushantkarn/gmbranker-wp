@@ -1420,7 +1420,11 @@ class GMB_Ranker_SEO_Ajax_Admin {
             "- optimization_tips (array of audit summary notes)\n" .
             "Do NOT wrap in markdown or backticks.";
 
-            $user_prompt = "Page Title: " . $title . "\nContent Body Snippet:\n" . mb_substr($content_clean, 0, 2500) . "\n\nSite Name: " . $site_name . "\nAvailable Site Pages for SILO Linking:\n" . wp_json_encode($live_pages);
+            $target_country = isset($_POST['country']) ? sanitize_text_field(wp_unslash($_POST['country'])) : 'GLOBAL|google.com';
+            $target_language = isset($_POST['language']) ? sanitize_text_field(wp_unslash($_POST['language'])) : 'en';
+            $opt_mode = isset($_POST['mode']) ? sanitize_text_field(wp_unslash($_POST['mode'])) : 'optimize';
+
+            $user_prompt = "Target Query/Keyword: " . $cur_focus . "\nPage Title: " . $title . "\nTarget Search Engine & Country: " . $target_country . "\nTarget Language: " . $target_language . "\nOptimization Mode: " . $opt_mode . "\nContent Body Snippet:\n" . mb_substr($content_clean, 0, 2500) . "\n\nSite Name: " . $site_name . "\nAvailable Site Pages for SILO Linking:\n" . wp_json_encode($live_pages);
 
             $messages = array(
                 array('role' => 'system', 'content' => $system_prompt),
