@@ -473,7 +473,7 @@ if (!defined('ABSPATH')) exit;
                             </div>
                             <div id="gmb-ai-modal-content" class="gmb-hidden">
                                 <p class="gmb-text-muted gmb-mb-12">Below are the AI-recommended redirection targets mapped to your live site pages. Uncheck any rules you do not wish to apply.</p>
-                                <div class="gmb-table-wrap gmb-max-h-400">
+                                <div class="gmb-table-wrap gmb-ai-table-scroll">
                                     <table class="gmb-data-table gmb-table-compact">
                                         <thead>
                                             <tr>
