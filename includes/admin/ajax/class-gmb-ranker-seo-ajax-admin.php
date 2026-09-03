@@ -1371,6 +1371,11 @@ class GMB_Ranker_SEO_Ajax_Admin {
 
         $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
         $title = isset($_POST['title']) ? sanitize_text_field(wp_unslash($_POST['title'])) : '';
+        $cur_focus = isset($_POST['focus_keyword']) ? sanitize_text_field(wp_unslash($_POST['focus_keyword'])) : '';
+
+        if (empty($title) && !empty($cur_focus)) {
+            $title = $cur_focus;
+        }
         if (empty($title) && $post_id > 0) {
             $title = get_the_title($post_id);
         }
@@ -1385,12 +1390,11 @@ class GMB_Ranker_SEO_Ajax_Admin {
         $content_clean = wp_strip_all_tags($content_raw);
         $post_type = isset($_POST['post_type']) ? sanitize_text_field(wp_unslash($_POST['post_type'])) : 'post';
 
-        $cur_focus = isset($_POST['focus_keyword']) ? sanitize_text_field(wp_unslash($_POST['focus_keyword'])) : '';
         $cur_seo_title = isset($_POST['seo_title']) ? sanitize_text_field(wp_unslash($_POST['seo_title'])) : '';
         $cur_meta_desc = isset($_POST['meta_description']) ? sanitize_textarea_field(wp_unslash($_POST['meta_description'])) : '';
 
-        if (empty($title) && empty($content_clean)) {
-            wp_send_json_error('Please enter a Post Title or Content body before running AI analysis.');
+        if (empty($title) && empty($content_clean) && empty($cur_focus)) {
+            wp_send_json_error('Please enter a target query or article title before running AI analysis.');
         }
 
         $target_country  = isset($_POST['country']) ? sanitize_text_field(wp_unslash($_POST['country'])) : 'GLOBAL|google.com';
