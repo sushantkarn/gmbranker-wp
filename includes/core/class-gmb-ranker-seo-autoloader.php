@@ -40,6 +40,7 @@ class GMB_Ranker_SEO_Autoloader {
             'GMB_Ranker_SEO_Help_Registry'     => self::$base_path . '/core/class-gmb-ranker-seo-help-registry.php',
             'GMB_Ranker_SEO_Integration_Registry' => self::$base_path . '/core/class-gmb-ranker-seo-integration-registry.php',
             'GMB_Ranker_SEO_Metadata_Registry'    => self::$base_path . '/core/class-gmb-ranker-seo-metadata-registry.php',
+            'GMB_Ranker_SEO_Metabox_Registry'     => self::$base_path . '/core/class-gmb-ranker-seo-metabox-registry.php',
             'GMB_Ranker_SEO_Redirect_Registry'    => self::$base_path . '/core/class-gmb-ranker-seo-redirect-registry.php',
             'GMB_Ranker_SEO_Schema_Registry'      => self::$base_path . '/core/class-gmb-ranker-seo-schema-registry.php',
             'GMB_Ranker_SEO_Sitemap_Registry'     => self::$base_path . '/core/class-gmb-ranker-seo-sitemap-registry.php',
