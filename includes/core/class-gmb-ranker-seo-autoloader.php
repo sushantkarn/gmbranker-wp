@@ -41,6 +41,7 @@ class GMB_Ranker_SEO_Autoloader {
             'GMB_Ranker_SEO_Integration_Registry' => self::$base_path . '/core/class-gmb-ranker-seo-integration-registry.php',
             'GMB_Ranker_SEO_Redirect_Registry'    => self::$base_path . '/core/class-gmb-ranker-seo-redirect-registry.php',
             'GMB_Ranker_SEO_Schema_Registry'      => self::$base_path . '/core/class-gmb-ranker-seo-schema-registry.php',
+            'GMB_Ranker_SEO_Sitemap_Registry'     => self::$base_path . '/core/class-gmb-ranker-seo-sitemap-registry.php',
             
             // Admin & UI Components
             'GMB_Ranker_SEO_Admin'             => self::$base_path . '/admin/class-gmb-ranker-seo-admin.php',
