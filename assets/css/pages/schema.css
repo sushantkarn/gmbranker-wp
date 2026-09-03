@@ -1310,17 +1310,17 @@
 }
 
 .gmb-templates-table-th--title {
-  width: 28%;
+  width: 25% !important;
 }
 .gmb-templates-table-th--conditions {
-  width: 42%;
+  width: 38% !important;
 }
 .gmb-templates-table-th--status {
-  width: 12%;
+  width: 10% !important;
   text-align: center !important;
 }
 .gmb-templates-table-th--actions {
-  width: 18%;
+  width: 27% !important;
   text-align: right !important;
 }
 
@@ -1384,7 +1384,20 @@
 
 .gmb-templates-actions-wrap {
   display: inline-flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.gmb-templates-btn-action,
+.gmb-templates-btn-delete {
+  font-size: 12px !important;
+  padding: 3px 10px !important;
+  height: 28px !important;
+  line-height: 20px !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
 }
 
 .gmb-templates-btn-action {
