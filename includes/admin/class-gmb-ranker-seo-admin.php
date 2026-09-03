@@ -673,6 +673,10 @@ class GMB_Ranker_SEO_Admin {
         }
         $trimmed = trim($key);
         if (empty($trimmed)) {
+            $existing = get_option('gmb_ranker_google_json_key', '');
+            if (!empty($existing)) {
+                return $existing;
+            }
             delete_transient('gmb_google_indexing_token');
             return '';
         }

@@ -79,11 +79,49 @@ class GMB_Ranker_SEO_Instant_Indexing {
         }
     }
 
+    /**
+     * Validate and sanitize URL for API submission (SSRF Protection)
+     *
+     * @param string $url
+     * @return string|false
+     */
+    public static function validate_url_for_submission($url) {
+        $url = esc_url_raw(trim($url));
+        if (empty($url)) {
+            return false;
+        }
+        $parsed = wp_parse_url($url);
+        if (!is_array($parsed) || empty($parsed['scheme']) || empty($parsed['host'])) {
+            return false;
+        }
+        $scheme = strtolower($parsed['scheme']);
+        if (!in_array($scheme, array('http', 'https'), true)) {
+            return false;
+        }
+        $host = strtolower($parsed['host']);
+        if (in_array($host, array('localhost', '127.0.0.1', '::1', '0.0.0.0'), true)) {
+            return false;
+        }
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            if (!filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return false;
+            }
+        }
+        return $url;
+    }
+
     public static function submit_to_indexnow($urls, $is_manual = true) {
         $urls = (array)$urls;
-        $urls = array_filter(array_unique(array_map('esc_url_raw', $urls)));
+        $validated_urls = array();
+        foreach ($urls as $u) {
+            $v = self::validate_url_for_submission($u);
+            if ($v) {
+                $validated_urls[] = $v;
+            }
+        }
+        $urls = array_filter(array_unique($validated_urls));
         if (empty($urls)) {
-            return array('success' => false, 'error' => 'No valid URLs provided.');
+            return array('success' => false, 'error' => __('No valid HTTP/HTTPS URLs provided.', 'gmb-ranker-seo-automation'));
         }
 
         $host = wp_parse_url(home_url(), PHP_URL_HOST);
@@ -257,9 +295,16 @@ class GMB_Ranker_SEO_Instant_Indexing {
 
     public static function submit_to_google($urls, $action = 'update') {
         $urls = (array)$urls;
-        $urls = array_filter(array_unique(array_map('esc_url_raw', $urls)));
+        $validated_urls = array();
+        foreach ($urls as $u) {
+            $v = self::validate_url_for_submission($u);
+            if ($v) {
+                $validated_urls[] = $v;
+            }
+        }
+        $urls = array_filter(array_unique($validated_urls));
         if (empty($urls)) {
-            return array('success' => false, 'error' => 'No valid URLs provided.');
+            return array('success' => false, 'error' => __('No valid HTTP/HTTPS URLs provided.', 'gmb-ranker-seo-automation'));
         }
 
         $token = self::get_google_access_token();

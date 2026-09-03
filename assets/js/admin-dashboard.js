@@ -677,4 +677,53 @@
         alert("Network error occurred.");
       });
   });
+
+  // Instant Indexing Unobtrusive Event Handlers
+  $(document).on("submit", "#gmb-instant-indexing-form", function (e) {
+    window.gmbSubmitInstantIndexing(e);
+  });
+
+  $(document).on("change", 'input[name="gmb_api_action"]', function () {
+    window.gmbUpdateIndexBtnText();
+  });
+
+  $(document).on("click", "#gmb-toggle-raw-json-btn", function (e) {
+    e.preventDefault();
+    var rawJson = document.getElementById("gmb-indexing-raw-json");
+    if (rawJson) {
+      rawJson.style.display = (rawJson.style.display === "none" || !rawJson.style.display) ? "block" : "none";
+    }
+  });
+
+  $(document).on("click", "#gmb-trigger-file-upload-btn", function (e) {
+    e.preventDefault();
+    var picker = document.getElementById("gmb_google_json_file_picker");
+    if (picker) picker.click();
+  });
+
+  $(document).on("change", "#gmb_google_json_file_picker", function () {
+    window.gmbHandleGoogleJsonFileUpload(this);
+  });
+
+  $(document).on("click", "#gmb-copy-service-email-btn", function (e) {
+    e.preventDefault();
+    var email = this.getAttribute("data-email");
+    if (email && navigator.clipboard) {
+      navigator.clipboard.writeText(email).then(function () {
+        alert("Service Account email copied to clipboard:\n" + email + "\n\nAdd this email as an OWNER in Google Search Console > Settings > Users & Permissions.");
+      }).catch(function () {
+        alert("Email: " + email);
+      });
+    }
+  });
+
+  $(document).on("click", "#gmb-reset-indexnow-key-btn", function (e) {
+    e.preventDefault();
+    window.gmbResetIndexNowKey();
+  });
+
+  $(document).on("click", "#gmb-clear-history-btn", function (e) {
+    e.preventDefault();
+    window.gmbClearIndexNowHistory();
+  });
 })(jQuery);
