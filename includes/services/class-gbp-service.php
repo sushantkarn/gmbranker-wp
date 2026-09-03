@@ -41,7 +41,7 @@ class GMB_Ranker_SEO_Gbp_Service {
                 'addressLocality' => isset($location['address']['city']) ? $location['address']['city'] : '',
                 'addressRegion'   => isset($location['address']['state']) ? $location['address']['state'] : '',
                 'postalCode'      => isset($location['address']['zip']) ? $location['address']['zip'] : '',
-                'addressCountry'  => isset($location['address']['country']) ? $location['address']['country'] : 'NP',
+                'addressCountry'  => isset($location['address']['country']) ? $location['address']['country'] : (function_exists('get_locale') ? strtoupper(substr(get_locale(), -2)) : 'US'),
             );
         }
 
