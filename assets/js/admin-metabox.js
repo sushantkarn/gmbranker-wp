@@ -417,20 +417,15 @@
         if (applyTOC && bodyHtml.indexOf("[gmb_toc]") === -1 && bodyHtml.indexOf("gmb-toc-box") === -1) {
           var pIdx = bodyHtml.indexOf("</p>");
           if (pIdx !== -1) {
-            bodyHtml = bodyHtml.substring(0, pIdx + 4) + '
-<p>[gmb_toc]</p>
-' + bodyHtml.substring(pIdx + 4);
+            bodyHtml = bodyHtml.substring(0, pIdx + 4) + '<p>[gmb_toc]</p>' + bodyHtml.substring(pIdx + 4);
           } else {
-            bodyHtml = '<p>[gmb_toc]</p>
-' + bodyHtml;
+            bodyHtml = '<p>[gmb_toc]</p>' + bodyHtml;
           }
         }
 
         // 3. H2 Subheading Keyword Injection
         if (applyH2 && bodyHtml.toLowerCase().indexOf("<h2>") === -1 && bodyHtml.toLowerCase().indexOf("<h2 ") === -1) {
-          bodyHtml += '
-<h2>' + curFocusKw + ': Key Overview & Best Practices</h2>
-<p>Understanding ' + curFocusKw + ' plays a critical role in achieving success. Below are key highlights to keep in mind.</p>';
+          bodyHtml += '<h2>' + curFocusKw + ': Key Overview & Best Practices</h2><p>Understanding ' + curFocusKw + ' plays a critical role in achieving success. Below are key highlights to keep in mind.</p>';
         }
 
         // 4. Image Alt Tag Injection
