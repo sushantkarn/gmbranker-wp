@@ -477,12 +477,11 @@ if (!defined('ABSPATH')) exit;
                                     <table class="gmb-data-table gmb-table-compact">
                                         <thead>
                                             <tr>
-                                                <th class="gmb-th-checkbox"><input type="checkbox" id="gmb-ai-select-all" checked /></th>
-                                                <th>404 Source Path</th>
-                                                <th>AI Suggested Destination</th>
-                                                <th>Code</th>
-                                                <th>Confidence</th>
-                                            </tr>
+                                                 <th class="gmb-th-checkbox"><input type="checkbox" id="gmb-ai-select-all" checked /></th>
+                                                 <th>404 Source Path</th>
+                                                 <th>AI Suggested Destination</th>
+                                                 <th>Code</th>
+                                             </tr>
                                         </thead>
                                         <tbody id="gmb-ai-suggestions-tbody">
                                             <!-- Dynamically populated via JS -->

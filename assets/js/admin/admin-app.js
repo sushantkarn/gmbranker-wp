@@ -3780,10 +3780,6 @@ function initGmbAdminApp() {
                 <option value="410" ${item.code == 410 ? 'selected' : ''}>410 Gone</option>
               </select>
             </td>
-            <td>
-              <span class="gmb-pill-badge ${confClass}">${item.confidence || 'medium'}</span>
-              <div class="gmb-text-xs gmb-text-muted">${item.reason || ''}</div>
-            </td>
           </tr>
         `;
       });
