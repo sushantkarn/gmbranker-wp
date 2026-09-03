@@ -592,17 +592,6 @@
       }
     }
 
-    // CTR Preset Modifier Buttons Handler
-    $(document).on("click", ".gmb-ctr-btn", function (e) {
-      e.preventDefault();
-      var appendText = $(this).attr("data-append") || "";
-      var $input = $("#gmb_seo_title_input");
-      var curVal = $input.val() || ($("#title").length ? $("#title").val() : "") || "";
-      if (curVal.indexOf(appendText.trim()) === -1) {
-        $input.val(curVal + appendText).trigger("input").trigger("change").trigger("keyup");
-      }
-    });
-
     function updateModalPreview() {
       updateTitleCharCount();
       updateDescCharCount();

@@ -200,18 +200,11 @@ wp_nonce_field('gmb_seo_save_nonce', 'gmb_seo_nonce');
                                     <div class="gmb-progress-bar-container">
                                         <div class="gmb-progress-bar-fill" id="gmb-title-progress-fill"></div>
                                     </div>
-                                    <!-- Pixel Width & CTR Hooks Row -->
+                                    <!-- SERP Pixel Width Indicator -->
                                     <div class="gmb-title-ctr-row gmb-mt-8">
                                         <div class="gmb-pixel-width-indicator">
                                             <span class="gmb-text-muted-xs">SERP Pixel Width: </span>
                                             <strong id="gmb-title-pixel-val" class="gmb-pixel-val">0px</strong> / 580px
-                                        </div>
-                                        <div class="gmb-ctr-preset-btns">
-                                            <?php $cur_year = date('Y'); ?>
-                                            <button type="button" class="gmb-ctr-btn" data-append=" [<?php echo esc_attr($cur_year); ?>]">+ [<?php echo esc_html($cur_year); ?>]</button>
-                                            <button type="button" class="gmb-ctr-btn" data-append=" (Certified)">+ (Certified)</button>
-                                            <button type="button" class="gmb-ctr-btn" data-append=" (Top Rated)">+ (Top Rated)</button>
-                                            <button type="button" class="gmb-ctr-btn" data-append=" (Free Consultation)">+ (Free Consultation)</button>
                                         </div>
                                     </div>
                                 </div>
