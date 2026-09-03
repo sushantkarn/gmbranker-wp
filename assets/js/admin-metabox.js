@@ -568,16 +568,20 @@
             nonce: gmbMetaboxData.nonce,
             post_id: postId,
             focus_keyword: focusKw,
-            seo_title: appliedTitle,
+            meta_title: appliedTitle,
             meta_description: appliedDesc,
             slug: appliedSlug,
-            schema_type: appliedSchema,
+            schema_preset: appliedSchema,
+            table_of_contents: $('.gmb-ai-post-check[data-factor="table_of_contents"]:checked').length > 0 ? '1' : '0',
             content_intro: appliedIntro
           },
           success: function (res) {
             var msg = (res && res.data && res.data.message) ? res.data.message : "Selected AI optimizations applied!";
             alert(msg);
             $("#gmb-ai-post-seo-modal").css("display", "none").removeClass("active");
+            if (res && res.data && typeof res.data.score !== "undefined") {
+              $("#gmb-ai-potential-score").text(res.data.score + " / 100");
+            }
             if (typeof window.gmbRunContentAnalysis === "function") {
               window.gmbRunContentAnalysis();
             }

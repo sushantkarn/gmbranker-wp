@@ -724,15 +724,60 @@ class GMB_Ranker_SEO_Ajax_Admin {
         // 4. Schema Preset Recommendation
         $active_schema = get_post_meta($post_id, '_gmb_ranker_schema_type', true);
         if (empty($active_schema)) {
+            $pt_schema = get_option('gmb_' . $post->post_type . '_schema_type', 'Article');
             $recommendations[] = array(
                 'id'          => 'schema_preset',
                 'category'    => __('Schema Markup', 'gmb-ranker-seo-automation'),
                 'current'     => __('None', 'gmb-ranker-seo-automation'),
-                'recommended' => 'Article',
+                'recommended' => ucfirst($pt_schema),
                 'status'      => 'MISSING',
                 'risk_level'  => 'LOW',
-                'action'      => 'APPLY ARTICLE SCHEMA',
+                'action'      => sprintf(__('APPLY %s SCHEMA', 'gmb-ranker-seo-automation'), strtoupper($pt_schema)),
                 'evidence'    => __('No structured data schema assigned to post.', 'gmb-ranker-seo-automation'),
+            );
+        }
+
+        // 5. Table of Contents (TOC) Module Integration
+        $toc_module_enabled = (get_option('gmb_ranker_module_toc', '1') === '1');
+        $has_explicit_toc   = (stripos($post->post_content, 'gmb-toc-box') !== false || stripos($post->post_content, '[toc') !== false || stripos($post->post_content, 'table-of-contents') !== false);
+        if (!$has_explicit_toc) {
+            if ($toc_module_enabled) {
+                $recommendations[] = array(
+                    'id'          => 'table_of_contents',
+                    'category'    => __('Table of Contents', 'gmb-ranker-seo-automation'),
+                    'current'     => __('No TOC detected', 'gmb-ranker-seo-automation'),
+                    'recommended' => __('Enable GMB Ranker TOC Auto-Insert', 'gmb-ranker-seo-automation'),
+                    'status'      => 'MODULE DEPENDENT',
+                    'risk_level'  => 'LOW',
+                    'action'      => 'ENABLE TOC AUTO-INSERT',
+                    'evidence'    => __('Add a Table of Contents to improve readability and user navigation.', 'gmb-ranker-seo-automation'),
+                );
+            } else {
+                $recommendations[] = array(
+                    'id'          => 'table_of_contents',
+                    'category'    => __('Table of Contents', 'gmb-ranker-seo-automation'),
+                    'current'     => __('TOC Module Disabled', 'gmb-ranker-seo-automation'),
+                    'recommended' => __('Available through Table of Contents module', 'gmb-ranker-seo-automation'),
+                    'status'      => 'MODULE DISABLED',
+                    'risk_level'  => 'HIGH RISK',
+                    'action'      => 'REQUIRES TOC MODULE',
+                    'evidence'    => __('Table of Contents module is currently disabled in plugin settings.', 'gmb-ranker-seo-automation'),
+                );
+            }
+        }
+
+        // 6. Image SEO Handling (EXCLUDED from AI Auto-Fix per policy)
+        $img_count = preg_match_all('/<img\s+[^>]*>/i', $post->post_content, $img_matches);
+        if ($img_count > 0) {
+            $recommendations[] = array(
+                'id'          => 'image_seo',
+                'category'    => __('Image SEO & Alt Text', 'gmb-ranker-seo-automation'),
+                'current'     => sprintf(__('%d image(s) in post content', 'gmb-ranker-seo-automation'), $img_count),
+                'recommended' => __('Handled by Image SEO module', 'gmb-ranker-seo-automation'),
+                'status'      => 'HANDLED BY MODULE',
+                'risk_level'  => 'HIGH RISK',
+                'action'      => 'REQUIRES IMAGE SEO MODULE',
+                'evidence'    => __('Image ALT and title attributes are managed separately by the Image SEO module.', 'gmb-ranker-seo-automation'),
             );
         }
 
@@ -780,6 +825,13 @@ class GMB_Ranker_SEO_Ajax_Admin {
         if (isset($_POST['focus_keyword']) && class_exists('GMB_Ranker_SEO_Keyword_Repository')) {
             $kw_repo = new GMB_Ranker_SEO_Keyword_Repository();
             $kw_repo->set_focus_keyword($post_id, sanitize_text_field(wp_unslash($_POST['focus_keyword'])));
+        }
+        if (isset($_POST['schema_preset'])) {
+            $clean_schema = sanitize_text_field(wp_unslash($_POST['schema_preset']));
+            update_post_meta($post_id, '_gmb_ranker_schema_type', strtolower($clean_schema));
+        }
+        if (isset($_POST['table_of_contents']) && $_POST['table_of_contents'] === '1') {
+            update_option('gmb_toc_auto_insert', '1');
         }
 
         clean_post_cache($post_id);
