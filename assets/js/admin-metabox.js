@@ -146,6 +146,40 @@
             '<td><span class="gmb-status-pill gmb-status-pill--primary">Recommended</span></td>' +
             '</tr>';
 
+          var focusKwVal = data.focus_keyword || "Focus Keyword";
+
+          // Row 6: Content Intro Paragraph Fix
+          rowsHtml += '<tr>' +
+            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="content_intro" checked /></td>' +
+            '<td><strong>Content Intro</strong></td>' +
+            '<td>Weave Focus Keyword ("<strong>' + focusKwVal + '</strong>") into paragraph 1 for keyword presence</td>' +
+            '<td><span class="gmb-status-pill gmb-status-pill--success">Fix Needed</span></td>' +
+            '</tr>';
+
+          // Row 7: H2 Subheading Keyword Fix
+          rowsHtml += '<tr>' +
+            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="h2_heading" checked /></td>' +
+            '<td><strong>H2 Subheading</strong></td>' +
+            '<td>Inject Heading: <code>&lt;h2&gt;' + focusKwVal + ': Key Overview &amp; Best Practices&lt;/h2&gt;</code></td>' +
+            '<td><span class="gmb-status-pill gmb-status-pill--success">Fix Needed</span></td>' +
+            '</tr>';
+
+          // Row 8: Image Alt Text Optimization
+          rowsHtml += '<tr>' +
+            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="image_alt" checked /></td>' +
+            '<td><strong>Image Alt Text</strong></td>' +
+            '<td>Set content images &amp; featured image alt tag to <code>' + focusKwVal + '</code></td>' +
+            '<td><span class="gmb-status-pill gmb-status-pill--primary">Optimized</span></td>' +
+            '</tr>';
+
+          // Row 9: Table of Contents Shortcode
+          rowsHtml += '<tr>' +
+            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="toc_injection" checked /></td>' +
+            '<td><strong>Table of Contents</strong></td>' +
+            '<td>Insert Table of Contents shortcode <code>[gmb_toc]</code> for UX readability</td>' +
+            '<td><span class="gmb-status-pill gmb-status-pill--primary">Recommended</span></td>' +
+            '</tr>';
+
           // Internal Links Rows
           if (data.internal_links && data.internal_links.length > 0) {
             data.internal_links.forEach(function (l) {
@@ -351,6 +385,70 @@
             });
             wp.data.dispatch("core/editor").editPost({ content: gContent });
           } catch (err) {}
+        }
+      }
+
+      // Apply Content Optimizations (Intro, H2, Image Alt, TOC)
+      var applyIntro = $('.gmb-ai-post-check[data-factor="content_intro"]:checked').length > 0;
+      var applyH2 = $('.gmb-ai-post-check[data-factor="h2_heading"]:checked').length > 0;
+      var applyImageAlt = $('.gmb-ai-post-check[data-factor="image_alt"]:checked').length > 0;
+      var applyTOC = $('.gmb-ai-post-check[data-factor="toc_injection"]:checked').length > 0;
+      var curFocusKw = $("#gmb-ai-input-focus").val() || "";
+
+      if (curFocusKw && (applyIntro || applyH2 || applyImageAlt || applyTOC)) {
+        var bodyHtml = "";
+        var isTinyMCE = typeof tinymce !== "undefined" && tinymce.get("content") && !tinymce.get("content").isHidden();
+
+        if (isTinyMCE) {
+          bodyHtml = tinymce.get("content").getContent() || "";
+        } else if ($("#content").length) {
+          bodyHtml = $("#content").val() || "";
+        } else if (typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.select("core/editor")) {
+          bodyHtml = wp.data.select("core/editor").getEditedPostAttribute("content") || "";
+        }
+
+        // 1. Intro Paragraph Focus Keyword Injection
+        if (applyIntro && bodyHtml.toLowerCase().indexOf(curFocusKw.toLowerCase()) === -1) {
+          var introSentence = '<p>In this guide, we provide essential information regarding <strong>' + curFocusKw + '</strong> for optimal results.</p>';
+          bodyHtml = introSentence + bodyHtml;
+        }
+
+        // 2. Table of Contents Injection
+        if (applyTOC && bodyHtml.indexOf("[gmb_toc]") === -1 && bodyHtml.indexOf("gmb-toc-box") === -1) {
+          var pIdx = bodyHtml.indexOf("</p>");
+          if (pIdx !== -1) {
+            bodyHtml = bodyHtml.substring(0, pIdx + 4) + '
+<p>[gmb_toc]</p>
+' + bodyHtml.substring(pIdx + 4);
+          } else {
+            bodyHtml = '<p>[gmb_toc]</p>
+' + bodyHtml;
+          }
+        }
+
+        // 3. H2 Subheading Keyword Injection
+        if (applyH2 && bodyHtml.toLowerCase().indexOf("<h2>") === -1 && bodyHtml.toLowerCase().indexOf("<h2 ") === -1) {
+          bodyHtml += '
+<h2>' + curFocusKw + ': Key Overview & Best Practices</h2>
+<p>Understanding ' + curFocusKw + ' plays a critical role in achieving success. Below are key highlights to keep in mind.</p>';
+        }
+
+        // 4. Image Alt Tag Injection
+        if (applyImageAlt && bodyHtml.indexOf("<img") !== -1) {
+          bodyHtml = bodyHtml.replace(/<img([^>]+)alt=["']([^"']*)["']([^>]*)>/gi, '<img$1alt="' + curFocusKw + '"$3>');
+          bodyHtml = bodyHtml.replace(/<img((?:(?!alt=)[^>])*)>/gi, '<img$1 alt="' + curFocusKw + '">');
+        }
+
+        // Update Editor with Enhanced Content
+        if (isTinyMCE) {
+          tinymce.get("content").setContent(bodyHtml);
+        } else if ($("#content").length) {
+          $("#content").val(bodyHtml).trigger("change");
+        }
+        if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
+          try {
+            wp.data.dispatch("core/editor").editPost({ content: bodyHtml });
+          } catch(e) {}
         }
       }
 
