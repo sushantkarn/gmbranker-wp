@@ -726,12 +726,12 @@ class GMB_Ranker_SEO_Ajax_Admin {
                     'id'          => 'content_intro',
                     'category'    => __('Content Intelligence', 'gmb-ranker-seo-automation'),
                     'current'     => sprintf(__('%d words in content body', 'gmb-ranker-seo-automation'), $word_count),
-                    'recommended' => wp_strip_all_tags(mb_substr($ai_intro_content, 0, 200)) . '...',
-                    'full_content'=> $ai_intro_content,
+                    'recommended' => $ai_intro_content,
+                    'preview'     => wp_strip_all_tags(mb_substr($ai_intro_content, 0, 200)) . '...',
                     'status'      => 'UNDER-OPTIMIZED',
                     'risk_level'  => 'LOW',
                     'action'      => 'ENHANCE CONTENT DEPTH',
-                    'evidence'    => sprintf(__('Word count is low (%d words). AI generated structured content section to improve topic depth.', 'gmb-ranker-seo-automation'), $word_count),
+                    'evidence'    => sprintf(__('Word count is low (%d words). AI generated comprehensive search-intent-aligned long-form content.', 'gmb-ranker-seo-automation'), $word_count),
                 );
             }
         }

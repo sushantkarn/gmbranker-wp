@@ -381,7 +381,7 @@
                   '<option value="Product"' + (schemaVal === 'Product' ? ' selected' : '') + '>Product</option>' +
                 '</select>';
               } else if (r.id === 'content_intro') {
-                inputControl = '<textarea id="gmb-ai-input-intro" rows="2" class="gmb-integration-input gmb-input-sm">' + (r.recommended || '') + '</textarea>';
+                inputControl = '<textarea id="gmb-ai-input-intro" rows="5" class="gmb-integration-input gmb-input-sm" style="min-height: 110px; font-family: monospace; font-size: 12px; line-height: 1.4;">' + (r.recommended || '') + '</textarea>';
               } else {
                 inputControl = '<span>' + (r.recommended || '') + '</span>';
               }
