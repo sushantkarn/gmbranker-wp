@@ -50,9 +50,9 @@
       }
 
       var postId = $("#post_ID").val() || 0;
-      var curFocus = $("#gmb_seo_focus_keyword").val() || "";
-      var curTitle = $("#gmb_seo_title").val() || "";
-      var curDesc = $("#gmb_seo_description").val() || "";
+      var curFocus = $("#gmb_seo_focus_keyword_hidden").val() || "";
+      var curTitle = $("#gmb_seo_title_input").val() || "";
+      var curDesc = $("#gmb_seo_desc_input").val() || "";
 
       $.ajax({
         url: gmbMetaboxData.ajaxUrl,
@@ -189,7 +189,11 @@
       if (applyFocus) {
         var focusKw = $("#gmb-ai-input-focus").val().trim();
         if (focusKw) {
-          $("#gmb_seo_focus_keyword").val(focusKw).trigger("input").trigger("change").trigger("keyup");
+          if (typeof window.gmbSetFocusKeywords === "function") {
+            window.gmbSetFocusKeywords(focusKw);
+          } else {
+            $("#gmb_seo_focus_keyword_hidden").val(focusKw);
+          }
         }
       }
 
@@ -817,6 +821,17 @@
 
       recalculateScore();
     }
+
+    window.gmbSetFocusKeywords = function (kwString) {
+      if (!kwString) return;
+      var newKws = kwString.split(",").map(function (k) { return k.trim(); }).filter(Boolean);
+      newKws.forEach(function (k) {
+        if (keywords.indexOf(k) === -1) {
+          keywords.push(k);
+        }
+      });
+      renderKeywordPills();
+    };
 
     renderKeywordPills();
 
@@ -1850,7 +1865,7 @@
         $("#title").val() || gmbMetaboxData.siteName || "",
       );
       var desc = getPostFieldValue("#gmb_seo_desc_input", "");
-      var kw = getPostFieldValue("#gmb_seo_focus_keyword", "");
+      var kw = getPostFieldValue("#gmb_seo_focus_keyword_hidden", "");
       var siteName = gmbMetaboxData.siteName || "";
 
       return str
