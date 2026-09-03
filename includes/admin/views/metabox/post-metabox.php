@@ -200,11 +200,25 @@ wp_nonce_field('gmb_seo_save_nonce', 'gmb_seo_nonce');
                                     <div class="gmb-progress-bar-container">
                                         <div class="gmb-progress-bar-fill" id="gmb-title-progress-fill"></div>
                                     </div>
+                                    <!-- Pixel Width & CTR Hooks Row -->
+                                    <div class="gmb-title-ctr-row gmb-mt-8">
+                                        <div class="gmb-pixel-width-indicator">
+                                            <span class="gmb-text-muted-xs">SERP Pixel Width: </span>
+                                            <strong id="gmb-title-pixel-val" class="gmb-pixel-val">0px</strong> / 580px
+                                        </div>
+                                        <div class="gmb-ctr-preset-btns">
+                                            <button type="button" class="gmb-ctr-btn" data-append=" [2026]">+ [2026]</button>
+                                            <button type="button" class="gmb-ctr-btn" data-append=" (Certified)">+ (Certified)</button>
+                                            <button type="button" class="gmb-ctr-btn" data-append=" (Top Rated)">+ (Top Rated)</button>
+                                            <button type="button" class="gmb-ctr-btn" data-append=" (Free Consultation)">+ (Free Consultation)</button>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="gmb-field-group">
                                     <div class="gmb-field-header-row">
                                         <label for="gmb_seo_desc_input" class="gmb-field-label gmb-field-label-nomargin">SEO Meta Description</label>
+                                        <span id="gmb-pas-badge" class="gmb-status-pill gmb-status-pill--primary gmb-hidden">PAS Copywriting Passed ✓</span>
                                         <span class="gmb-metric-char gmb-char-count-bold" id="gmb-desc-char-count">0 / 160 chars</span>
                                     </div>
                                     <textarea id="gmb_seo_desc_input" name="gmb_seo_description" rows="4" class="gmb-field-textarea" placeholder="Summarize your page content here..."><?php echo esc_textarea($meta_desc); ?></textarea>

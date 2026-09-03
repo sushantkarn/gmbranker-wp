@@ -422,16 +422,38 @@
     // ==========================================
     // 4. Character Counts & Live Preview Updating
     // ==========================================
+    // SERP Title Pixel Width Calculation (580px max width)
+    function calculateTitlePixelWidth(str) {
+      if (!str) return 0;
+      var canvas = calculateTitlePixelWidth.canvas || (calculateTitlePixelWidth.canvas = document.createElement("canvas"));
+      var context = canvas.getContext("2d");
+      context.font = "20px Arial, sans-serif";
+      return Math.round(context.measureText(str).width);
+    }
+
     function updateTitleCharCount() {
       var $input = $("#gmb_seo_title_input");
       var val = $input.val() || "";
       var count = val.length;
       $("#gmb-title-char-count").text(count + " / 60 chars");
 
+      var px = calculateTitlePixelWidth(val);
+      var $pxVal = $("#gmb-title-pixel-val");
+      if ($pxVal.length) {
+        $pxVal.text(px + "px");
+        if (px > 580) {
+          $pxVal.css("color", "#dc2626");
+        } else if (px >= 400) {
+          $pxVal.css("color", "#16a34a");
+        } else {
+          $pxVal.css("color", "#d97706");
+        }
+      }
+
       var pct = Math.min(100, Math.round((count / 60) * 100));
       var $bar = $("#gmb-title-progress-fill");
       $bar.css("width", pct + "%");
-      if (count > 60) {
+      if (count > 60 || px > 580) {
         $bar.css("background-color", "#dc2626");
       } else if (count >= 40) {
         $bar.css("background-color", "#16a34a");
@@ -458,6 +480,18 @@
       var val = $input.val() || "";
       var count = val.length;
       $("#gmb-desc-char-count").text(count + " / 160 chars");
+
+      // PAS Copywriting Formula Check (Pain/Question + Solution/Service + Active CTA)
+      var hasPain = val.indexOf("?") !== -1 || /worry|fear|struggle|need|looking|problem|care/i.test(val);
+      var hasCTA = /book|call|contact|get|discover|learn|start|try|apply|order|schedule/i.test(val);
+      var $pasBadge = $("#gmb-pas-badge");
+      if ($pasBadge.length) {
+        if (count >= 120 && hasPain && hasCTA) {
+          $pasBadge.removeClass("gmb-hidden");
+        } else {
+          $pasBadge.addClass("gmb-hidden");
+        }
+      }
 
       var pct = Math.min(100, Math.round((count / 160) * 100));
       var $bar = $("#gmb-desc-progress-fill");
@@ -486,6 +520,17 @@
         );
       }
     }
+
+    // CTR Preset Modifier Buttons Handler
+    $(document).on("click", ".gmb-ctr-btn", function (e) {
+      e.preventDefault();
+      var appendText = $(this).attr("data-append") || "";
+      var $input = $("#gmb_seo_title_input");
+      var curVal = $input.val() || ($("#title").length ? $("#title").val() : "") || "";
+      if (curVal.indexOf(appendText.trim()) === -1) {
+        $input.val(curVal + appendText).trigger("input").trigger("change").trigger("keyup");
+      }
+    });
 
     function updateModalPreview() {
       updateTitleCharCount();
