@@ -62,7 +62,7 @@ class GMB_Ranker_SEO_Admin {
      * Enforce CSRF security validation across AJAX endpoints
      */
     public static function enforce_ajax_csrf_protection() {
-        if (!current_user_can('manage_options')) {
+        if (!current_user_can('edit_posts') && !current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized capabilities.'), 403);
         }
         $nonce = isset($_REQUEST['nonce']) ? sanitize_text_field(wp_unslash($_REQUEST['nonce'])) : (isset($_REQUEST['_wpnonce']) ? sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])) : '');

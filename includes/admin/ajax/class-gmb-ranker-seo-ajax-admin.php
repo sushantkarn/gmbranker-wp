@@ -1352,7 +1352,17 @@ class GMB_Ranker_SEO_Ajax_Admin {
 
         $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
         $title = isset($_POST['title']) ? sanitize_text_field(wp_unslash($_POST['title'])) : '';
+        if (empty($title) && $post_id > 0) {
+            $title = get_the_title($post_id);
+        }
+
         $content_raw = isset($_POST['content']) ? wp_unslash($_POST['content']) : '';
+        if (empty($content_raw) && $post_id > 0) {
+            $post_obj = get_post($post_id);
+            if ($post_obj) {
+                $content_raw = $post_obj->post_content;
+            }
+        }
         $content_clean = wp_strip_all_tags($content_raw);
         $post_type = isset($_POST['post_type']) ? sanitize_text_field(wp_unslash($_POST['post_type'])) : 'post';
 

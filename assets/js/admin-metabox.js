@@ -25,7 +25,7 @@
 
       // Extract title & content
       var postTitle = $("#title").val() || "";
-      if (!postTitle && wp && wp.data && wp.data.select && wp.data.select("core/editor")) {
+      if (!postTitle && typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.select("core/editor")) {
         postTitle = wp.data.select("core/editor").getEditedPostAttribute("title") || "";
       }
 
@@ -34,7 +34,7 @@
         postContent = tinymce.get("content").getContent();
       } else if ($("#content").length) {
         postContent = $("#content").val();
-      } else if (wp && wp.data && wp.data.select && wp.data.select("core/editor")) {
+      } else if (typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.select("core/editor")) {
         postContent = wp.data.select("core/editor").getEditedPostAttribute("content") || "";
       }
 
