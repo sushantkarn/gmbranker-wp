@@ -473,35 +473,37 @@ class GMB_Ranker_SEO_Research_Engine {
         
         $kw_uc = ucwords($target_kw_clean);
         $kw_lc = strtolower($target_kw_clean);
+        $home_link = esc_url(home_url('/'));
 
-        $full_600_word_draft = '<p>Recognizing the key <strong>' . esc_html($kw_lc) . '</strong> is essential for ensuring timely support, safety, and long-term well-being. Whether you are evaluating care options or seeking expert guidance, understanding these critical indicators enables families to make confident, informed choices. Explore our complete guide from ' . esc_html($site_name_clean) . ' below to discover actionable checklists, expert advice, and practical solutions tailored to your needs.</p>' . "\n\n" .
-        '<h2>1. Overview of ' . esc_html($title_clean) . '</h2>' . "\n" .
-        '<p>Accessing reliable ' . esc_html($kw_lc) . ' plays a vital role in maintaining independence, safety, and comfort. As healthcare needs evolve, professional assistance ensures that individuals receive personalized, compassionate attention right in the familiar environment of their own home.</p>' . "\n" .
-        '<p>Modern care solutions encompass a wide spectrum of professional services—from skilled nursing oversight and personal hygiene assistance to companion care and specialized therapy support. By bridging medical expertise with personalized home support, care providers ensure enhanced quality of life for every client.</p>' . "\n\n" .
-        '<h2>2. Key Benefits & Advantages</h2>' . "\n" .
-        '<p>Opting for professional ' . esc_html($kw_lc) . ' delivers significant benefits for patients and their families alike:</p>' . "\n" .
+        $full_600_word_draft = '<p>Recognizing the key features of <strong>' . esc_html($kw_lc) . '</strong> is essential for ensuring timely medical support, patient safety, and long-term personal well-being. Whether you are evaluating care options or seeking expert guidance, understanding these critical indicators enables families to make confident, informed choices. Explore our complete guide from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> below to discover actionable checklists, expert advice, and practical solutions tailored to your needs.</p>' . "\n\n" .
+        '[gmb_toc]' . "\n\n" .
+        '<h2>1. Overview of ' . esc_html($kw_uc) . '</h2>' . "\n" .
+        '<p>Accessing reliable <strong>' . esc_html($kw_lc) . '</strong> plays a vital role in maintaining personal independence, safety, and daily comfort. As healthcare needs evolve, professional home assistance ensures that individuals receive personalized, compassionate attention right in the familiar environment of their own residence. According to international care standards published by the <a href="https://www.who.int/" target="_blank" rel="noopener">World Health Organization (WHO)</a>, home-based healthcare significantly improves patient recovery speed and long-term quality of life.</p>' . "\n" .
+        '<p>Modern <strong>' . esc_html($kw_lc) . '</strong> solutions encompass a wide spectrum of professional caregiving—from skilled nursing oversight and personal hygiene assistance to companion care and specialized physical therapy support. By bridging professional medical expertise with personalized home support, care providers ensure enhanced well-being for every client.</p>' . "\n\n" .
+        '<h2>2. Key Benefits & Advantages of ' . esc_html($kw_uc) . '</h2>' . "\n" .
+        '<p>Opting for comprehensive <strong>' . esc_html($kw_lc) . '</strong> delivers significant benefits for patients and their families alike:</p>' . "\n" .
         '<ul>' . "\n" .
-        '    <li><strong>Personalized Care Plans:</strong> Customized assistance tailored to specific medical, mobility, and personal requirements.</li>' . "\n" .
-        '    <li><strong>Comfort & Familiarity:</strong> Patients recover faster and experience less stress in the comfort of their home.</li>' . "\n" .
-        '    <li><strong>Enhanced Independence:</strong> Empowers individuals to maintain daily routines with dignified support.</li>' . "\n" .
-        '    <li><strong>Family Peace of Mind:</strong> Keeps family members informed while alleviating caregiver stress and burnout.</li>' . "\n" .
-        '    <li><strong>Cost-Effective Quality Care:</strong> Eliminates unnecessary hospitalization costs while providing targeted professional attention.</li>' . "\n" .
+        '    <li><strong>Personalized Care Plans:</strong> Customized <strong>' . esc_html($kw_lc) . '</strong> assistance tailored to specific medical, mobility, and personal requirements.</li>' . "\n" .
+        '    <li><strong>Comfort & Familiarity:</strong> Patients recover faster and experience less emotional stress in the comfort of their own home environment.</li>' . "\n" .
+        '    <li><strong>Enhanced Independence:</strong> Empowers individuals to maintain daily routines with dignified, compassionate support.</li>' . "\n" .
+        '    <li><strong>Family Peace of Mind:</strong> Keeps family members informed while registered caregivers alleviate daily stress and burnout.</li>' . "\n" .
+        '    <li><strong>Cost-Effective Quality Care:</strong> Eliminates unnecessary hospitalization costs while providing targeted <strong>' . esc_html($kw_lc) . '</strong>.</li>' . "\n" .
         '</ul>' . "\n\n" .
-        '<h2>3. Step-by-Step Practical Decision Checklist</h2>' . "\n" .
-        '<p>When selecting the right care solution, following a structured evaluation process ensures optimal outcomes:</p>' . "\n" .
+        '<h2>3. Step-by-Step ' . esc_html($kw_uc) . ' Decision Framework</h2>' . "\n" .
+        '<p>When selecting the right professional solution for <strong>' . esc_html($kw_lc) . '</strong>, following a structured evaluation process ensures optimal long-term health outcomes:</p>' . "\n" .
         '<ol>' . "\n" .
         '    <li><strong>Assess Individual Care Needs:</strong> Determine required assistance levels, including medical supervision, mobility support, and daily activity help.</li>' . "\n" .
-        '    <li><strong>Verify Provider Credentials:</strong> Ensure caregivers and nurses are fully certified, background-checked, and highly experienced.</li>' . "\n" .
-        '    <li><strong>Review Customized Service Plans:</strong> Verify that the care plan adapts flexibly as health conditions and requirements change over time.</li>' . "\n" .
+        '    <li><strong>Verify Provider Credentials:</strong> Ensure caregivers and registered nurses providing <strong>' . esc_html($kw_lc) . '</strong> are fully certified, background-checked, and experienced.</li>' . "\n" .
+        '    <li><strong>Review Customized Service Plans:</strong> Verify that your <strong>' . esc_html($kw_lc) . '</strong> plan adapts flexibly as health conditions and requirements change over time.</li>' . "\n" .
         '    <li><strong>Establish Clear Communication Channels:</strong> Confirm regular progress updates, direct emergency contacts, and dedicated care management.</li>' . "\n" .
         '</ol>' . "\n\n" .
-        '<h2>4. Frequently Asked Questions (FAQ)</h2>' . "\n" .
-        '<h3>What services are included in ' . esc_html($kw_lc) . '?</h3>' . "\n" .
+        '<h2>4. Frequently Asked Questions (FAQ) About ' . esc_html($kw_uc) . '</h2>' . "\n" .
+        '<h3>What services are included in professional ' . esc_html($kw_lc) . '?</h3>' . "\n" .
         '<p>Services range from skilled nursing, wound care, and medication administration to personal hygiene assistance, physical therapy exercises, and compassionate companionship.</p>' . "\n" .
-        '<h3>How do I get started with a customized care plan?</h3>' . "\n" .
-        '<p>Getting started involves an initial consultation to assess health requirements, followed by matching with a qualified professional caregiver to create a personalized schedule.</p>' . "\n\n" .
-        '<h2>5. Conclusion & Next Steps</h2>' . "\n" .
-        '<p>Investing in high-quality ' . esc_html($kw_lc) . ' guarantees safety, dignified care, and peace of mind for your loved ones. Contact the expert team at ' . esc_html($site_name_clean) . ' today to schedule a consultation and secure personalized care tailored to your family\'s needs.</p>';
+        '<h3>How do I get started with a customized ' . esc_html($kw_lc) . ' plan?</h3>' . "\n" .
+        '<p>Getting started involves an initial consultation to assess health requirements, followed by matching with a qualified caregiver from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> to create a personalized schedule.</p>' . "\n\n" .
+        '<h2>5. ' . esc_html($kw_uc) . ' Summary & Next Steps</h2>' . "\n" .
+        '<p>Investing in high-quality <strong>' . esc_html($kw_lc) . '</strong> guarantees safety, dignified care, and peace of mind for your loved ones. Contact the expert care team at <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> today to schedule a free consultation and secure personalized care tailored to your family\'s needs.</p>';
 
         $short_intro = 'Recognizing the key ' . esc_html($kw_lc) . ' is essential for ensuring timely support, safety, and long-term well-being. Whether you are evaluating care options or seeking expert guidance, understanding these critical indicators enables families to make confident, informed choices. Explore our complete guide from ' . esc_html($site_name_clean) . ' below to discover actionable checklists, expert advice, and practical solutions tailored to your needs.';
 
