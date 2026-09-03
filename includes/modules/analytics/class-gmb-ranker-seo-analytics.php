@@ -130,35 +130,23 @@ class GMB_Ranker_SEO_Analytics {
         $start_date = gmdate('Y-m-d', strtotime('-30 days'));
         $end_date   = gmdate('Y-m-d', strtotime('-2 days'));
 
+        $gsc_client     = new GMB_Ranker_SEO_GSC_Client();
         $connected_site = null;
-        $date_rows = null;
+        $date_rows      = null;
 
         // Find authorized Search Console property
         foreach ($candidate_sites as $site) {
-            $url = self::GSC_API_BASE . '/' . urlencode($site) . '/searchAnalytics/query';
-            $body = array(
+            $result = $gsc_client->query_search_analytics($token, $site, array(
                 'startDate'  => $start_date,
                 'endDate'    => $end_date,
                 'dimensions' => array('date'),
                 'rowLimit'   => 28,
-            );
-
-            $response = wp_remote_post($url, array(
-                'headers' => array(
-                    'Authorization' => 'Bearer ' . $token,
-                    'Content-Type'  => 'application/json',
-                ),
-                'body'    => wp_json_encode($body),
-                'timeout' => 15,
             ));
 
-            if (!is_wp_error($response) && 200 === wp_remote_retrieve_response_code($response)) {
-                $decoded = json_decode(wp_remote_retrieve_body($response), true);
-                if (is_array($decoded) && isset($decoded['rows'])) {
-                    $connected_site = $site;
-                    $date_rows = $decoded['rows'];
-                    break;
-                }
+            if (!is_wp_error($result) && !empty($result['rows'])) {
+                $connected_site = $site;
+                $date_rows      = $result['rows'];
+                break;
             }
         }
 
@@ -190,67 +178,46 @@ class GMB_Ranker_SEO_Analytics {
         $avg_pos = ($total_impressions > 0) ? round($weighted_pos_sum / $total_impressions, 1) : 0;
 
         // Fetch Top 10 Queries
-        $query_url = self::GSC_API_BASE . '/' . urlencode($connected_site) . '/searchAnalytics/query';
         $top_queries = array();
-        $q_resp = wp_remote_post($query_url, array(
-            'headers' => array(
-                'Authorization' => 'Bearer ' . $token,
-                'Content-Type'  => 'application/json',
-            ),
-            'body'    => wp_json_encode(array(
-                'startDate'  => $start_date,
-                'endDate'    => $end_date,
-                'dimensions' => array('query'),
-                'rowLimit'   => 10,
-            )),
-            'timeout' => 15,
+        $q_result    = $gsc_client->query_search_analytics($token, $connected_site, array(
+            'startDate'  => $start_date,
+            'endDate'    => $end_date,
+            'dimensions' => array('query'),
+            'rowLimit'   => 10,
         ));
 
-        if (!is_wp_error($q_resp) && 200 === wp_remote_retrieve_response_code($q_resp)) {
-            $q_body = json_decode(wp_remote_retrieve_body($q_resp), true);
-            if (isset($q_body['rows']) && is_array($q_body['rows'])) {
-                foreach ($q_body['rows'] as $qr) {
-                    $top_queries[] = array(
-                        'query'       => isset($qr['keys'][0]) ? $qr['keys'][0] : '',
-                        'clicks'      => isset($qr['clicks']) ? (int)$qr['clicks'] : 0,
-                        'impressions' => isset($qr['impressions']) ? (int)$qr['impressions'] : 0,
-                        'ctr'         => isset($qr['ctr']) ? round($qr['ctr'] * 100, 2) . '%' : '0%',
-                        'position'    => isset($qr['position']) ? round($qr['position'], 1) : 0,
-                    );
-                }
+        if (!is_wp_error($q_result) && !empty($q_result['rows'])) {
+            foreach ($q_result['rows'] as $qr) {
+                $top_queries[] = array(
+                    'query'       => isset($qr['keys'][0]) ? $qr['keys'][0] : '',
+                    'clicks'      => isset($qr['clicks']) ? (int)$qr['clicks'] : 0,
+                    'impressions' => isset($qr['impressions']) ? (int)$qr['impressions'] : 0,
+                    'ctr'         => isset($qr['ctr']) ? round($qr['ctr'] * 100, 2) . '%' : '0%',
+                    'position'    => isset($qr['position']) ? round($qr['position'], 1) : 0,
+                );
             }
         }
 
         // Fetch Top 10 Landing Pages
         $top_pages = array();
-        $p_resp = wp_remote_post($query_url, array(
-            'headers' => array(
-                'Authorization' => 'Bearer ' . $token,
-                'Content-Type'  => 'application/json',
-            ),
-            'body'    => wp_json_encode(array(
-                'startDate'  => $start_date,
-                'endDate'    => $end_date,
-                'dimensions' => array('page'),
-                'rowLimit'   => 10,
-            )),
-            'timeout' => 15,
+        $p_result  = $gsc_client->query_search_analytics($token, $connected_site, array(
+            'startDate'  => $start_date,
+            'endDate'    => $end_date,
+            'dimensions' => array('page'),
+            'rowLimit'   => 10,
         ));
 
-        if (!is_wp_error($p_resp) && 200 === wp_remote_retrieve_response_code($p_resp)) {
-            $p_body = json_decode(wp_remote_retrieve_body($p_resp), true);
-            if (isset($p_body['rows']) && is_array($p_body['rows'])) {
-                foreach ($p_body['rows'] as $pr) {
-                    $page_raw = isset($pr['keys'][0]) ? $pr['keys'][0] : '';
-                    $path = wp_parse_url($page_raw, PHP_URL_PATH) ?: '/';
-                    $top_pages[] = array(
-                        'url'         => $page_raw,
-                        'page'        => $path,
-                        'clicks'      => isset($pr['clicks']) ? (int)$pr['clicks'] : 0,
-                        'impressions' => isset($pr['impressions']) ? (int)$pr['impressions'] : 0,
-                        'position'    => isset($pr['position']) ? round($pr['position'], 1) : 0,
-                    );
-                }
+        if (!is_wp_error($p_result) && !empty($p_result['rows'])) {
+            foreach ($p_result['rows'] as $pr) {
+                $page_raw = isset($pr['keys'][0]) ? $pr['keys'][0] : '';
+                $path     = wp_parse_url($page_raw, PHP_URL_PATH) ?: '/';
+                $top_pages[] = array(
+                    'url'         => $page_raw,
+                    'page'        => $path,
+                    'clicks'      => isset($pr['clicks']) ? (int)$pr['clicks'] : 0,
+                    'impressions' => isset($pr['impressions']) ? (int)$pr['impressions'] : 0,
+                    'position'    => isset($pr['position']) ? round($pr['position'], 1) : 0,
+                );
             }
         }
 
