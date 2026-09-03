@@ -1496,7 +1496,9 @@ class GMB_Ranker_SEO_Ajax_Admin {
 
             // Universal N-Gram Extraction for Focus Keyword
             $focus = '';
-            if (count($words) >= 2) {
+            if (!empty($cur_focus)) {
+                $focus = $cur_focus;
+            } elseif (count($words) >= 2) {
                 $focus = ucwords($words[0] . ' ' . $words[1]);
             } elseif (!empty($words)) {
                 $focus = ucwords($words[0]);

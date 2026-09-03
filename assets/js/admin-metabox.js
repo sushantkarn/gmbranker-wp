@@ -19,22 +19,22 @@
       $(".gmb-step-badge").removeClass("active");
       $("#gmb-step-badge-" + step).addClass("active");
 
-      $("#gmb-ai-post-modal-setup").addClass("gmb-hidden");
-      $("#gmb-ai-post-modal-loading").addClass("gmb-hidden");
-      $("#gmb-ai-post-modal-content").addClass("gmb-hidden");
+      $("#gmb-ai-post-modal-setup").hide();
+      $("#gmb-ai-post-modal-loading").hide();
+      $("#gmb-ai-post-modal-content").hide();
 
       if (step === 1) {
-        $("#gmb-ai-post-modal-setup").removeClass("gmb-hidden");
-        $("#gmb-ai-setup-start-btn").removeClass("gmb-hidden");
-        $("#gmb-ai-post-apply-btn").addClass("gmb-hidden");
+        $("#gmb-ai-post-modal-setup").show();
+        $("#gmb-ai-setup-start-btn").show();
+        $("#gmb-ai-post-apply-btn").hide();
       } else if (step === 2) {
-        $("#gmb-ai-post-modal-loading").removeClass("gmb-hidden");
-        $("#gmb-ai-setup-start-btn").addClass("gmb-hidden");
-        $("#gmb-ai-post-apply-btn").addClass("gmb-hidden");
+        $("#gmb-ai-post-modal-loading").show();
+        $("#gmb-ai-setup-start-btn").hide();
+        $("#gmb-ai-post-apply-btn").hide();
       } else if (step === 3) {
-        $("#gmb-ai-post-modal-content").removeClass("gmb-hidden");
-        $("#gmb-ai-setup-start-btn").addClass("gmb-hidden");
-        $("#gmb-ai-post-apply-btn").removeClass("gmb-hidden").prop("disabled", false);
+        $("#gmb-ai-post-modal-content").show();
+        $("#gmb-ai-setup-start-btn").hide();
+        $("#gmb-ai-post-apply-btn").show().prop("disabled", false);
       }
     }
 
@@ -90,20 +90,21 @@
 
       setAiModalStep(2);
 
-      // Rotating AI Research Step Messages
+      // Real SVG Search Icon + Rotating AI Research Step Messages
+      var svgSearch = '<svg class="gmb-search-svg-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 6px; color: #3b82f6;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
       var researchSteps = [
-        "🔍 Step 1/5: Fetching " + countryText + " SERP entities & search intent...",
-        "🧠 Step 2/5: Performing deep LSI entity clustering for '" + targetQuery + "'...",
-        "📐 Step 3/5: Calculating SERP pixel width and crafting high-CTR titles...",
-        "✍️ Step 4/5: Writing PAS conversion copy for Meta Description...",
-        "🕸️ Step 5/5: Mapping SILO internal links & E-E-A-T trust citations..."
+        svgSearch + "Step 1/5: Fetching " + countryText + " SERP entities & search intent...",
+        svgSearch + "Step 2/5: Performing deep LSI entity clustering for '" + targetQuery + "'...",
+        svgSearch + "Step 3/5: Calculating SERP pixel width and crafting high-CTR titles...",
+        svgSearch + "Step 4/5: Writing PAS conversion copy for Meta Description...",
+        svgSearch + "Step 5/5: Mapping SILO internal links & E-E-A-T trust citations..."
       ];
       var stepIdx = 0;
-      $("#gmb-ai-loading-step-text").text(researchSteps[0]);
+      $("#gmb-ai-loading-step-text").html(researchSteps[0]);
       if (stepTimer) clearInterval(stepTimer);
       stepTimer = setInterval(function () {
         stepIdx = (stepIdx + 1) % researchSteps.length;
-        $("#gmb-ai-loading-step-text").text(researchSteps[stepIdx]);
+        $("#gmb-ai-loading-step-text").html(researchSteps[stepIdx]);
       }, 2200);
 
       // Extract content safely
