@@ -1,131 +1,166 @@
-# Enterprise WordPress Plugin Engineering & Audit Rules
+# Enterprise WordPress Plugin Engineering & Architecture Rules
 
-This document defines the mandatory engineering standards, security controls, architectural guidelines, and prompt methodology for all AI agents working on this codebase.
-
----
-
-## 1. Core Engineering Principle: Full Architecture Context
-
-Never treat a requested file as an isolated script. Before modifying any file:
-* Inspect the **complete file** first.
-* Identify its class, interface, and function responsibilities.
-* Trace all callers, consumers, and upstream/downstream dependencies.
-* Trace related services, repositories, registries, REST/AJAX endpoints, UI views, cron jobs, actions, and condition evaluators.
-* Trace persistence, option, and meta key ownership.
-* Trace JavaScript contracts, localized data arrays, and AJAX action names.
-* Trace third-party integrations (Rank Math, Yoast, AIOSEO, SEOPress, Google APIs).
-* Trace migration, backward-compatibility, and multisite requirements.
-* Determine the canonical architecture already present in the repository.
-
-> [!IMPORTANT]
-> Do NOT guess architecture. Do NOT invent new services, registries, repositories, interfaces, or APIs when canonical implementations already exist. Reuse existing architecture.
+This document defines the mandatory engineering standards, security controls, architectural guidelines, preservation policies, and prompt methodology for all AI agents working on this codebase.
 
 ---
 
-## 2. Root-Cause Engineering
+## 1. PRESERVE EXISTING FUNCTIONALITY
 
-Never perform superficial cleanup or symptom patching when the underlying architecture is flawed.
-* Do **NOT** limit fixes to syntax cleanup, formatting, replacing functions, adding isolated `try/catch` or `null` checks, or suppressing warnings.
-* **Identify Root Causes**:
-  * If a View directly performs database persistence, move persistence to the canonical Repository/Service layer.
-  * If a Controller contains domain logic, move the logic to the canonical Domain layer.
-  * If multiple files duplicate the same registry, unify them behind a Single Source of Truth.
-  * If an API client manages credentials, move credential ownership to the canonical Credential Provider.
-  * If a Condition Evaluator trusts arbitrary inputs, enforce a strict Field/Operator Registry with fail-closed evaluation.
-  * If a UI claims capabilities the backend cannot guarantee, fix the state model.
+Before changing any file, inspect what the file currently provides and what other files depend on it.
 
----
+Never remove, rename, replace, or simplify existing:
+- Metaboxes
+- Fields & Form Controls
+- Tabs & Sub-navigation
+- Sections & Layout Panels
+- Buttons & Action Controls
+- Admin Settings & Configuration Options
+- AJAX Actions & Handlers
+- Hooks (`add_action`, `add_filter`)
+- Custom Post Types & Taxonomies
+- Third-Party Integrations (Rank Math, Yoast, AIOSEO, SEOPress, Google APIs)
+- Services, Repositories, & Registries
+- API Contracts & Data Response Schemas
+- JavaScript Behavior & DOM Contracts
+- CSS Classes, IDs, & Data Attributes
+- Saved Metadata & Transient Caches
+- Database Options & Schema Migrations
+- Backward Compatibility Layer
 
-## 3. Single Source of Truth (SSOT)
-
-Always search for existing sources of truth before adding new constants, defaults, arrays, registries, options, schemas, or configuration.
-
-Avoid duplicate definitions for:
-* Modules & Capabilities
-* Post Types & Taxonomies
-* Schema Types & JSON-LD Properties
-* Metadata Keys (`_gmb_ranker_seo_title`, `_gmb_ranker_seo_description`, `_gmb_ranker_focus_keyword`)
-* Robots Directives & Template Variables
-* AI Providers & AI Models
-* API Endpoints & Versions
-* Condition Fields & Operators
-* Automation Actions & Workflow States
-* Admin Tabs, Settings, & Credentials
+> [!CAUTION]
+> NEVER optimize for "less code" or "cleaner UI" at the expense of existing features. If something appears duplicated or obsolete, trace ALL callers and consumers before making any change.
 
 ---
 
-## 4. Generic & Business-Agnostic Site Architecture
+## 2. NEVER MODIFY A FILE IN ISOLATION
 
-All code must operate generically on **ANY** compatible WordPress website across any industry.
+Before editing a file, inspect:
+* Its parent controller, interfaces, services, and repositories.
+* Admin views, metaboxes, and rendering logic.
+* JS consumers, localized data variables, and DOM event listeners.
+* AJAX handlers, REST endpoints, and action nonces.
+* Option/meta keys, database schema, and migration scripts.
+* Other classes calling it and classes it calls.
 
-Never hardcode site-specific assumptions or business data:
-* Do **NOT** hardcode business names, domains, countries, languages, currencies, phone numbers, addresses, or specific service locations.
-* Do **NOT** hardcode specific custom post types, taxonomies, or industry-specific content structures in core services.
-* Keep test and example data strictly isolated in unit tests or mock fixtures.
-
----
-
-## 5. No Global Content Templates or Fabricated Data
-
-* **Dynamic Content Strategy**: Do not force rigid H2 structures, fixed introduction patterns, fixed FAQ placement, or artificial word-count/keyword-density formulas. Content structure must be driven by search intent, topic/entity relationships, and user configuration.
-* **Truthful UI & Data**: Never fabricate analytics, SEO scores, keyword rankings, SERP positions, traffic data, health scores, or API connection statuses. If data is unavailable, represent the actual state (`unavailable`, `disconnected`, `pending`, `error`).
+Understand the complete data flow before changing any implementation.
 
 ---
 
-## 6. Security-First Architecture
+## 3. GLOBAL ARCHITECTURE FIRST
 
-Treat every external input as untrusted (POST, GET, REST, AJAX, Cron, CLI, imported JSON/CSV, AI output, API responses, webhook payloads, database inputs).
-
-### 6.1 Defense-in-Depth Separation
-* **Sanitization** is NOT Validation.
-* **Escaping** is NOT Authorization.
-* A **Nonce** is NOT an Authorization Check.
-* A **Capability Check** is NOT Object-Level Authorization.
-
-### 6.2 Fail-Closed Execution
-Security-sensitive components (authorization, condition evaluators, API boundaries, automation actions) MUST fail closed:
-* Missing field $\rightarrow$ `false`
-* Unknown operator $\rightarrow$ `false`
-* Unauthorized resource $\rightarrow$ Reject / Abort
-* Invalid payload $\rightarrow$ Reject / Return Error
-
----
-
-## 7. Authorization & Object-Level Access Control
-
-Every mutation and read operation must enforce proper authorization:
-* Check capability (`current_user_can()`).
-* Check object-level ownership and edit permissions (prevent IDOR).
-* Validate Nonce / CSRF tokens.
-* Verify site and multisite tenant context.
-* Never rely on frontend JS visibility for security.
+The agent must reason about the entire system architecture:
+```
+Plugin Bootstrap
+→ Module Manager / Module Registry
+→ Admin / API / Automation Registries
+→ Capability & Authorization Registry
+→ Settings Registry
+→ Integration & Provider Registries
+→ Domain Services
+→ Repositories & Data Access
+→ AJAX / REST Endpoints
+→ View Models & Admin Views
+→ JavaScript & Event Listeners
+→ Persistence Layer
+```
+Do NOT introduce a secondary architecture inside an existing module. Always reuse existing canonical services, registries, repositories, validators, and providers.
 
 ---
 
-## 8. Thin UI, Thin Controllers, & Thin Actions
+## 4. SINGLE SOURCE OF TRUTH (SSOT)
 
-* **Views**: Render ViewModels, escape output, delegate interactions to dedicated JS files. Views must NOT perform DB queries or business logic.
-* **Controllers & REST Handlers**: Coordinate requests, validate inputs against schemas, authorize, and delegate to Domain Services.
-* **Automation Actions**: Validate parameters, resolve targets, authorize, delegate to Domain Services, and return normalized result arrays.
-* **Condition Evaluators**: Implement deterministic, strongly-typed comparisons against registered field/operator schemas. Fail closed on unknown inputs.
+Before adding new logic, search the repository for existing implementations. Never duplicate:
+* SEO Scoring & Analysis Engines
+* Metadata Models & Storage Keys
+* Schema Registries & JSON-LD Builders
+* Post Type & Taxonomy Registries
+* AI Provider & Model Registries
+* Integration & Credential Registries
+* Condition & Action Registries
+* Settings, Validation, & URL Helpers
+
+If a canonical implementation already exists, consume it.
 
 ---
 
-## 9. AI Output Trust Boundary
+## 5. NO HARDCODED SITE OR BUSINESS ASSUMPTIONS
 
-AI output is inherently untrusted. Never allow raw AI output to:
+All code must remain 100% generic for arbitrary WordPress websites, industries, languages, and countries.
+
+Never hardcode assumptions about:
+* Business names, domains, or phone numbers.
+* Specific geographic locations, regions, or countries.
+* Specific languages, locales, or search engine TLDs.
+* Industry-specific post types, taxonomies, or content templates.
+
+Everything that varies must be derived from canonical settings, registries, runtime context, or user input.
+
+---
+
+## 6. NO FABRICATED DATA & TRUTHFUL UI
+
+Never add fallback or demo values merely to make the UI appear complete:
+* Do NOT fabricate SEO scores, optimization potentials, ranking positions, SERP analytics, or traffic data.
+* Do NOT fabricate recommendations, schema properties, reviews, locations, progress percentages, or connection statuses.
+* If real backend data is unavailable, accurately display the actual state (`unavailable`, `loading`, `error`, `not_configured`).
+
+---
+
+## 7. NEVER HIDE BACKEND ERRORS AS EMPTY STATES
+
+Do not convert API failures, missing data, or exceptions into silent empty arrays (`[]`) or default success responses. Errors must be captured, logged safely, and reported truthfully at the correct architectural layer.
+
+---
+
+## 8. AI IS NEVER A SOURCE OF TRUTH
+
+AI output is untrusted external input. Never allow AI output to directly:
+* Mutate WordPress posts or metadata without domain validation.
+* Generate unvalidated redirects, canonical URLs, or JSON-LD schema.
 * Execute PHP code, SQL queries, or arbitrary callbacks.
-* Modify security settings, capabilities, or user roles.
-* Create unvalidated redirects, canonical URLs, or schema markup.
-* Mutate arbitrary posts or options without schema validation and authorization.
+* Modify capabilities, user permissions, or system settings.
+
+All AI recommendations must flow through:
+`AI Output → Parser → Schema Validation → Domain Validation → Authorization → User Approval (where required) → Application Service → Persistence`
 
 ---
 
-## 10. Required Workflow for Every Task
+## 9. CLIENT IS NEVER A TRUST BOUNDARY
 
-1. **PHASE 1 — DISCOVER**: Inspect complete files, callers, consumers, registries, persistence, JS contracts, and tests.
-2. **PHASE 2 — MODEL**: Identify ownership, data flows, trust boundaries, and canonical sources of truth.
-3. **PHASE 3 — AUDIT**: Check security, correctness, validation, authorization, multisite isolation, performance, and backward compatibility.
-4. **PHASE 4 — ROOT-CAUSE FIX**: Refactor the owning domain service/repository rather than patching symptoms.
-5. **PHASE 5 — CONTRACT CHECK**: Update all callers, consumers, hooks, and JS contracts to ensure zero breaking changes.
-6. **PHASE 6 — TEST & VERIFY**: Run static analysis (`php -l`) and git status checks before completing.
+Never trust hidden form inputs, JS variables, checkbox states, client-side scores, or client-provided IDs. The server must authorize every read/write operation and resolve authoritative state independently.
+
+---
+
+## 10. PRESERVE METABOXES & CONDITIONAL FUNCTIONALITY
+
+* **Metabox Inventory**: The agent must never remove or hide existing post metaboxes, metabox tabs, or sidebar panels.
+* **Post-Type Genericity**: Preserve custom post type and WooCommerce support across all metaboxes and services. Respect WordPress registered post types dynamically.
+* **Conditional Logic Awareness**: A feature hidden under certain post types or capabilities is conditional—NOT obsolete. Understand visibility rules before refactoring.
+
+---
+
+## 11. DATABASE, SETTINGS, & META KEY BACKWARD COMPATIBILITY
+
+Before changing any database option (`get_option`), post meta key (`get_post_meta`), term meta, or user meta:
+* Search every reader, writer, fallback, migration, and AJAX handler.
+* Never rename or orphan stored metadata without a migration and backward-compatibility adapter strategy.
+
+---
+
+## 12. CONTRACT COMPATIBILITY & SECURITY CONTROL
+
+Every AJAX handler, REST endpoint, action, and filter hook MUST maintain backwards compatibility:
+* Preserve capability checks (`current_user_can`).
+* Preserve CSRF nonces (`check_ajax_referer`).
+* Preserve object-level authorization (prevent IDOR).
+* Escape output according to context (`esc_html`, `esc_attr`, `esc_url`, `wp_json_encode`).
+
+---
+
+## 13. MANDATORY WORKFLOW FOR EVERY CODE TASK
+
+1. **PHASE 1 — INVENTORY & TRACE**: Understand the requested change, locate target files, trace callers, dependencies, JS contracts, metaboxes, and database schemas.
+2. **PHASE 2 — ARCHITECTURAL ALIGNMENT**: Identify canonical registries, services, and sources of truth.
+3. **PHASE 3 — ROOT-CAUSE REFACTOR**: Fix the owning domain service/repository rather than patching symptoms or deleting code.
+4. **PHASE 4 — FUNCTIONALITY PRESERVATION CHECK**: Verify every metabox, tab, field, setting, AJAX action, and hook remains intact and functional.
+5. **PHASE 5 — SYNTAX & STATIC ANALYSIS**: Validate PHP syntax (`php -l`) and git status before declaring completion.
