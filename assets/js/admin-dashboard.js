@@ -1,8 +1,105 @@
 /**
- * GMB Ranker SEO — Admin Dashboard JavaScript
+ * GMB Ranker SEO — Enterprise Admin Dashboard JavaScript
+ * Hardened, XSS-safe, race-condition resistant, and 100% website-agnostic.
  */
 (function ($) {
   "use strict";
+
+  /**
+   * Helper: Resolve AJAX URL Safely
+   */
+  function getAjaxUrl() {
+    if (typeof window.gmb_ranker_admin !== "undefined" && window.gmb_ranker_admin.ajax_url) {
+      return window.gmb_ranker_admin.ajax_url;
+    }
+    if (typeof window.ajaxurl !== "undefined" && window.ajaxurl) {
+      return window.ajaxurl;
+    }
+    return "";
+  }
+
+  /**
+   * Helper: Resolve Nonce Safely
+   */
+  function getNonce(overrideId) {
+    if (overrideId) {
+      var el = document.getElementById(overrideId);
+      if (el && el.value) {
+        return el.value;
+      }
+    }
+    if (typeof window.gmb_ranker_admin !== "undefined" && window.gmb_ranker_admin.nonce) {
+      return window.gmb_ranker_admin.nonce;
+    }
+    return "";
+  }
+
+  /**
+   * Helper: Cryptographically Secure Random String
+   */
+  function generateSecureRandomKey(length) {
+    length = length || 32;
+    var chars = "0123456789abcdef";
+    var result = "";
+    if (window.crypto && window.crypto.getRandomValues) {
+      var values = new Uint8Array(length);
+      window.crypto.getRandomValues(values);
+      for (var i = 0; i < length; i++) {
+        result += chars.charAt(values[i] % chars.length);
+      }
+      return result;
+    }
+    // Fallback if crypto API is unavailable
+    for (var j = 0; j < length; j++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  /**
+   * Helper: Safe Alert Box Renderer (XSS-Safe)
+   */
+  function renderAlertBox(container, message, type) {
+    if (!container) return;
+    container.textContent = "";
+
+    var card = document.createElement("div");
+    card.className = type === "success" ? "gmb-alert-success-card" : "gmb-alert-danger-card";
+
+    var iconSpan = document.createElement("span");
+    iconSpan.style.marginRight = "6px";
+    iconSpan.textContent = type === "success" ? "✓ " : "✕ ";
+    card.appendChild(iconSpan);
+
+    var textSpan = document.createElement("span");
+    textSpan.textContent = message || (type === "success" ? "Operation completed." : "An error occurred.");
+    card.appendChild(textSpan);
+
+    container.appendChild(card);
+    container.style.display = "block";
+  }
+
+  /**
+   * Helper: Validate and Sanitize URLs for Indexing
+   */
+  function sanitizeIndexingUrls(rawInput) {
+    if (!rawInput || typeof rawInput !== "string") return [];
+    var lines = rawInput.split(/\r?\n/);
+    var validUrls = [];
+    for (var i = 0; i < lines.length; i++) {
+      var trimmed = lines[i].trim();
+      if (!trimmed) continue;
+      try {
+        var parsed = new URL(trimmed);
+        if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+          validUrls.push(parsed.toString());
+        }
+      } catch (err) {
+        // Skip invalid URL schemes
+      }
+    }
+    return validUrls;
+  }
 
   $(document).ready(function () {
     // Sidebar Sub-tab switching
@@ -46,9 +143,13 @@
           .replace("gmb-subtab-sitemap-", "")
           .replace("gmb-subtab-schema-", "")
           .replace("gmb-subtab-", "");
-        var currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set("tab", cleanSub);
-        window.history.replaceState({}, "", currentUrl.toString());
+        try {
+          var currentUrl = new URL(window.location.href);
+          currentUrl.searchParams.set("tab", cleanSub);
+          window.history.replaceState({}, "", currentUrl.toString());
+        } catch (err) {
+          // Ignore URL manipulation failures
+        }
       }
     });
 
@@ -83,32 +184,45 @@
       $("#ai-section-" + val).show();
     });
 
-    // Copy Webhook URL
+    // Copy Webhook URL (Safely)
     $(document).on("click", "#gmb-copy-webhook-btn", function (e) {
       e.preventDefault();
       var $input = $("#gmb_webhook_endpoint");
-      $input.select();
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText($input.val());
-      } else {
-        document.execCommand("copy");
-      }
+      var val = $input.val();
       var $btn = $(this);
       var origText = $btn.text();
-      $btn.text("Copied!");
-      setTimeout(function () {
-        $btn.text(origText);
-      }, 2000);
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard
+          .writeText(val)
+          .then(function () {
+            $btn.text("Copied!");
+            setTimeout(function () {
+              $btn.text(origText);
+            }, 2000);
+          })
+          .catch(function () {
+            $input.select();
+            document.execCommand("copy");
+            $btn.text("Copied!");
+            setTimeout(function () {
+              $btn.text(origText);
+            }, 2000);
+          });
+      } else {
+        $input.select();
+        document.execCommand("copy");
+        $btn.text("Copied!");
+        setTimeout(function () {
+          $btn.text(origText);
+        }, 2000);
+      }
     });
 
     // Generate IndexNow Key
     $(document).on("click", "#gmb-generate-indexnow-key", function (e) {
       e.preventDefault();
-      var chars = "0123456789abcdef";
-      var key = "";
-      for (var i = 0; i < 32; i++) {
-        key += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
+      var key = generateSecureRandomKey(32);
       $("#gmb_indexnow_key_input").val(key);
     });
 
@@ -133,23 +247,28 @@
     });
   });
 
-  // Global Live Analytics Sync handler
+  // Global Live Analytics Sync handler (Guard against concurrency)
+  var isAnalyticsSyncing = false;
   window.gmbSyncAnalytics = function () {
+    if (isAnalyticsSyncing) return;
+
     var $btn = $("#gmb-sync-analytics-btn");
     var $label = $("#gmb-sync-btn-label");
     if (!$btn.length) return;
 
+    isAnalyticsSyncing = true;
     $btn.prop("disabled", true);
     $label.text("Syncing Cloud Data...");
 
-    var ajaxUrl =
-      typeof gmb_ranker_admin !== "undefined" && gmb_ranker_admin.ajax_url
-        ? gmb_ranker_admin.ajax_url
-        : "/wp-admin/admin-ajax.php";
-    var nonce =
-      typeof gmb_ranker_admin !== "undefined" && gmb_ranker_admin.nonce
-        ? gmb_ranker_admin.nonce
-        : "";
+    var ajaxUrl = getAjaxUrl();
+    var nonce = getNonce();
+
+    if (!ajaxUrl) {
+      isAnalyticsSyncing = false;
+      $btn.prop("disabled", false);
+      $label.text("Sync Live Data");
+      return;
+    }
 
     $.ajax({
       url: ajaxUrl,
@@ -159,29 +278,49 @@
         nonce: nonce,
       },
       success: function (response) {
+        isAnalyticsSyncing = false;
         $btn.prop("disabled", false);
         $label.text("Sync Live Data");
-        if (response.success && response.data && response.data.data) {
+
+        if (response && response.success && response.data && response.data.data) {
           var d = response.data.data;
           if (d.totals) {
-            if (d.totals.clicks)
-              $("#gmb-kpi-clicks").text(
-                Number(d.totals.clicks).toLocaleString(),
-              );
-            if (d.totals.impressions)
-              $("#gmb-kpi-impressions").text(
-                Number(d.totals.impressions).toLocaleString(),
-              );
-            if (d.totals.ctr) $("#gmb-kpi-ctr").text(d.totals.ctr + "%");
-            if (d.totals.position) $("#gmb-kpi-pos").text(d.totals.position);
+            if (typeof d.totals.clicks !== "undefined" && !isNaN(Number(d.totals.clicks))) {
+              $("#gmb-kpi-clicks").text(Number(d.totals.clicks).toLocaleString());
+            }
+            if (typeof d.totals.impressions !== "undefined" && !isNaN(Number(d.totals.impressions))) {
+              $("#gmb-kpi-impressions").text(Number(d.totals.impressions).toLocaleString());
+            }
+            if (typeof d.totals.ctr !== "undefined" && d.totals.ctr !== null) {
+              var ctrVal = String(d.totals.ctr).replace("%", "");
+              $("#gmb-kpi-ctr").text(ctrVal + "%");
+            }
+            if (typeof d.totals.position !== "undefined" && d.totals.position !== null) {
+              $("#gmb-kpi-pos").text(String(d.totals.position));
+            }
           }
           if (d.status === "connected") {
-            $("#gmb-analytics-status-badge")
+            var $badge = $("#gmb-analytics-status-badge");
+            $badge
               .removeClass("gmb-analytics-badge-preview")
-              .addClass("gmb-analytics-badge-connected")
-              .html(
-                '<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg> Live Cloud Sync',
-              );
+              .addClass("gmb-analytics-badge-connected");
+            $badge.text("");
+
+            var svgNs = "http://www.w3.org/2000/svg";
+            var svg = document.createElementNS(svgNs, "svg");
+            svg.setAttribute("width", "10");
+            svg.setAttribute("height", "10");
+            svg.setAttribute("viewBox", "0 0 24 24");
+            svg.setAttribute("fill", "currentColor");
+
+            var circle = document.createElementNS(svgNs, "circle");
+            circle.setAttribute("cx", "12");
+            circle.setAttribute("cy", "12");
+            circle.setAttribute("r", "10");
+            svg.appendChild(circle);
+
+            $badge.append(svg);
+            $badge.append(document.createTextNode(" Live Cloud Sync"));
           }
           $label.text("Synced!");
           setTimeout(function () {
@@ -190,21 +329,26 @@
         }
       },
       error: function () {
+        isAnalyticsSyncing = false;
         $btn.prop("disabled", false);
         $label.text("Sync Live Data");
       },
     });
   };
 
-  // Instant Indexing Global Handlers
+  // Instant Indexing Global Handlers (Guard against concurrency)
+  var isIndexingSubmitting = false;
   window.gmbSubmitInstantIndexing = function (e) {
     if (e && e.preventDefault) e.preventDefault();
+    if (isIndexingSubmitting) return false;
+
     var urlsEl = document.getElementById("gmb_indexing_urls");
-    var urls = urlsEl ? urlsEl.value : "";
+    var rawUrls = urlsEl ? urlsEl.value : "";
+    var sanitizedUrls = sanitizeIndexingUrls(rawUrls);
+
     var actionInput = document.querySelector('input[name="gmb_api_action"]:checked');
     var action = actionInput ? actionInput.value : "bing_submit";
-    var nonceEl = document.getElementById("gmb_instant_nonce");
-    var nonce = nonceEl ? nonceEl.value : "";
+    var nonce = getNonce("gmb_instant_nonce");
 
     var btn = document.getElementById("gmb-indexing-submit-btn");
     var spinner = document.getElementById("gmb-indexing-spinner");
@@ -212,6 +356,15 @@
     var respMsg = document.getElementById("gmb-indexing-response-msg");
     var rawJson = document.getElementById("gmb-indexing-raw-json");
 
+    if (sanitizedUrls.length === 0) {
+      if (respBox && respMsg) {
+        renderAlertBox(respMsg, "Please enter at least one valid HTTP/HTTPS URL.", "danger");
+        respBox.style.display = "block";
+      }
+      return false;
+    }
+
+    isIndexingSubmitting = true;
     if (btn) btn.disabled = true;
     if (spinner) spinner.style.display = "inline";
     if (respBox) respBox.style.display = "none";
@@ -219,101 +372,148 @@
     var formData = new FormData();
     formData.append("action", "gmb_instant_indexing_submit");
     formData.append("nonce", nonce);
-    formData.append("urls", urls);
+    formData.append("urls", sanitizedUrls.join("\n"));
     formData.append("api_action", action);
 
-    var ajaxUrl = typeof ajaxurl !== "undefined" ? ajaxurl : (typeof gmb_ranker_admin !== "undefined" ? gmb_ranker_admin.ajax_url : "");
+    var ajaxUrl = getAjaxUrl();
+
+    if (!ajaxUrl) {
+      isIndexingSubmitting = false;
+      if (btn) btn.disabled = false;
+      if (spinner) spinner.style.display = "none";
+      if (respBox && respMsg) {
+        renderAlertBox(respMsg, "AJAX endpoint URL is undefined.", "danger");
+      }
+      return false;
+    }
 
     fetch(ajaxUrl, { method: "POST", body: formData })
-      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        return r.json().catch(function () {
+          throw new Error("Invalid JSON server response");
+        });
+      })
       .then(function (data) {
+        isIndexingSubmitting = false;
         if (btn) btn.disabled = false;
         if (spinner) spinner.style.display = "none";
-        if (respBox) respBox.style.display = "block";
 
-        if (data.success && respMsg) {
-          respMsg.innerHTML = '<div class="gmb-alert-success-card">&check; Request successfully submitted! ' + (data.data && data.data.message ? data.data.message : '') + '</div>';
+        if (data && data.success && respMsg) {
+          var msg = (data.data && data.data.message) ? data.data.message : "Request successfully submitted!";
+          renderAlertBox(respMsg, "Request successfully submitted! " + msg, "success");
           if (rawJson) rawJson.value = JSON.stringify(data.data, null, 2);
         } else if (respMsg) {
-          var err = (data.data && data.data.error) ? data.data.error : 'Submission error.';
-          respMsg.innerHTML = '<div class="gmb-alert-danger-card">&cross; ' + err + '</div>';
+          var err = (data && data.data && data.data.error) ? data.data.error : "Submission error.";
+          renderAlertBox(respMsg, err, "danger");
           if (rawJson) rawJson.value = JSON.stringify(data, null, 2);
         }
       })
       .catch(function (err) {
+        isIndexingSubmitting = false;
         if (btn) btn.disabled = false;
         if (spinner) spinner.style.display = "none";
-        if (respBox) respBox.style.display = "block";
-        if (respMsg) respMsg.innerHTML = '<div class="gmb-alert-danger-card">Network error: ' + err + '</div>';
+        if (respMsg) {
+          renderAlertBox(respMsg, "Submission failed: " + (err.message || "Network error"), "danger");
+        }
       });
 
     return false;
   };
 
+  // Google Service Account JSON File Handler (Safely validated)
   window.gmbHandleGoogleJsonFileUpload = function (fileInput) {
     if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
     var file = fileInput.files[0];
+
+    // File size guard (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert("File is too large. Please select a valid JSON key under 2MB.");
+      return;
+    }
+
     var reader = new FileReader();
     reader.onload = function (e) {
       try {
         var content = e.target.result;
         var parsed = JSON.parse(content);
-        if (!parsed.client_email || !parsed.private_key) {
+        if (!parsed || typeof parsed !== "object" || !parsed.client_email || !parsed.private_key) {
           alert("Invalid Google Service Account JSON: Missing client_email or private_key.");
+          return;
+        }
+        if (typeof parsed.client_email !== "string" || typeof parsed.private_key !== "string") {
+          alert("Invalid Google Service Account JSON structure.");
           return;
         }
         var textarea = document.getElementById("gmb_ranker_google_json_key_field");
         if (textarea) textarea.value = JSON.stringify(parsed, null, 2);
+
         var badge = document.getElementById("gmb_google_json_upload_badge");
         if (badge) {
+          badge.textContent = "";
           badge.style.display = "block";
-          badge.innerHTML = "&check; Loaded Service Account Key for: <strong>" + parsed.client_email + "</strong>";
+
+          var iconSpan = document.createElement("span");
+          iconSpan.textContent = "✓ Loaded Service Account Key for: ";
+          badge.appendChild(iconSpan);
+
+          var emailStrong = document.createElement("strong");
+          emailStrong.textContent = parsed.client_email;
+          badge.appendChild(emailStrong);
         }
       } catch (err) {
-        alert("Failed to parse JSON file: " + err.message);
+        alert("Failed to parse JSON file safely.");
       }
     };
     reader.readAsText(file);
   };
 
+  // Reset IndexNow API Key
   window.gmbResetIndexNowKey = function () {
     if (!confirm("Are you sure you want to generate a new IndexNow API key?")) return;
-    var nonceEl = document.getElementById("gmb_instant_nonce");
-    var nonce = nonceEl ? nonceEl.value : "";
+    var nonce = getNonce("gmb_instant_nonce");
     var fd = new FormData();
     fd.append("action", "gmb_instant_indexing_reset_key");
     fd.append("nonce", nonce);
 
-    var ajaxUrl = typeof ajaxurl !== "undefined" ? ajaxurl : (typeof gmb_ranker_admin !== "undefined" ? gmb_ranker_admin.ajax_url : "");
+    var ajaxUrl = getAjaxUrl();
+    if (!ajaxUrl) return;
 
     fetch(ajaxUrl, { method: "POST", body: fd })
       .then(function (r) { return r.json(); })
       .then(function (res) {
-        if (res.success && res.data) {
+        if (res && res.success && res.data && res.data.key) {
           var field = document.getElementById("gmb_indexnow_key_field");
           if (field) field.value = res.data.key;
           alert("IndexNow API Key successfully regenerated.");
         }
+      })
+      .catch(function () {
+        alert("Failed to regenerate IndexNow key.");
       });
   };
 
+  // Clear IndexNow History
   window.gmbClearIndexNowHistory = function () {
     if (!confirm("Clear all IndexNow submission logs?")) return;
-    var nonceEl = document.getElementById("gmb_instant_nonce");
-    var nonce = nonceEl ? nonceEl.value : "";
+    var nonce = getNonce("gmb_instant_nonce");
     var fd = new FormData();
     fd.append("action", "gmb_instant_indexing_clear_history");
     fd.append("nonce", nonce);
 
-    var ajaxUrl = typeof ajaxurl !== "undefined" ? ajaxurl : (typeof gmb_ranker_admin !== "undefined" ? gmb_ranker_admin.ajax_url : "");
+    var ajaxUrl = getAjaxUrl();
+    if (!ajaxUrl) return;
 
     fetch(ajaxUrl, { method: "POST", body: fd })
       .then(function (r) { return r.json(); })
       .then(function (res) {
-        if (res.success) location.reload();
+        if (res && res.success) location.reload();
+      })
+      .catch(function () {
+        alert("Failed to clear IndexNow logs.");
       });
   };
 
+  // Update Index Button Text based on Action Selection
   window.gmbUpdateIndexBtnText = function () {
     var actionInput = document.querySelector('input[name="gmb_api_action"]:checked');
     var labelSpan = document.getElementById("gmb-submit-btn-label");
@@ -331,12 +531,13 @@
 
   // Change Username Modal Handler
   function syncCurrentLogin() {
-    var userSelect = document.getElementById('gmb-modal-user-select');
-    var currentInput = document.getElementById('gmb-modal-current-username');
+    var userSelect = document.getElementById("gmb-modal-user-select");
+    var currentInput = document.getElementById("gmb-modal-current-username");
     if (!userSelect || !currentInput) return;
     var opt = userSelect.options[userSelect.selectedIndex];
     if (opt) {
-      currentInput.value = opt.getAttribute('data-login') || opt.textContent.trim();
+      currentInput.textContent = "";
+      currentInput.value = opt.getAttribute("data-login") || opt.textContent.trim();
     }
   }
 
@@ -371,23 +572,27 @@
     $("#gmb-change-username-modal").removeClass("is-active");
   });
 
+  var isUsernameUpdating = false;
   $(document).on("click", "#gmb-submit-username-modal", function (e) {
     e.preventDefault();
+    if (isUsernameUpdating) return;
+
     var userSelect = document.getElementById("gmb-modal-user-select");
     var newInput = document.getElementById("gmb-modal-new-username");
     var errorSpan = document.getElementById("gmb-modal-username-error");
     var submitBtn = document.getElementById("gmb-submit-username-modal");
 
     var newName = newInput ? newInput.value.trim() : "";
-    if (!newName) {
+    if (!newName || !/^[a-zA-Z0-9_\-\.\@\+\s]+$/.test(newName)) {
       if (errorSpan) {
-        errorSpan.textContent = "Please enter a valid new username.";
+        errorSpan.textContent = "Please enter a valid, acceptable new username.";
         errorSpan.style.display = "block";
       }
       return;
     }
 
     var userId = userSelect ? userSelect.value : "";
+    isUsernameUpdating = true;
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.textContent = "Updating...";
@@ -398,20 +603,20 @@
     formData.append("action", "gmb_change_username");
     formData.append("user_id", userId);
     formData.append("new_username", newName);
-    var nonce = (window.gmb_ranker_admin && window.gmb_ranker_admin.nonce) ? window.gmb_ranker_admin.nonce : "";
-    formData.append("nonce", nonce);
+    formData.append("nonce", getNonce());
 
-    var ajaxUrl = typeof ajaxurl !== "undefined" ? ajaxurl : (typeof gmb_ranker_admin !== "undefined" ? gmb_ranker_admin.ajax_url : "/wp-admin/admin-ajax.php");
+    var ajaxUrl = getAjaxUrl();
 
     fetch(ajaxUrl, { method: "POST", body: formData })
       .then(function (res) { return res.json(); })
       .then(function (data) {
+        isUsernameUpdating = false;
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = "Update Username";
         }
         if (data && data.success) {
-          alert(data.data.message || "Username updated successfully!");
+          alert((data.data && data.data.message) ? data.data.message : "Username updated successfully!");
           window.location.reload();
         } else if (errorSpan) {
           errorSpan.textContent = (data && data.data && data.data.message) ? data.data.message : "Error updating username.";
@@ -419,6 +624,7 @@
         }
       })
       .catch(function () {
+        isUsernameUpdating = false;
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = "Update Username";
@@ -430,22 +636,26 @@
       });
   });
 
+  var isDisplayFixing = false;
   $(document).on("click", "#gmb-auto-fix-display-name-btn", function (e) {
     e.preventDefault();
+    if (isDisplayFixing) return;
+
     var autoFixBtn = this;
+    isDisplayFixing = true;
     autoFixBtn.disabled = true;
     autoFixBtn.textContent = "Fixing...";
 
     var formData = new FormData();
     formData.append("action", "gmb_auto_fix_display_names");
-    var nonce = (window.gmb_ranker_admin && window.gmb_ranker_admin.nonce) ? window.gmb_ranker_admin.nonce : "";
-    formData.append("nonce", nonce);
+    formData.append("nonce", getNonce());
 
-    var ajaxUrl = typeof ajaxurl !== "undefined" ? ajaxurl : (typeof gmb_ranker_admin !== "undefined" ? gmb_ranker_admin.ajax_url : "/wp-admin/admin-ajax.php");
+    var ajaxUrl = getAjaxUrl();
 
     fetch(ajaxUrl, { method: "POST", body: formData })
       .then(function (res) { return res.json(); })
       .then(function (data) {
+        isDisplayFixing = false;
         if (data && data.success) {
           var card = document.getElementById("gmb-display-name-risk-card");
           if (card) {
@@ -461,6 +671,7 @@
         }
       })
       .catch(function () {
+        isDisplayFixing = false;
         autoFixBtn.disabled = false;
         autoFixBtn.textContent = "Auto-Fix Display Name";
         alert("Network error occurred.");
