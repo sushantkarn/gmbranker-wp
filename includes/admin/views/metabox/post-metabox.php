@@ -207,7 +207,8 @@ wp_nonce_field('gmb_seo_save_nonce', 'gmb_seo_nonce');
                                             <strong id="gmb-title-pixel-val" class="gmb-pixel-val">0px</strong> / 580px
                                         </div>
                                         <div class="gmb-ctr-preset-btns">
-                                            <button type="button" class="gmb-ctr-btn" data-append=" [2026]">+ [2026]</button>
+                                            <?php $cur_year = date('Y'); ?>
+                                            <button type="button" class="gmb-ctr-btn" data-append=" [<?php echo esc_attr($cur_year); ?>]">+ [<?php echo esc_html($cur_year); ?>]</button>
                                             <button type="button" class="gmb-ctr-btn" data-append=" (Certified)">+ (Certified)</button>
                                             <button type="button" class="gmb-ctr-btn" data-append=" (Top Rated)">+ (Top Rated)</button>
                                             <button type="button" class="gmb-ctr-btn" data-append=" (Free Consultation)">+ (Free Consultation)</button>

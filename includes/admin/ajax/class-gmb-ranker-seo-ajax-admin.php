@@ -1396,11 +1396,12 @@ class GMB_Ranker_SEO_Ajax_Admin {
         $ai_data = null;
 
         if (class_exists('GMB_Ranker_SEO_AI_Provider')) {
+            $cur_yr = date('Y');
             $system_prompt = "You are an Elite Senior SEO Architect & Search Intent Engineer specializing in Google RankBrain, MUM, and E-E-A-T entity optimization.\n" .
             "Analyze the given WordPress page title, content snippet, and available site pages. Generate world-class, Google top-ranking SEO fixes.\n\n" .
             "CRITICAL SEO RULES TO ENFORCE:\n" .
             "1. FOCUS KEYWORD: Must be a 2-4 word high-intent commercial/service entity phrase. Do NOT pick generic single words.\n" .
-            "2. SEO TITLE: Front-load the Focus Keyword. Add a bracketed CTR hook e.g. '(Certified Caregivers)' or '[2026 Guide]'. Must be 50-58 characters max ending with '| " . $site_name . "'. Never exceed 58 chars!\n" .
+            "2. SEO TITLE: Front-load the Focus Keyword. Add a bracketed CTR hook e.g. '(Certified Caregivers)' or '[" . $cur_yr . " Guide]'. Must be 50-58 characters max ending with '| " . $site_name . "'. Never exceed 58 chars!\n" .
             "3. META DESCRIPTION: Use PAS Copywriting Formula (Pain -> Solution -> Active Call-to-Action). Include exact focus keyword in first sentence. Length MUST be 140-155 characters.\n" .
             "4. SUGGESTED SLUG: Clean 2-3 word hyphenated SILO path removing stop words ('in', 'at', 'the', 'for').\n" .
             "5. SCHEMA TYPE: Select exact entity blueprint (Service, LocalBusiness, WebPage, Article, AboutPage, Product). For service pages, NEVER use Article!\n" .
