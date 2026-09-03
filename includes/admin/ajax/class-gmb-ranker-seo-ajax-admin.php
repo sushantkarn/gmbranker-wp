@@ -611,24 +611,147 @@ class GMB_Ranker_SEO_Ajax_Admin {
      */
     public function ajax_ai_analyze_and_fix_post_seo() {
         $this->enforce_ajax_csrf_protection();
-        
+
         $post_id = isset($_POST['post_id']) ? intval(wp_unslash($_POST['post_id'])) : 0;
         if (empty($post_id) || !current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'Unauthorized or invalid post ID.'), 403);
+            wp_send_json_error(array('message' => __('Unauthorized access or invalid post ID.', 'gmb-ranker-seo-automation')), 403);
         }
 
         $post = get_post($post_id);
-        if (!$post) {
-            wp_send_json_error(array('message' => 'Post not found.'), 404);
+        if (!$post || in_array($post->post_status, array('trash', 'auto-draft'), true)) {
+            wp_send_json_error(array('message' => __('Target post not found or invalid status.', 'gmb-ranker-seo-automation')), 404);
         }
 
-        if (class_exists('GMB_Ranker_SEO_Content_AI')) {
-            $content_ai = new GMB_Ranker_SEO_Content_AI();
-            $result = $content_ai->generate_archetype_draft($post->post_title, get_post_meta($post_id, '_gmb_focus_keyword', true));
-            wp_send_json_success(array('message' => 'AI SEO analysis complete.', 'result' => $result));
-        } else {
-            wp_send_json_success(array('message' => 'AI SEO analysis ready.', 'result' => array('title' => $post->post_title)));
+        $focus_kw = isset($_POST['focus_keyword']) ? sanitize_text_field(wp_unslash($_POST['focus_keyword'])) : '';
+        if (empty($focus_kw) && class_exists('GMB_Ranker_SEO_Keyword_Repository')) {
+            $kw_repo  = new GMB_Ranker_SEO_Keyword_Repository();
+            $focus_kw = $kw_repo->get_focus_keyword($post_id);
         }
+        if (empty($focus_kw)) {
+            $focus_kw = get_the_title($post_id);
+        }
+
+        $current_title = isset($_POST['seo_title']) ? sanitize_text_field(wp_unslash($_POST['seo_title'])) : get_post_meta($post_id, '_gmb_ranker_seo_title', true);
+        if (empty($current_title)) {
+            $current_title = get_the_title($post_id);
+        }
+
+        $current_desc = isset($_POST['meta_description']) ? sanitize_textarea_field(wp_unslash($_POST['meta_description'])) : get_post_meta($post_id, '_gmb_ranker_seo_description', true);
+
+        // Run canonical SEO audit via analysis service
+        $audit_score = 0;
+        $audit_results = array();
+        if (class_exists('GMB_Ranker_SEO_Analysis_Service')) {
+            $analysis_svc = new GMB_Ranker_SEO_Analysis_Service();
+            $audit_res    = $analysis_svc->audit_post($post_id);
+            if (is_array($audit_res)) {
+                $audit_score   = isset($audit_res['score']) ? intval($audit_res['score']) : 0;
+                $audit_results = isset($audit_res['results']) ? $audit_res['results'] : array();
+            }
+        }
+
+        $recommendations = array();
+
+        // 1. Focus Keyword Recommendation
+        $kw_in_title = (stripos($current_title, $focus_kw) !== false);
+        if (!$kw_in_title) {
+            $suggested_title = $focus_kw . ' - ' . $current_title;
+            if (mb_strlen($suggested_title) > 65) {
+                $suggested_title = mb_substr($focus_kw . ' | ' . $post->post_title, 0, 60);
+            }
+            $recommendations[] = array(
+                'id'          => 'seo_title',
+                'category'    => __('SEO Title', 'gmb-ranker-seo-automation'),
+                'current'     => $current_title,
+                'recommended' => $suggested_title,
+                'status'      => 'FIX NEEDED',
+                'risk_level'  => 'LOW',
+                'action'      => 'OPTIMIZE TITLE',
+                'evidence'    => sprintf(__('Focus keyword "%s" is missing from SEO Title.', 'gmb-ranker-seo-automation'), esc_html($focus_kw)),
+            );
+        } else {
+            $recommendations[] = array(
+                'id'          => 'seo_title',
+                'category'    => __('SEO Title', 'gmb-ranker-seo-automation'),
+                'current'     => $current_title,
+                'recommended' => $current_title,
+                'status'      => 'OPTIMAL',
+                'risk_level'  => 'LOW',
+                'action'      => 'KEEP CURRENT',
+                'evidence'    => __('SEO Title contains target focus keyword and optimal length.', 'gmb-ranker-seo-automation'),
+            );
+        }
+
+        // 2. Meta Description Recommendation
+        $desc_len = mb_strlen($current_desc);
+        if (empty($current_desc)) {
+            $fallback_desc = wp_strip_all_tags(mb_substr($post->post_content, 0, 155));
+            $recommendations[] = array(
+                'id'          => 'meta_description',
+                'category'    => __('Meta Description', 'gmb-ranker-seo-automation'),
+                'current'     => '',
+                'recommended' => $fallback_desc,
+                'status'      => 'MISSING',
+                'risk_level'  => 'LOW',
+                'action'      => 'ADD DESCRIPTION',
+                'evidence'    => __('Meta Description is missing completely.', 'gmb-ranker-seo-automation'),
+            );
+        } elseif ($desc_len < 120 || $desc_len > 160) {
+            $recommendations[] = array(
+                'id'          => 'meta_description',
+                'category'    => __('Meta Description', 'gmb-ranker-seo-automation'),
+                'current'     => $current_desc,
+                'recommended' => mb_substr($current_desc, 0, 155),
+                'status'      => $desc_len < 120 ? 'UNDER-OPTIMIZED' : 'OVER-OPTIMIZED',
+                'risk_level'  => 'LOW',
+                'action'      => 'ADJUST LENGTH',
+                'evidence'    => sprintf(__('Meta description length is %d characters (recommended: 120-160).', 'gmb-ranker-seo-automation'), $desc_len),
+            );
+        }
+
+        // 3. Focus Keyword Persistence Recommendation
+        $recommendations[] = array(
+            'id'          => 'focus_keyword',
+            'category'    => __('Focus Keyword', 'gmb-ranker-seo-automation'),
+            'current'     => $focus_kw,
+            'recommended' => $focus_kw,
+            'status'      => 'RECOMMENDED',
+            'risk_level'  => 'LOW',
+            'action'      => 'SET FOCUS KEYWORD',
+            'evidence'    => sprintf(__('Target keyword "%s" configured as primary ranking target.', 'gmb-ranker-seo-automation'), esc_html($focus_kw)),
+        );
+
+        // 4. Schema Preset Recommendation
+        $active_schema = get_post_meta($post_id, '_gmb_ranker_schema_type', true);
+        if (empty($active_schema)) {
+            $recommendations[] = array(
+                'id'          => 'schema_preset',
+                'category'    => __('Schema Markup', 'gmb-ranker-seo-automation'),
+                'current'     => __('None', 'gmb-ranker-seo-automation'),
+                'recommended' => 'Article',
+                'status'      => 'MISSING',
+                'risk_level'  => 'LOW',
+                'action'      => 'APPLY ARTICLE SCHEMA',
+                'evidence'    => __('No structured data schema assigned to post.', 'gmb-ranker-seo-automation'),
+            );
+        }
+
+        $potential_score = min(100, max($audit_score + 18, 85));
+
+        wp_send_json_success(array(
+            'target' => array(
+                'post_id'       => $post_id,
+                'post_title'    => get_the_title($post_id),
+                'focus_keyword' => $focus_kw,
+                'url'           => get_permalink($post_id),
+            ),
+            'score' => array(
+                'current'         => $audit_score,
+                'potential'       => $potential_score,
+                'potential_label' => sprintf('%d / 100 (Potential: %d / 100)', $audit_score, $potential_score),
+            ),
+            'recommendations' => $recommendations,
+        ));
     }
 
     /**

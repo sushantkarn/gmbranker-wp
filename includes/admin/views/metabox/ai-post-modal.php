@@ -287,7 +287,7 @@ $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : '
                     <table class="gmb-data-table gmb-table-compact">
                         <thead>
                             <tr>
-                                <th class="gmb-th-checkbox"><input type="checkbox" id="gmb-ai-post-select-all" checked /></th>
+                                <th class="gmb-th-checkbox"><input type="checkbox" id="gmb-ai-post-select-all" disabled /></th>
                                 <th style="width: 180px;"><?php esc_html_e('SEO Factor', 'gmb-ranker-seo-automation'); ?></th>
                                 <th><?php esc_html_e('AI Recommended Optimization', 'gmb-ranker-seo-automation'); ?></th>
                                 <th style="width: 130px;"><?php esc_html_e('Status', 'gmb-ranker-seo-automation'); ?></th>

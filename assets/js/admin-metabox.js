@@ -318,8 +318,10 @@
           // Populate Optimization Potential Score
           if (data.score && data.score.potential_label) {
             $("#gmb-ai-potential-score").text(data.score.potential_label);
+          } else if (data.score && typeof data.score.current !== "undefined") {
+            $("#gmb-ai-potential-score").text(data.score.current + " / 100");
           } else {
-            $("#gmb-ai-potential-score").text("92 – 99 / 100");
+            $("#gmb-ai-potential-score").text("Not available");
           }
 
           // Populate Top Opportunities Summary (if present)
@@ -340,55 +342,67 @@
           }
 
           var recs = data.recommendations || [];
-
-          // Populate Evidence Table
           var $tbody = $("#gmb-ai-post-suggestions-tbody").empty();
-          var rowsHtml = "";
 
-          recs.forEach(function (r) {
-            var statusPillClass = "gmb-status-pill--success";
-            if (r.status === "FIX NEEDED" || r.status === "MISSING" || r.status === "UNDER-OPTIMIZED") {
-              statusPillClass = "gmb-status-pill--warning";
-            } else if (r.status === "OVER-OPTIMIZED" || r.risk_level === "HIGH RISK") {
-              statusPillClass = "gmb-status-pill--danger";
-            }
+          if (recs.length === 0) {
+            $tbody.html('<tr><td colspan="4" style="text-align: center; padding: 24px; color: #64748b;">No actionable SEO recommendations were identified for this page.</td></tr>');
+            $("#gmb-ai-post-select-all").prop("checked", false).prop("disabled", true);
+            $("#gmb-ai-post-apply-btn").prop("disabled", true);
+          } else {
+            var rowsHtml = "";
+            var selectableCount = 0;
+            var checkedCount = 0;
 
-            var inputControl = '';
-            if (r.id === 'focus_keyword') {
-              inputControl = '<input type="text" id="gmb-ai-input-focus" value="' + (r.recommended || '') + '" class="gmb-integration-input gmb-input-sm" />';
-            } else if (r.id === 'seo_title') {
-              inputControl = '<input type="text" id="gmb-ai-input-title" value="' + (r.recommended || '') + '" class="gmb-integration-input gmb-input-sm" />';
-            } else if (r.id === 'meta_description') {
-              inputControl = '<textarea id="gmb-ai-input-desc" rows="2" class="gmb-integration-input gmb-input-sm">' + (r.recommended || '') + '</textarea>';
-            } else if (r.id === 'slug') {
-              inputControl = '<input type="text" id="gmb-ai-input-slug" value="' + (r.recommended || '') + '" class="gmb-integration-input gmb-input-sm" ' + (r.action === 'KEEP CURRENT URL' ? 'disabled' : '') + ' />';
-            } else if (r.id === 'schema_preset') {
-              var schemaVal = r.recommended || 'Article';
-              inputControl = '<select id="gmb-ai-input-schema" class="gmb-integration-select gmb-input-sm">' +
-                '<option value="WebPage"' + (schemaVal === 'WebPage' ? ' selected' : '') + '>WebPage</option>' +
-                '<option value="Article"' + (schemaVal === 'Article' ? ' selected' : '') + '>Article</option>' +
-                '<option value="AboutPage"' + (schemaVal === 'AboutPage' ? ' selected' : '') + '>AboutPage</option>' +
-                '<option value="Service"' + (schemaVal === 'Service' ? ' selected' : '') + '>Service</option>' +
-                '<option value="LocalBusiness"' + (schemaVal === 'LocalBusiness' ? ' selected' : '') + '>LocalBusiness</option>' +
-                '<option value="Product"' + (schemaVal === 'Product' ? ' selected' : '') + '>Product</option>' +
-              '</select>';
-            } else if (r.id === 'content_intro') {
-              inputControl = '<textarea id="gmb-ai-input-intro" rows="2" class="gmb-integration-input gmb-input-sm">' + (r.recommended || '') + '</textarea>';
-            } else {
-              inputControl = '<span>' + (r.recommended || '') + '</span>';
-            }
+            recs.forEach(function (r) {
+              var statusPillClass = "gmb-status-pill--success";
+              if (r.status === "FIX NEEDED" || r.status === "MISSING" || r.status === "UNDER-OPTIMIZED") {
+                statusPillClass = "gmb-status-pill--warning";
+              } else if (r.status === "OVER-OPTIMIZED" || r.risk_level === "HIGH RISK") {
+                statusPillClass = "gmb-status-pill--danger";
+              }
 
-            var checkAttr = (r.risk_level === 'HIGH RISK' || r.action === 'KEEP CURRENT URL') ? '' : 'checked';
+              var inputControl = '';
+              if (r.id === 'focus_keyword') {
+                inputControl = '<input type="text" id="gmb-ai-input-focus" value="' + (r.recommended || '') + '" class="gmb-integration-input gmb-input-sm" />';
+              } else if (r.id === 'seo_title') {
+                inputControl = '<input type="text" id="gmb-ai-input-title" value="' + (r.recommended || '') + '" class="gmb-integration-input gmb-input-sm" />';
+              } else if (r.id === 'meta_description') {
+                inputControl = '<textarea id="gmb-ai-input-desc" rows="2" class="gmb-integration-input gmb-input-sm">' + (r.recommended || '') + '</textarea>';
+              } else if (r.id === 'slug') {
+                inputControl = '<input type="text" id="gmb-ai-input-slug" value="' + (r.recommended || '') + '" class="gmb-integration-input gmb-input-sm" ' + (r.action === 'KEEP CURRENT URL' ? 'disabled' : '') + ' />';
+              } else if (r.id === 'schema_preset') {
+                var schemaVal = r.recommended || 'Article';
+                inputControl = '<select id="gmb-ai-input-schema" class="gmb-integration-select gmb-input-sm">' +
+                  '<option value="WebPage"' + (schemaVal === 'WebPage' ? ' selected' : '') + '>WebPage</option>' +
+                  '<option value="Article"' + (schemaVal === 'Article' ? ' selected' : '') + '>Article</option>' +
+                  '<option value="AboutPage"' + (schemaVal === 'AboutPage' ? ' selected' : '') + '>AboutPage</option>' +
+                  '<option value="Service"' + (schemaVal === 'Service' ? ' selected' : '') + '>Service</option>' +
+                  '<option value="LocalBusiness"' + (schemaVal === 'LocalBusiness' ? ' selected' : '') + '>LocalBusiness</option>' +
+                  '<option value="Product"' + (schemaVal === 'Product' ? ' selected' : '') + '>Product</option>' +
+                '</select>';
+              } else if (r.id === 'content_intro') {
+                inputControl = '<textarea id="gmb-ai-input-intro" rows="2" class="gmb-integration-input gmb-input-sm">' + (r.recommended || '') + '</textarea>';
+              } else {
+                inputControl = '<span>' + (r.recommended || '') + '</span>';
+              }
 
-            rowsHtml += '<tr>' +
-              '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="' + r.id + '" ' + checkAttr + ' /></td>' +
-              '<td><strong>' + r.category + '</strong></td>' +
-              '<td>' + inputControl + '</td>' +
-              '<td><span class="gmb-status-pill ' + statusPillClass + '">' + (r.status || 'RECOMMENDED') + '</span></td>' +
-              '</tr>';
-          });
+              var isChecked = (r.risk_level !== 'HIGH RISK' && r.action !== 'KEEP CURRENT URL');
+              var checkAttr = isChecked ? 'checked' : '';
+              selectableCount++;
+              if (isChecked) checkedCount++;
 
-          $tbody.html(rowsHtml);
+              rowsHtml += '<tr>' +
+                '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="' + r.id + '" ' + checkAttr + ' /></td>' +
+                '<td><strong>' + r.category + '</strong></td>' +
+                '<td>' + inputControl + '</td>' +
+                '<td><span class="gmb-status-pill ' + statusPillClass + '">' + (r.status || 'RECOMMENDED') + '</span></td>' +
+                '</tr>';
+            });
+
+            $tbody.html(rowsHtml);
+            $("#gmb-ai-post-select-all").prop("disabled", false).prop("checked", selectableCount > 0 && checkedCount === selectableCount);
+            $("#gmb-ai-post-apply-btn").prop("disabled", checkedCount === 0);
+          }
         }, 600);
       }
 
@@ -466,10 +480,19 @@
       });
     });
 
-        // Select All Checkbox Handler
+    // Select All & Individual Checkbox Handlers
     $(document).on("change", "#gmb-ai-post-select-all", function () {
       var isChecked = $(this).is(":checked");
       $(".gmb-ai-post-check").prop("checked", isChecked);
+      var checkedCount = $(".gmb-ai-post-check:checked").length;
+      $("#gmb-ai-post-apply-btn").prop("disabled", checkedCount === 0);
+    });
+
+    $(document).on("change", ".gmb-ai-post-check", function () {
+      var total = $(".gmb-ai-post-check").length;
+      var checkedCount = $(".gmb-ai-post-check:checked").length;
+      $("#gmb-ai-post-select-all").prop("checked", total > 0 && checkedCount === total);
+      $("#gmb-ai-post-apply-btn").prop("disabled", checkedCount === 0);
     });
 
     $(document).on("click", "#gmb-ai-post-modal-close, #gmb-ai-post-modal-cancel", function (e) {
