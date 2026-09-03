@@ -93,8 +93,8 @@ class GMB_Ranker_SEO_Generate_Content_Action implements GMB_Ranker_SEO_Action_In
 
             $ai_response = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages);
 
-            if (!empty($ai_response['content'])) {
-                $generated_text = trim($ai_response['content']);
+            if (!is_wp_error($ai_response) && is_string($ai_response) && !empty($ai_response)) {
+                $generated_text = trim($ai_response);
 
                 // Parse out title if present on first line
                 if (preg_match('/^(?:Title|#)\s*:\s*(.+)$/m', $generated_text, $matches)) {

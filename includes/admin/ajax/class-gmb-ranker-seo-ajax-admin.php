@@ -638,6 +638,27 @@ class GMB_Ranker_SEO_Ajax_Admin {
 
         $current_desc = isset($_POST['meta_description']) ? sanitize_textarea_field(wp_unslash($_POST['meta_description'])) : get_post_meta($post_id, '_gmb_ranker_seo_description', true);
 
+        try {
+            if (class_exists('GMB_Ranker_SEO_Research_Engine')) {
+                $args = array(
+                    'post_id'       => $post_id,
+                    'title'         => $current_title,
+                    'content'       => isset($_POST['content']) ? wp_unslash($_POST['content']) : $post->post_content,
+                    'focus_keyword' => $focus_kw,
+                    'country'       => isset($_POST['country']) ? sanitize_text_field(wp_unslash($_POST['country'])) : 'GLOBAL|google.com',
+                    'language'      => isset($_POST['language']) ? sanitize_text_field(wp_unslash($_POST['language'])) : 'en',
+                    'mode'          => isset($_POST['mode']) ? sanitize_text_field(wp_unslash($_POST['mode'])) : 'optimize',
+                );
+
+                $research_data = GMB_Ranker_SEO_Research_Engine::run_research_pipeline($args);
+                if (!empty($research_data) && is_array($research_data)) {
+                    wp_send_json_success($research_data);
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('GMB Ranker SEO Research Engine Error: ' . $e->getMessage());
+        }
+
         // Run canonical SEO audit via analysis service
         $audit_score = 0;
         $audit_results = array();

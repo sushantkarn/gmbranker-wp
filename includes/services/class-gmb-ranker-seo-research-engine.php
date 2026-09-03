@@ -359,8 +359,8 @@ class GMB_Ranker_SEO_Research_Engine {
         );
 
         $res = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages, 0.3);
-        if (!is_wp_error($res) && !empty($res['choices'][0]['message']['content'])) {
-            $raw = trim($res['choices'][0]['message']['content']);
+        if (!is_wp_error($res) && is_string($res) && !empty($res)) {
+            $raw = trim($res);
             $raw = preg_replace('/^```(?:json)?/i', '', $raw);
             $raw = preg_replace('/```$/', '', $raw);
             $raw = trim($raw);
