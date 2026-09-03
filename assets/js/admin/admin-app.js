@@ -904,7 +904,7 @@ function initGmbAdminApp() {
         description: "%excerpt%",
         url: "%url%",
         telephone: "%phone%",
-        medicalSpecialty: "ElderlyCare",
+        medicalSpecialty: "%specialty%",
         availableService: "%title%",
         address: {
           "@type": "PostalAddress",
@@ -920,7 +920,7 @@ function initGmbAdminApp() {
         "@context": "https://schema.org",
         "@type": "Service",
         name: "%title%",
-        serviceType: "Healthcare & Assistance",
+        serviceType: "%servicetype%",
         provider: {
           "@type": "Organization",
           name: "%sitename%",
