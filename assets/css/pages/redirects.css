@@ -722,16 +722,20 @@
 
 /* AI Auto-Fix Styling */
 .gmb-btn--ai, .gmb-btn-ai-404 {
+  height: 36px !important;
+  line-height: 34px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 0 16px !important;
+  border-radius: 6px !important;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
   color: #ffffff !important;
   border: none !important;
-  border-radius: 6px !important;
-  padding: 6px 14px !important;
-  font-size: 12.5px !important;
-  font-weight: 600 !important;
   cursor: pointer !important;
+  box-sizing: border-box !important;
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 6px !important;
   transition: all 0.15s ease-in-out !important;
   box-shadow: 0 2px 4px rgba(99, 102, 241, 0.25) !important;
@@ -743,15 +747,20 @@
 }
 
 .gmb-btn-ai-sm {
+  height: 30px !important;
+  line-height: 28px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 0 12px !important;
+  border-radius: 4px !important;
   background: #f3e8ff !important;
   color: #7e22ce !important;
   border: 1px solid #e9d5ff !important;
-  border-radius: 4px !important;
-  padding: 2px 8px !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
   cursor: pointer !important;
   margin-right: 6px !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
 }
 
 .gmb-btn-ai-sm:hover {

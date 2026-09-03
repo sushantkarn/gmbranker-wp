@@ -3714,6 +3714,7 @@ function initGmbAdminApp() {
 
   function openAiModal() {
     if (!aiModal) return;
+    aiModal.style.display = "flex";
     aiModal.classList.add("active");
     if (aiLoadingBox) aiLoadingBox.style.display = "flex";
     if (aiModalContent) aiModalContent.classList.add("gmb-hidden");
@@ -3722,7 +3723,10 @@ function initGmbAdminApp() {
   }
 
   function closeAiModal() {
-    if (aiModal) aiModal.classList.remove("active");
+    if (aiModal) {
+      aiModal.style.display = "none";
+      aiModal.classList.remove("active");
+    }
   }
 
   if (aiModalClose) aiModalClose.addEventListener("click", closeAiModal);
