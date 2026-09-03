@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) exit;
                     </div>
                 <?php else : ?>
                     <div class="rm-tab-content active" id="rm-tab-metadata">
-                        <form method="post" action="options.php">
+                        <form method="post" action="options.php" novalidate>
                             <?php settings_fields('gmb_ranker_titles_meta_group'); ?>
                     
                     <div class="gmb-sidebar-layout-container">

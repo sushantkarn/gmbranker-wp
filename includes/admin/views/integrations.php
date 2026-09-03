@@ -35,7 +35,7 @@ if (!defined('ABSPATH')) exit;
                         <p class="gmb-form-help">Connect your website with GMB Ranker Cloud Platform, Google Search Console, Google Analytics 4, IndexNow, free AI engines (OpenRouter, Groq, Ollama), and automation webhooks. <a href="https://gmbranker.org" target="_blank" class="gmb-help-link">Learn more</a>.</p>
                     </div>
 
-                    <form method="post" action="options.php">
+                    <form method="post" action="options.php" novalidate>
                         <?php settings_fields('gmb_ranker_integrations_group'); ?>
                     
                     <div class="gmb-integrations-stack">

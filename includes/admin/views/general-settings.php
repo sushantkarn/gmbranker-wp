@@ -13,7 +13,7 @@ $image_title_temp            = isset($image_title_temp) ? $image_title_temp : ge
 ?>
              <?php if ($current_page === 'gmb-ranker-settings') : ?>
             <div class="rm-tab-content active" id="rm-tab-local">
-                <form method="post" action="options.php">
+                <form method="post" action="options.php" novalidate>
                     <?php settings_fields('gmb_ranker_general_group'); ?>
                     
                     <div class="gmb-sidebar-layout-container">

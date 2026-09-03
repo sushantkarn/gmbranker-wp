@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) exit;
                     </div>
                 <?php else : ?>
                     <div class="rm-tab-content active" id="rm-tab-schema">
-                        <form method="post" action="options.php">
+                        <form method="post" action="options.php" novalidate>
                             <?php settings_fields('gmb_ranker_schema_group'); ?>
                             
                             <div class="gmb-sidebar-layout-container">

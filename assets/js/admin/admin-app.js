@@ -135,6 +135,46 @@ function initGmbAdminApp() {
 
   initGmbSidebarNavigation();
 
+  // Sync active subtab to _wp_http_referer and sessionStorage on form submit
+  document.querySelectorAll('form[action="options.php"]').forEach((form) => {
+    form.addEventListener("submit", function () {
+      const activeNav =
+        form.querySelector(".gmb-sidebar-nav-item.active") ||
+        document.querySelector(".gmb-sidebar-nav-item.active");
+      if (activeNav) {
+        const targetPanelId = activeNav.getAttribute("data-subtab");
+        if (targetPanelId) {
+          const cleanSub = targetPanelId
+            .replace("gmb-subtab-sitemap-", "")
+            .replace("gmb-subtab-schema-", "")
+            .replace("gmb-subtab-", "");
+          const pageParam =
+            new URLSearchParams(window.location.search).get("page") ||
+            "gmb-ranker-settings";
+          try {
+            sessionStorage.setItem("gmb_active_subtab_" + pageParam, cleanSub);
+          } catch (e) {}
+
+          const refInputs = form.querySelectorAll(
+            'input[name="_wp_http_referer"]',
+          );
+          refInputs.forEach((refInput) => {
+            try {
+              const refUrl = new URL(refInput.value, window.location.origin);
+              refUrl.searchParams.set("tab", cleanSub);
+              refInput.value = refUrl.pathname + refUrl.search;
+            } catch (err) {
+              const curUrl = new URL(window.location.href);
+              curUrl.searchParams.set("tab", cleanSub);
+              refInput.value = curUrl.pathname + curUrl.search;
+            }
+          });
+        }
+      }
+    });
+  });
+
+
   // URL Tab Auto-clicker trigger
   const urlParams = new URLSearchParams(window.location.search);
   const pageParam = urlParams.get("page");

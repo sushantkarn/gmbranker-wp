@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) exit;
                     </div>
                 <?php else : ?>
                     <div class="rm-tab-content active" id="rm-tab-sitemaps">
-                        <form method="post" action="options.php">
+                        <form method="post" action="options.php" novalidate>
                             <?php settings_fields('gmb_ranker_sitemaps_group'); ?>
                             
                             <div class="gmb-sidebar-layout-container">
