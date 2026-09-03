@@ -120,22 +120,29 @@
 
       // Apply Focus Keyword
       if (focusKw) {
-        $("#gmb_seo_focus_keyword").val(focusKw).trigger("input").trigger("change");
+        $("#gmb_seo_focus_keyword").val(focusKw).trigger("input").trigger("change").trigger("keyup");
       }
 
       // Apply SEO Title
       if (seoTitle) {
-        $("#gmb_seo_title").val(seoTitle).trigger("input").trigger("change");
+        $("#gmb_seo_title").val(seoTitle).trigger("input").trigger("change").trigger("keyup");
       }
 
       // Apply Meta Description
       if (metaDesc) {
-        $("#gmb_seo_description").val(metaDesc).trigger("input").trigger("change");
+        $("#gmb_seo_description").val(metaDesc).trigger("input").trigger("change").trigger("keyup");
       }
 
-      // Apply Slug
-      if (slug && $("#post_name").length) {
-        $("#post_name").val(slug);
+      // Apply Slug (Classic + Gutenberg)
+      if (slug) {
+        if ($("#post_name").length) {
+          $("#post_name").val(slug);
+        }
+        if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
+          try {
+            wp.data.dispatch("core/editor").editPost({ slug: slug });
+          } catch(err) {}
+        }
       }
 
       // Apply Schema
@@ -143,20 +150,61 @@
         $("#gmb_seo_schema_preset").val(schema).trigger("change");
       }
 
-      // Apply internal links into editor
+      // Smart In-Text & Contextual Internal Link Insertion (Classic + Gutenberg)
+      var linksToInsert = [];
       $(".gmb-ai-link-check:checked").each(function () {
         var anchor = $(this).attr("data-anchor");
         var url = $(this).attr("data-url");
         if (anchor && url) {
-          var linkTag = '<a href="' + url + '">' + anchor + '</a>';
-          if (typeof tinymce !== "undefined" && tinymce.get("content") && !tinymce.get("content").isHidden()) {
-            var bodyHtml = tinymce.get("content").getContent();
-            if (bodyHtml.indexOf(url) === -1) {
-              tinymce.get("content").setContent(bodyHtml + '<p>Learn more about <a href="' + url + '">' + anchor + '</a>.</p>');
-            }
-          }
+          linksToInsert.push({ anchor: anchor, url: url });
         }
       });
+
+      if (linksToInsert.length > 0) {
+        function escapeRegex(str) {
+          return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+        }
+
+        // TinyMCE / Classic Editor
+        if (typeof tinymce !== "undefined" && tinymce.get("content") && !tinymce.get("content").isHidden()) {
+          var bodyHtml = tinymce.get("content").getContent();
+          linksToInsert.forEach(function (l) {
+            if (bodyHtml.indexOf(l.url) === -1) {
+              var reg = new RegExp("\\b(" + escapeRegex(l.anchor) + ")\\b", "i");
+              if (reg.test(bodyHtml)) {
+                bodyHtml = bodyHtml.replace(reg, '<a href="' + l.url + '">$1</a>');
+              } else {
+                bodyHtml += '<p>Learn more about <a href="' + l.url + '">' + l.anchor + '</a>.</p>';
+              }
+            }
+          });
+          tinymce.get("content").setContent(bodyHtml);
+        } 
+        // Gutenberg Block Editor
+        else if (typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.dispatch && wp.data.select("core/editor")) {
+          try {
+            var gContent = wp.data.select("core/editor").getEditedPostAttribute("content") || "";
+            linksToInsert.forEach(function (l) {
+              if (gContent.indexOf(l.url) === -1) {
+                var reg = new RegExp("\\b(" + escapeRegex(l.anchor) + ")\\b", "i");
+                if (reg.test(gContent)) {
+                  gContent = gContent.replace(reg, '<a href="' + l.url + '">$1</a>');
+                } else {
+                  gContent += '<!-- wp:paragraph --><p>Learn more about <a href="' + l.url + '">' + l.anchor + '</a>.</p><!-- /wp:paragraph -->';
+                }
+              }
+            });
+            wp.data.dispatch("core/editor").editPost({ content: gContent });
+          } catch (err) {}
+        }
+      }
+
+      // Trigger Live SEO Analysis Recalculation
+      if (typeof window.gmbRunContentAnalysis === "function") {
+        window.gmbRunContentAnalysis();
+      } else {
+        $("#gmb_seo_focus_keyword").trigger("keyup");
+      }
 
       $("#gmb-ai-post-seo-modal").css("display", "none").removeClass("active");
       alert("✨ AI Recommendations successfully applied to page SEO settings!");
