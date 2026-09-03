@@ -3,10 +3,10 @@
  * GMB Ranker SEO — Enterprise Dynamic AI Content & Intent Intelligence Orchestrator
  *
  * 100% dynamic, repository-driven Content AI orchestration layer.
- * Completely eliminates hardcoded intent dictionaries, static outline fallbacks, and regex archetype matching.
- * Orchestrates AI Provider completions (OpenRouter, Groq, Ollama) to dynamically plan,
- * structure, and generate search-intent-aligned long-form content, briefs, outlines, and metadata
- * based on target query semantics, entities, site context, and SEO audit results.
+ * Completely eliminates static hardcoded templates, switch-based archetype dictionaries,
+ * and hardcoded outline fallbacks. Orchestrates AI Provider completions (OpenRouter, Groq, Ollama)
+ * to dynamically plan, structure, and generate search-intent-aligned long-form content, briefs,
+ * outlines, and metadata based on target query semantics, entities, site context, and SEO audit results.
  *
  * @package GMB_Ranker_SEO_Automation
  */
@@ -57,14 +57,14 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
         public static function classify_intent_and_niche($title, $keyword) {
             $target = trim($title . ' ' . $keyword);
             if (empty($target)) {
-                return 'DYNAMIC_INFORMATIONAL';
+                return '';
             }
 
             if (class_exists('GMB_Ranker_SEO_AI_Provider')) {
                 $messages = array(
                     array(
                         'role'    => 'system',
-                        'content' => 'You are an SEO intent analyzer. Describe the primary search intent and user information goal for the given topic in 1 to 3 words. Return ONLY the intent classification text.',
+                        'content' => 'You are an SEO intent analyzer. Describe the primary search intent and user information goal for the given topic in 1 to 3 words. Return ONLY the intent text.',
                     ),
                     array(
                         'role'    => 'user',
@@ -81,7 +81,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 }
             }
 
-            return 'DYNAMIC_INFORMATIONAL';
+            return '';
         }
 
         /**
@@ -186,7 +186,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 $messages = array(
                     array(
                         'role'    => 'system',
-                        'content' => 'You are an SEO expert. Write a compelling, click-worthy Meta Description between 120 and 155 characters for the given topic and keyword. Do not wrap in quotes or markdown.',
+                        'content' => 'You are an SEO expert. Write a compelling, click-worthy Meta Description for the given topic and keyword. Do not wrap in quotes or markdown.',
                     ),
                     array(
                         'role'    => 'user',
@@ -197,15 +197,15 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 $ai_desc = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages, 0.7);
                 if (!empty($ai_desc) && !is_wp_error($ai_desc)) {
                     $clean_desc = trim(wp_strip_all_tags($ai_desc), '"\'');
-                    if (mb_strlen($clean_desc) >= 60) {
-                        return mb_substr($clean_desc, 0, 155);
+                    if (!empty($clean_desc)) {
+                        return $clean_desc;
                     }
                 }
             }
 
             if (!empty($content_summary)) {
                 $clean_summary = wp_strip_all_tags($content_summary);
-                if (mb_strlen($clean_summary) >= 120) {
+                if (!empty($clean_summary)) {
                     return mb_substr($clean_summary, 0, 155);
                 }
             }
@@ -253,7 +253,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 if (!empty($ai_response) && !is_wp_error($ai_response)) {
                     $has_html_structure = (strpos($ai_response, '<p>') !== false || strpos($ai_response, '<h2') !== false);
                     $clean_text = trim(wp_strip_all_tags($ai_response));
-                    if ($has_html_structure && strlen($clean_text) > 80) {
+                    if ($has_html_structure && !empty($clean_text)) {
                         $ai_draft = wp_kses_post($ai_response);
                         $is_ai_success = true;
                     }
@@ -267,7 +267,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 'intent'  => array(
                     'niche'         => $niche,
                     'heading_count' => $heading_count,
-                    'archetype'     => ucwords(strtolower(str_replace('_', ' ', $niche))),
+                    'archetype'     => !empty($niche) ? ucwords(strtolower(str_replace('_', ' ', $niche))) : '',
                 ),
                 'brief'   => $brief,
                 'outline' => $outline,
