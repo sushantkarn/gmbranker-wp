@@ -42,6 +42,7 @@ class GMB_Ranker_SEO_Ajax_Admin {
         add_action('wp_ajax_gmb_apply_ai_redirects', array($this, 'ajax_apply_ai_redirects'));
         add_action('wp_ajax_gmb_test_outbound_webhook', array($this, 'ajax_test_outbound_webhook'));
         add_action('wp_ajax_gmb_ai_analyze_and_fix_post_seo', array($this, 'ajax_ai_analyze_and_fix_post_seo'));
+        add_action('wp_ajax_gmb_quick_save_ai_seo_fields', array($this, 'ajax_quick_save_ai_seo_fields'));
     }
 
     public function ajax_auto_fix_display_names() {
@@ -1524,5 +1525,57 @@ class GMB_Ranker_SEO_Ajax_Admin {
         }
 
         wp_send_json_success($ai_data);
+    }
+
+    /**
+     * Instantly persist applied AI SEO fields directly to database
+     */
+    public function ajax_quick_save_ai_seo_fields() {
+        $this->enforce_ajax_csrf_protection();
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+        if ($post_id <= 0) {
+            wp_send_json_error('Invalid Post ID');
+        }
+
+        if (isset($_POST['focus_keyword'])) {
+            $focus = sanitize_text_field(wp_unslash($_POST['focus_keyword']));
+            update_post_meta($post_id, '_gmb_ranker_focus_keyword', $focus);
+            update_post_meta($post_id, '_yoast_wpseo_focuskw', $focus);
+            update_post_meta($post_id, 'rank_math_focus_keyword', $focus);
+        }
+
+        if (isset($_POST['seo_title'])) {
+            $title = sanitize_text_field(wp_unslash($_POST['seo_title']));
+            update_post_meta($post_id, '_gmb_ranker_seo_title', $title);
+            update_post_meta($post_id, '_yoast_wpseo_title', $title);
+            update_post_meta($post_id, 'rank_math_title', $title);
+        }
+
+        if (isset($_POST['meta_description'])) {
+            $desc = sanitize_textarea_field(wp_unslash($_POST['meta_description']));
+            update_post_meta($post_id, '_gmb_ranker_seo_description', $desc);
+            update_post_meta($post_id, '_yoast_wpseo_metadesc', $desc);
+            update_post_meta($post_id, 'rank_math_description', $desc);
+        }
+
+        if (isset($_POST['slug']) && !empty($_POST['slug'])) {
+            $slug = sanitize_title(wp_unslash($_POST['slug']));
+            wp_update_post(array(
+                'ID'        => $post_id,
+                'post_name' => $slug,
+            ));
+        }
+
+        if (isset($_POST['schema_type']) && !empty($_POST['schema_type'])) {
+            $schema = sanitize_text_field(wp_unslash($_POST['schema_type']));
+            update_post_meta($post_id, '_gmb_ranker_active_schemas', array($schema));
+            update_post_meta($post_id, '_gmb_ranker_schema_type', $schema);
+        }
+
+        wp_send_json_success(array('message' => 'Post SEO saved directly to database!'));
     }
 }

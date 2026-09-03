@@ -198,42 +198,80 @@
       }
 
       // Apply SEO Title
+      var appliedTitle = "";
       if (applyTitle) {
-        var seoTitle = $("#gmb-ai-input-title").val().trim();
-        if (seoTitle) {
-          $("#gmb_seo_title").val(seoTitle).trigger("input").trigger("change").trigger("keyup");
+        appliedTitle = $("#gmb-ai-input-title").val().trim();
+        if (appliedTitle) {
+          $("#gmb_seo_title_input").val(appliedTitle).trigger("input").trigger("change").trigger("keyup");
         }
       }
 
       // Apply Meta Description
+      var appliedDesc = "";
       if (applyDesc) {
-        var metaDesc = $("#gmb-ai-input-desc").val().trim();
-        if (metaDesc) {
-          $("#gmb_seo_description").val(metaDesc).trigger("input").trigger("change").trigger("keyup");
+        appliedDesc = $("#gmb-ai-input-desc").val().trim();
+        if (appliedDesc) {
+          $("#gmb_seo_desc_input").val(appliedDesc).trigger("input").trigger("change").trigger("keyup");
         }
       }
 
       // Apply Slug
+      var appliedSlug = "";
       if (applySlug) {
-        var slug = $("#gmb-ai-input-slug").val().trim();
-        if (slug) {
+        appliedSlug = $("#gmb-ai-input-slug").val().trim();
+        if (appliedSlug) {
           if ($("#post_name").length) {
-            $("#post_name").val(slug);
+            $("#post_name").val(appliedSlug);
+          }
+          if ($("#editable-post-name").length) {
+            $("#editable-post-name").text(appliedSlug);
           }
           if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
             try {
-              wp.data.dispatch("core/editor").editPost({ slug: slug });
+              wp.data.dispatch("core/editor").editPost({ slug: appliedSlug });
             } catch(err) {}
           }
         }
       }
 
       // Apply Schema
+      var appliedSchema = "";
       if (applySchema) {
-        var schema = $("#gmb-ai-input-schema").val();
-        if (schema && $("#gmb_seo_schema_preset").length) {
-          $("#gmb_seo_schema_preset").val(schema).trigger("change");
+        appliedSchema = $("#gmb-ai-input-schema").val();
+        if (appliedSchema) {
+          if ($("#gmb_seo_active_schemas").length) {
+            $("#gmb_seo_active_schemas").val(appliedSchema);
+          }
+          var $schemaList = $("#gmb-schema-in-use-list");
+          if ($schemaList.length) {
+            $schemaList.html(
+              '<div class="gmb-schema-active-card" data-schema-active="' + appliedSchema + '">' +
+                '<div class="gmb-schema-active-info">' +
+                  '<strong class="gmb-schema-active-title">' + appliedSchema + '</strong>' +
+                '</div>' +
+              '</div>'
+            );
+          }
         }
+      }
+
+      // Real-time Background DB Persistence (guarantees DB update even without post save)
+      var postId = $("#post_ID").val() || 0;
+      if (postId > 0) {
+        $.ajax({
+          url: gmbMetaboxData.ajaxUrl,
+          type: "POST",
+          data: {
+            action: "gmb_quick_save_ai_seo_fields",
+            nonce: gmbMetaboxData.nonce,
+            post_id: postId,
+            focus_keyword: applyFocus ? $("#gmb-ai-input-focus").val().trim() : "",
+            seo_title: appliedTitle,
+            meta_description: appliedDesc,
+            slug: appliedSlug,
+            schema_type: appliedSchema
+          }
+        });
       }
 
       // Apply checked internal & external links
