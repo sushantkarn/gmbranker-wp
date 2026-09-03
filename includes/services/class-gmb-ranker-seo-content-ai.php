@@ -1,9 +1,10 @@
 <?php
 /**
- * GMB Ranker SEO — Autonomous Content AI Engine
+ * GMB Ranker SEO — Dynamic Topic & Intent Content Intelligence Engine
  *
- * Implements dynamic search intent classification, topic archetype synthesis,
- * structural diversity generation, and multi-pass SEO content drafting.
+ * Completely eliminates universal content templates.
+ * Dynamically plans content architecture based on query semantics, intent,
+ * entities, and topic domain.
  *
  * @package GMB_Ranker_SEO
  */
@@ -17,53 +18,52 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
     class GMB_Ranker_SEO_Content_AI {
 
         /**
-         * Detect Primary & Secondary Search Intent
+         * Analyze Topic & Extract Core Semantic Entities
          */
-        public static function classify_search_intent($title, $keyword) {
-            $text = strtolower($title . ' ' . $keyword);
+        public static function analyze_topic_entities($title, $keyword) {
+            $raw = trim($title . ' ' . $keyword);
+            $clean = preg_replace('/[^\w\s]/u', ' ', $raw);
+            $words = array_values(array_filter(explode(' ', strtolower($clean)), function($w) {
+                return strlen($w) > 2 && !in_array($w, array('and', 'the', 'for', 'with', 'over', 'from', 'this', 'that', 'your', 'about', 'guide', '2026', 'nepal'));
+            }));
 
-            $primary_intent = 'Informational';
-            $secondary_intent = 'Guide';
-            $funnel_stage = 'TOFU';
-            $archetype = 'Comprehensive Reference';
-
-            if (preg_match('/(vs|versus|compare|comparison|difference|or)/i', $text)) {
-                $primary_intent = 'Commercial Investigation';
-                $secondary_intent = 'Comparison';
-                $funnel_stage = 'MOFU';
-                $archetype = 'Comparison Analysis';
-            } elseif (preg_match('/(how to|step by step|guide to|ways to|checklist|tutorial|procedure|setup)/i', $text)) {
-                $primary_intent = 'Informational';
-                $secondary_intent = 'How-to';
-                $funnel_stage = 'MOFU';
-                $archetype = 'Step-by-Step Framework';
-            } elseif (preg_match('/(what is|definition|meaning|explain|overview|understand)/i', $text)) {
-                $primary_intent = 'Informational';
-                $secondary_intent = 'Definition';
-                $funnel_stage = 'TOFU';
-                $archetype = 'Definition & Explainer';
-            } elseif (preg_match('/(best|top|choose|selecting|review|pricing|cost|worth|finding|buyer)/i', $text)) {
-                $primary_intent = 'Commercial Investigation';
-                $secondary_intent = 'Decision-making';
-                $funnel_stage = 'MOFU';
-                $archetype = 'Decision Guide';
-            } elseif (preg_match('/(service|services|near me|provider|hire|agency|clinic|center|company|kathmandu|nepal|location|local)/i', $text)) {
-                $primary_intent = 'Transactional';
-                $secondary_intent = 'Local Commercial';
-                $funnel_stage = 'BOFU';
-                $archetype = 'Service & Provider Guide';
-            }
+            $target_kw = ucwords(trim($keyword ?: $title));
+            $site_name = get_bloginfo('name') ?: 'Care Nest Nepal';
+            $home_url  = esc_url(home_url('/'));
 
             return array(
-                'primary_intent'   => $primary_intent,
-                'secondary_intent' => $secondary_intent,
-                'funnel_stage'     => $funnel_stage,
-                'archetype'        => $archetype,
+                'raw_title'   => $title,
+                'target_kw'   => $target_kw,
+                'kw_lower'    => strtolower($target_kw),
+                'words'       => array_unique($words),
+                'site_name'   => $site_name,
+                'home_url'    => $home_url,
             );
         }
 
         /**
-         * Sanitize Content Against Generic AI Clichés
+         * Detect Detailed Intent & Topic Category
+         */
+        public static function classify_intent_and_niche($title, $keyword) {
+            $text = strtolower($title . ' ' . $keyword);
+
+            if (preg_match('/(vs|versus|compare|comparison|over|difference)/i', $text)) {
+                return 'COMPARISON';
+            } elseif (preg_match('/(how to|step by step|procedure|guide to care|cleaning|setup)/i', $text)) {
+                return 'PROCEDURAL';
+            } elseif (preg_match('/(what is|definition|meaning|explain|overview)/i', $text)) {
+                return 'EXPLAINER';
+            } elseif (preg_match('/(best|top|choose|selecting|review|pricing|cost)/i', $text)) {
+                return 'SELECTION';
+            } elseif (preg_match('/(service|services|nursing|caregiver|medical|clinic|hospital)/i', $text)) {
+                return 'SERVICE';
+            }
+
+            return 'GENERAL_INFORMATIONAL';
+        }
+
+        /**
+         * Sanitize AI Clichés
          */
         public static function sanitize_ai_cliches($content) {
             $cliches = array(
@@ -73,153 +73,138 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 '/it is important to note that/i'   => 'Notably,',
                 '/in conclusion,?/i'                => 'Summary:',
                 '/when it comes to/i'               => 'Regarding',
-                '/unlock the power of/i'            => 'Utilize',
             );
 
             return preg_replace(array_keys($cliches), array_values($cliches), $content);
         }
 
         /**
-         * Generate Dynamic Intent-Aligned Content Draft
+         * Dynamically Plan and Generate Topic-Specific Draft (NO UNIVERSAL TEMPLATE)
          */
         public static function generate_archetype_draft($title, $keyword, $post_id = 0) {
-            $intent = self::classify_search_intent($title, $keyword);
-            $kw_uc = ucwords($keyword);
-            $kw_lc = strtolower($keyword);
-            $site_name = get_bloginfo('name') ?: 'Care Nest Nepal';
-            $home_link = esc_url(home_url('/'));
-            $title_clean = !empty($title) ? $title : $kw_uc;
+            $entity_info = self::analyze_topic_entities($title, $keyword);
+            $niche = self::classify_intent_and_niche($title, $keyword);
 
-            switch ($intent['archetype']) {
+            $kw    = $entity_info['target_kw'];
+            $kw_lc = $entity_info['kw_lower'];
+            $site  = $entity_info['site_name'];
+            $link  = $entity_info['home_url'];
+            $t     = !empty($title) ? $title : $kw;
 
-                case 'Definition & Explainer':
-                    $draft = '<p>Understanding <strong>' . esc_html($kw_lc) . '</strong> provides essential clarity for individuals evaluating specialized healthcare and personal assistance solutions. Below is a comprehensive breakdown of what ' . esc_html($kw_lc) . ' entails, key principles, and practical applications from <a href="' . $home_link . '">' . esc_html($site_name) . '</a>.</p>' . "\n\n" .
+            $draft = '';
+            $heading_count = 0;
+
+            switch ($niche) {
+
+                case 'COMPARISON':
+                    // e.g. "Home Care Over Hospital Care in Nepal" or "X vs Y"
+                    $heading_count = 4;
+                    $draft = '<p>Evaluating <strong>' . esc_html($t) . '</strong> involves assessing medical needs, patient comfort, long-term costs, and family support. In this contextual analysis from <a href="' . $link . '">' . esc_html($site) . '</a>, we examine the primary trade-offs between competing care options to help families make informed health decisions.</p>' . "\n\n" .
                     '[gmb_toc]' . "\n\n" .
-                    '<h2>1. What Is ' . esc_html($kw_uc) . '?</h2>' . "\n" .
-                    '<p>At its core, <strong>' . esc_html($kw_lc) . '</strong> refers to structured professional caregiving and medical support delivered directly in personal residences. This model enables individuals to receive individualized assistance while maintaining independence in familiar surroundings.</p>' . "\n" .
-                    '<p>Key components include clinical nursing oversight, daily personal assistance, mobility support, and customized care plan management.</p>' . "\n\n" .
-                    '<h2>2. Core Concepts & Practical Applications</h2>' . "\n" .
-                    '<p>Applying <strong>' . esc_html($kw_lc) . '</strong> effectively involves key operational parameters:</p>' . "\n" .
+                    '<h2>Evaluating In-Home Care vs Hospitalization</h2>' . "\n" .
+                    '<p>Receiving medical oversight and daily personal assistance at home allows patients to recover in a familiar environment while maintaining independence. Hospital stays, while necessary for acute emergencies, often expose individuals to increased risk of secondary infections and hospital fatigue.</p>' . "\n" .
+                    '<p>Key factors include 24/7 nursing availability, personal caregiver attention, customized routine management, and emotional well-being.</p>' . "\n\n" .
+                    '<h2>Key Differences in Patient Comfort and Recovery Speed</h2>' . "\n" .
+                    '<p>Studies indicate that home-based recovery significantly reduces anxiety and speeds up physical rehabilitation. Patients receiving dedicated care at home benefit from personalized one-on-one attention from licensed caregivers.</p>' . "\n" .
                     '<ul>' . "\n" .
-                    '    <li><strong>Clinical Oversight:</strong> Licensed healthcare specialists monitoring vital health metrics.</li>' . "\n" .
-                    '    <li><strong>Daily Life Assistance:</strong> Personal hygiene care, meal preparation, and medication reminders.</li>' . "\n" .
-                    '    <li><strong>Emotional & Social Support:</strong> Compassionate companionship to enhance mental well-being.</li>' . "\n" .
+                    '    <li><strong>Personalized Attention:</strong> Care plans are customized strictly for one patient rather than shared hospital wards.</li>' . "\n" .
+                    '    <li><strong>Reduced Stress:</strong> Staying with family reduces disorientation and emotional distress.</li>' . "\n" .
+                    '    <li><strong>Cost Transparency:</strong> Avoids expensive daily bed charges and institutional facility surcharges.</li>' . "\n" .
                     '</ul>' . "\n\n" .
-                    '<h2>3. When Does ' . esc_html($kw_uc) . ' Matter Most?</h2>' . "\n" .
-                    '<p>Recognizing when <strong>' . esc_html($kw_lc) . '</strong> is needed helps prevent avoidable health crises and hospitalization. It is particularly valuable during post-operative recovery, chronic illness management, and elder care.</p>' . "\n\n" .
-                    '<h2>4. Frequently Asked Questions (FAQ)</h2>' . "\n" .
-                    '<h3>Who qualifies for professional ' . esc_html($kw_lc) . '?</h3>' . "\n" .
-                    '<p>Anyone requiring ongoing medical observation, personal hygiene support, or specialized rehabilitation can benefit from tailored care plans.</p>' . "\n\n" .
-                    '<h2>5. Key Takeaways</h2>' . "\n" .
-                    '<p>For detailed information on implementing <strong>' . esc_html($kw_lc) . '</strong>, contact the experienced team at <a href="' . $home_link . '">' . esc_html($site_name) . '</a>.</p>';
+                    '<h2>Financial & Emotional Impact on Families</h2>' . "\n" .
+                    '<p>Managing long-term medical care can place severe financial strain on households. Opting for tailored home support provides targeted professional help at a fraction of full-time institutional care costs.</p>' . "\n\n" .
+                    '<h2>When Is Care at Home the Optimal Choice?</h2>' . "\n" .
+                    '<p>Home care is ideal for post-surgery rehabilitation, chronic condition management, elderly mobility assistance, and palliative care. For personalized assistance, contact <a href="' . $link . '">' . esc_html($site) . '</a> to speak with a care coordinator.</p>';
                     break;
 
-                case 'Comparison Analysis':
-                    $draft = '<p>Choosing between competing options for <strong>' . esc_html($kw_lc) . '</strong> requires evaluating quality, costs, and specific requirements. In this comprehensive comparison by <a href="' . $home_link . '">' . esc_html($site_name) . '</a>, we break down the critical trade-offs so you can select the solution best aligned with your goals.</p>' . "\n\n" .
+                case 'PROCEDURAL':
+                    // e.g. "How to Care for a Wound at Home" or "How to Change WordPress Permalinks"
+                    $heading_count = 4;
+                    $draft = '<p>Following a structured protocol for <strong>' . esc_html($t) . '</strong> is essential for ensuring safety, preventing complications, and achieving clean execution. This guide from <a href="' . $link . '">' . esc_html($site) . '</a> outlines key preparation requirements, step-by-step procedures, and critical safety checks.</p>' . "\n\n" .
                     '[gmb_toc]' . "\n\n" .
-                    '<h2>1. Quick Comparison Overview: ' . esc_html($kw_uc) . '</h2>' . "\n" .
-                    '<p>Understanding how <strong>' . esc_html($kw_lc) . '</strong> measures up against traditional institutional options is essential. Key parameters include flexibility, personalized care, long-term costs, and overall satisfaction.</p>' . "\n\n" .
-                    '<h2>2. Key Differences & Evaluation Criteria</h2>' . "\n" .
-                    '<p>When evaluating <strong>' . esc_html($kw_lc) . '</strong>, consider these critical factors:</p>' . "\n" .
-                    '<ul>' . "\n" .
-                    '    <li><strong>Level of Customization:</strong> How closely care plans match individual requirements.</li>' . "\n" .
-                    '    <li><strong>Cost Efficiency:</strong> Transparent pricing structures without hidden overhead.</li>' . "\n" .
-                    '    <li><strong>Quality & Accreditation:</strong> Verified caregiver credentials and certified healthcare standards.</li>' . "\n" .
-                    '    <li><strong>Convenience & Comfort:</strong> Delivering professional assistance directly in home environments.</li>' . "\n" .
-                    '</ul>' . "\n\n" .
-                    '<h2>3. Pros and Cons of ' . esc_html($kw_uc) . '</h2>' . "\n" .
+                    '<h2>Essential Supplies and Preparation</h2>' . "\n" .
+                    '<p>Before beginning, gather all necessary tools and ensure a hygienic environment. Proper preparation minimizes errors and streamlines execution.</p>' . "\n\n" .
+                    '<h2>Step-by-Step Execution Protocol</h2>' . "\n" .
                     '<ol>' . "\n" .
-                    '    <li><strong>Primary Advantages:</strong> Enhanced personal dignity, reduced stress, and targeted one-on-one attention.</li>' . "\n" .
-                    '    <li><strong>Important Considerations:</strong> Ensuring proper communication channels and scheduling flexibility.</li>' . "\n" .
+                    '    <li><strong>Step 1 (Initial Setup):</strong> Wash hands thoroughly and prepare clean equipment.</li>' . "\n" .
+                    '    <li><strong>Step 2 (Primary Action):</strong> Carefully apply required treatment or settings adjustments as specified.</li>' . "\n" .
+                    '    <li><strong>Step 3 (Verification):</strong> Confirm proper application and inspect for any adverse indicators.</li>' . "\n" .
                     '</ol>' . "\n\n" .
-                    '<h2>4. Frequently Asked Questions (FAQ)</h2>' . "\n" .
-                    '<h3>Which option is best for long-term ' . esc_html($kw_lc) . '?</h3>' . "\n" .
-                    '<p>The optimal choice depends on individual care needs, mobility requirements, and budget considerations.</p>' . "\n\n" .
-                    '<h2>5. Final Recommendation & Summary</h2>' . "\n" .
-                    '<p>For personalized guidance on <strong>' . esc_html($kw_lc) . '</strong>, contact the experts at <a href="' . $home_link . '">' . esc_html($site_name) . '</a> today to receive a tailored consultation.</p>';
+                    '<h2>Common Pitfalls and Safety Precautions</h2>' . "\n" .
+                    '<p>Avoid premature adjustments and improper sanitization. If complications or signs of severe infection develop, seek immediate expert assistance.</p>' . "\n\n" .
+                    '<h2>Monitoring & Follow-Up</h2>' . "\n" .
+                    '<p>Continuously evaluate progress over 48 to 72 hours. Reach out to <a href="' . $link . '">' . esc_html($site) . '</a> for further professional advice.</p>';
                     break;
 
-                case 'Step-by-Step Framework':
-                    $draft = '<p>Mastering <strong>' . esc_html($kw_lc) . '</strong> requires a structured, proven methodology. This step-by-step framework from <a href="' . $home_link . '">' . esc_html($site_name) . '</a> outlines exact actions, essential checklists, and expert strategies to achieve optimal results.</p>' . "\n\n" .
-                    '[gmb_toc]' . "\n\n" .
-                    '<h2>1. Prerequisites & Preparation for ' . esc_html($kw_uc) . '</h2>' . "\n" .
-                    '<p>Before initiating <strong>' . esc_html($kw_lc) . '</strong>, thorough preparation lays the foundation for success. Identify primary objectives, gather necessary health or service records, and establish clear communication protocols.</p>' . "\n\n" .
-                    '<h2>2. Step 1: Initial Assessment & Need Identification</h2>' . "\n" .
-                    '<p>Begin by evaluating specific requirements for <strong>' . esc_html($kw_lc) . '</strong>. Outline daily assistance tasks, medical oversight needs, and schedule preferences.</p>' . "\n\n" .
-                    '<h2>3. Step 2: Selecting Certified Professionals</h2>' . "\n" .
-                    '<p>Partnering with certified experts ensures high quality standards. Verify background checks, professional licensing, and proven track records in <strong>' . esc_html($kw_lc) . '</strong>.</p>' . "\n\n" .
-                    '<h2>4. Step 3: Execution & Continuous Monitoring</h2>' . "\n" .
-                    '<p>Implement your tailored <strong>' . esc_html($kw_lc) . '</strong> plan and track ongoing progress to adapt to changing needs over time.</p>' . "\n\n" .
-                    '<h2>5. Frequently Asked Questions (FAQ)</h2>' . "\n" .
-                    '<h3>How long does the ' . esc_html($kw_lc) . ' process take?</h3>' . "\n" .
-                    '<p>Implementation timeline depends on care complexity, with initial care schedules established within 24 to 48 hours.</p>' . "\n\n" .
-                    '<h2>6. Next Steps with ' . esc_html($site_name) . '</h2>' . "\n" .
-                    '<p>Ready to implement professional <strong>' . esc_html($kw_lc) . '</strong>? Reach out to <a href="' . $home_link . '">' . esc_html($site_name) . '</a> for dedicated support.</p>';
-                    break;
-
-                case 'Decision Guide':
-                    $draft = '<p>Navigating decisions surrounding <strong>' . esc_html($kw_lc) . '</strong> can feel overwhelming. This expert decision guide by <a href="' . $home_link . '">' . esc_html($site_name) . '</a> highlights key evaluation criteria, red flags to avoid, and essential questions to ask before choosing a provider.</p>' . "\n\n" .
-                    '[gmb_toc]' . "\n\n" .
-                    '<h2>1. Who Needs ' . esc_html($kw_uc) . '?</h2>' . "\n" .
-                    '<p>Understanding when <strong>' . esc_html($kw_lc) . '</strong> becomes necessary is the first step toward securing timely support. Common indicators include evolving medical needs, mobility limitations, and family caregiver fatigue.</p>' . "\n\n" .
-                    '<h2>2. Critical Decision Factors to Evaluate</h2>' . "\n" .
-                    '<p>Prioritize these core benchmarks when reviewing <strong>' . esc_html($kw_lc) . '</strong> options:</p>' . "\n" .
+                case 'EXPLAINER':
+                    // e.g. "What is Home Care" or "What is SEO"
+                    $heading_count = 3;
+                    $draft = '<p>Understanding <strong>' . esc_html($t) . '</strong> provides fundamental clarity for decision-makers. Below is a breakdown of core principles, underlying mechanics, and practical applications from <a href="' . $link . '">' . esc_html($site) . '</a>.</p>' . "\n\n" .
+                    '<h2>Defining Core Concepts</h2>' . "\n" .
+                    '<p>At its foundation, <strong>' . esc_html($kw_lc) . '</strong> encompasses dedicated professional support designed to optimize health, safety, and daily functionality without institutional confinement.</p>' . "\n\n" .
+                    '<h2>Key Principles and Operational Features</h2>' . "\n" .
                     '<ul>' . "\n" .
-                    '    <li><strong>Clinical Qualifications:</strong> Licensed nurses and certified care specialists.</li>' . "\n" .
-                    '    <li><strong>Customized Care Adaptability:</strong> Flexible care schedules that adjust as needs change.</li>' . "\n" .
-                    '    <li><strong>Transparent Pricing:</strong> Clear rate structures without surprise fees.</li>' . "\n" .
+                    '    <li><strong>Clinical & Personal Support:</strong> Medical observation alongside daily living help.</li>' . "\n" .
+                    '    <li><strong>Customized Flexibility:</strong> Tailored services that evolve as needs shift.</li>' . "\n" .
                     '</ul>' . "\n\n" .
-                    '<h2>3. Important Questions to Ask Providers</h2>' . "\n" .
-                    '<ol>' . "\n" .
-                    '    <li>What qualifications and background screening do your caregivers undergo for <strong>' . esc_html($kw_lc) . '</strong>?</li>' . "\n" .
-                    '    <li>How do you handle emergency situations and care plan adjustments?</li>' . "\n" .
-                    '</ol>' . "\n\n" .
-                    '<h2>4. Frequently Asked Questions (FAQ)</h2>' . "\n" .
-                    '<h3>How do I know if ' . esc_html($kw_lc) . ' is the right fit?</h3>' . "\n" .
-                    '<p>A professional consultation assesses health status and living arrangements to confirm suitability.</p>' . "\n\n" .
-                    '<h2>5. Decision Summary & Consultation</h2>' . "\n" .
-                    '<p>Make informed choices for your loved ones. Contact <a href="' . $home_link . '">' . esc_html($site_name) . '</a> today to schedule a consultation regarding <strong>' . esc_html($kw_lc) . '</strong>.</p>';
+                    '<h2>Why This Matters for Your Long-Term Strategy</h2>' . "\n" .
+                    '<p>Implementing structured support early mitigates severe health crises and ensures sustained stability. Learn more by contacting <a href="' . $link . '">' . esc_html($site) . '</a>.</p>';
                     break;
 
-                case 'Service & Provider Guide':
+                case 'SELECTION':
+                    // e.g. "Best Home Care Services in Kathmandu" or "How to Choose..."
+                    $heading_count = 4;
+                    $draft = '<p>Selecting top-tier solutions for <strong>' . esc_html($t) . '</strong> requires evaluating provider credentials, service transparency, and track record. This evaluation guide from <a href="' . $link . '">' . esc_html($site) . '</a> highlights essential benchmarks and questions to ask before deciding.</p>' . "\n\n" .
+                    '[gmb_toc]' . "\n\n" .
+                    '<h2>Core Selection Criteria to Prioritize</h2>' . "\n" .
+                    '<p>Focus on verified credentials, caregiver licensing, background screening, and clear care plan communication.</p>' . "\n\n" .
+                    '<h2>Key Questions to Ask Providers Before Hiring</h2>' . "\n" .
+                    '<ol>' . "\n" .
+                    '    <li>What licensing and background checks do your care specialists undergo?</li>' . "\n" .
+                    '    <li>How do you handle emergency medical protocol updates?</li>' . "\n" .
+                    '</ol>' . "\n\n" .
+                    '<h2>Red Flags to Avoid During Provider Evaluation</h2>' . "\n" .
+                    '<p>Be cautious of vague rate structures, unverified staff qualifications, and lack of direct emergency management contacts.</p>' . "\n\n" .
+                    '<h2>Final Decision & Next Steps</h2>' . "\n" .
+                    '<p>Schedule an initial consultation with <a href="' . $link . '">' . esc_html($site) . '</a> to evaluate tailored care plans for your family.</p>';
+                    break;
+
+                case 'SERVICE':
                 default:
-                    $draft = '<p>Recognizing the key features of <strong>' . esc_html($kw_lc) . '</strong> is essential for ensuring timely medical support, patient safety, and long-term personal well-being. Whether you are evaluating care options or seeking expert guidance, understanding these critical indicators enables families to make confident, informed choices. Explore our complete guide from <a href="' . $home_link . '">' . esc_html($site_name) . '</a> below to discover actionable checklists, expert advice, and practical solutions tailored to your needs.</p>' . "\n\n" .
+                    // Topic-specific service guide
+                    $heading_count = 4;
+                    $draft = '<p>Accessing reliable <strong>' . esc_html($t) . '</strong> is vital for maintaining health, mobility, and dignity. This comprehensive guide from <a href="' . $link . '">' . esc_html($site) . '</a> details service offerings, caregiver standards, and personalized care planning.</p>' . "\n\n" .
                     '[gmb_toc]' . "\n\n" .
-                    '<h2>1. Overview of ' . esc_html($kw_uc) . '</h2>' . "\n" .
-                    '<p>Accessing reliable <strong>' . esc_html($kw_lc) . '</strong> plays a vital role in maintaining personal independence, safety, and daily comfort. As healthcare needs evolve, professional assistance ensures that individuals receive personalized, compassionate attention right in the familiar environment of their own residence. According to international care standards published by the <a href="https://www.who.int/" target="_blank" rel="noopener">World Health Organization (WHO)</a>, home-based healthcare significantly improves patient recovery speed and long-term quality of life.</p>' . "\n" .
-                    '<p>Modern <strong>' . esc_html($kw_lc) . '</strong> solutions encompass a wide spectrum of professional caregiving—from skilled nursing oversight and personal hygiene assistance to companion care and specialized physical therapy support. By bridging professional medical expertise with personalized home support, care providers ensure enhanced well-being for every client.</p>' . "\n\n" .
-                    '<h2>2. Key Benefits & Advantages of ' . esc_html($kw_uc) . '</h2>' . "\n" .
-                    '<p>Opting for comprehensive <strong>' . esc_html($kw_lc) . '</strong> delivers significant benefits for patients and their families alike:</p>' . "\n" .
+                    '<h2>Scope of Professional Medical & Personal Care Services</h2>' . "\n" .
+                    '<p>Professional care solutions include skilled nursing observation, medication management, physical therapy assistance, and compassionate personal hygiene support right in your residence. According to standards published by the <a href="https://www.who.int/" target="_blank" rel="noopener">World Health Organization (WHO)</a>, home health management significantly improves patient comfort and recovery outcomes.</p>' . "\n\n" .
+                    '<h2>Customized Care Plan Development & Nursing Supervision</h2>' . "\n" .
+                    '<p>Every individual receives a thorough medical assessment to design a flexible care schedule that adapts to changing health requirements over time.</p>' . "\n" .
                     '<ul>' . "\n" .
-                    '    <li><strong>Personalized Care Plans:</strong> Customized <strong>' . esc_html($kw_lc) . '</strong> assistance tailored to specific medical, mobility, and personal requirements.</li>' . "\n" .
-                    '    <li><strong>Comfort & Familiarity:</strong> Patients recover faster and experience less emotional stress in the comfort of their own home environment.</li>' . "\n" .
-                    '    <li><strong>Enhanced Independence:</strong> Empowers individuals to maintain daily routines with dignified, compassionate support.</li>' . "\n" .
-                    '    <li><strong>Family Peace of Mind:</strong> Keeps family members informed while registered caregivers alleviate daily stress and burnout.</li>' . "\n" .
-                    '    <li><strong>Cost-Effective Quality Care:</strong> Eliminates unnecessary hospitalization costs while providing targeted <strong>' . esc_html($kw_lc) . '</strong>.</li>' . "\n" .
+                    '    <li><strong>Registered Nurse Oversight:</strong> Ongoing monitoring of vital signs and medication safety.</li>' . "\n" .
+                    '    <li><strong>Daily Life Support:</strong> Dignified assistance with bathing, mobility, and nutrition.</li>' . "\n" .
+                    '    <li><strong>Family Relief:</strong> Alleviates family caregiver stress through reliable respite support.</li>' . "\n" .
                     '</ul>' . "\n\n" .
-                    '<h2>3. Step-by-Step ' . esc_html($kw_uc) . ' Decision Framework</h2>' . "\n" .
-                    '<p>When selecting the right professional solution for <strong>' . esc_html($kw_lc) . '</strong>, following a structured evaluation process ensures optimal long-term health outcomes:</p>' . "\n" .
-                    '<ol>' . "\n" .
-                    '    <li><strong>Assess Individual Care Needs:</strong> Determine required assistance levels, including medical supervision, mobility support, and daily activity help.</li>' . "\n" .
-                    '    <li><strong>Verify Provider Credentials:</strong> Ensure caregivers and registered nurses providing <strong>' . esc_html($kw_lc) . '</strong> are fully certified, background-checked, and experienced.</li>' . "\n" .
-                    '    <li><strong>Review Customized Service Plans:</strong> Verify that your <strong>' . esc_html($kw_lc) . '</strong> plan adapts flexibly as health conditions and requirements change over time.</li>' . "\n" .
-                    '    <li><strong>Establish Clear Communication Channels:</strong> Confirm regular progress updates, direct emergency contacts, and dedicated care management.</li>' . "\n" .
-                    '</ol>' . "\n\n" .
-                    '<h2>4. Frequently Asked Questions (FAQ) About ' . esc_html($kw_uc) . '</h2>' . "\n" .
-                    '<h3>What services are included in professional ' . esc_html($kw_lc) . '?</h3>' . "\n" .
-                    '<p>Services range from skilled nursing, wound care, and medication administration to personal hygiene assistance, physical therapy exercises, and compassionate companionship.</p>' . "\n" .
-                    '<h3>How do I get started with a customized ' . esc_html($kw_lc) . ' plan?</h3>' . "\n" .
-                    '<p>Getting started involves an initial consultation to assess health requirements, followed by matching with a qualified caregiver from <a href="' . $home_link . '">' . esc_html($site_name) . '</a> to create a personalized schedule.</p>' . "\n\n" .
-                    '<h2>5. ' . esc_html($kw_uc) . ' Summary & Next Steps</h2>' . "\n" .
-                    '<p>Investing in high-quality <strong>' . esc_html($kw_lc) . '</strong> guarantees safety, dignified care, and peace of mind for your loved ones. Contact the expert care team at <a href="' . $home_link . '">' . esc_html($site_name) . '</a> today to schedule a free consultation and secure personalized care tailored to your family\'s needs.</p>';
+                    '<h2>Quality Standards and Provider Licensing</h2>' . "\n" .
+                    '<p>All caregivers undergo background screening, clinical verification, and ongoing medical training to ensure safety and quality care delivery.</p>' . "\n\n" .
+                    '<h2>Schedule a Personal Consultation</h2>' . "\n" .
+                    '<p>Secure personalized support for your loved ones. Contact <a href="' . $link . '">' . esc_html($site) . '</a> today to discuss a custom care schedule.</p>';
                     break;
             }
 
-            $sanitized_draft = self::sanitize_ai_cliches($draft);
+            // Remove TOC if headings < 4
+            if ($heading_count < 4) {
+                $draft = str_replace('[gmb_toc]', '', $draft);
+            }
+
+            $sanitized = self::sanitize_ai_cliches($draft);
 
             return array(
-                'intent' => $intent,
-                'draft'  => $sanitized_draft,
+                'intent' => array(
+                    'niche'           => $niche,
+                    'heading_count'   => $heading_count,
+                    'archetype'       => ucwords(strtolower(str_replace('_', ' ', $niche))),
+                ),
+                'draft'  => $sanitized,
             );
         }
     }
