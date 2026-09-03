@@ -565,15 +565,16 @@
         $("#gmb_seo_desc_input").val(appliedDesc).trigger("input").trigger("change");
       }
       if (appliedIntro) {
+        var formattedContent = (appliedIntro.trim().indexOf("<") === 0) ? appliedIntro : ('<p>' + appliedIntro + '</p>');
         if (typeof tinymce !== "undefined" && tinymce.get("content") && !tinymce.get("content").isHidden()) {
           var curBody = tinymce.get("content").getContent();
-          tinymce.get("content").setContent('<p>' + appliedIntro + '</p>\n' + curBody);
+          tinymce.get("content").setContent(formattedContent + (curBody ? '\n' + curBody : ''));
         } else if ($("#content").length) {
           var curText = $("#content").val();
-          $("#content").val('<p>' + appliedIntro + '</p>\n' + curText).trigger("change");
+          $("#content").val(formattedContent + (curText ? '\n' + curText : '')).trigger("change");
         } else if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
           var curBlocks = wp.data.select("core/editor").getBlocks();
-          var newBlock = wp.blocks.createBlock("core/paragraph", { content: appliedIntro });
+          var newBlock = wp.blocks.createBlock("core/freeform", { content: formattedContent });
           wp.data.dispatch("core/editor").resetBlocks([newBlock].concat(curBlocks));
         }
       }
