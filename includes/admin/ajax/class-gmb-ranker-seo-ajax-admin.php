@@ -38,6 +38,8 @@ class GMB_Ranker_SEO_Ajax_Admin {
         add_action('wp_ajax_gmb_apply_recommended_security', array($this, 'ajax_apply_recommended_security'));
         add_action('wp_ajax_gmb_change_username', array($this, 'ajax_change_username'));
         add_action('wp_ajax_gmb_auto_fix_display_names', array($this, 'ajax_auto_fix_display_names'));
+        add_action('wp_ajax_gmb_ai_suggest_404_redirects', array($this, 'ajax_ai_suggest_404_redirects'));
+        add_action('wp_ajax_gmb_apply_ai_redirects', array($this, 'ajax_apply_ai_redirects'));
     }
 
     public function ajax_auto_fix_display_names() {
@@ -1074,4 +1076,222 @@ class GMB_Ranker_SEO_Ajax_Admin {
     }
 
 
+
+    public function ajax_ai_suggest_404_redirects() {
+        $this->enforce_ajax_csrf_protection();
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $single_uri = isset($_POST['uri']) ? sanitize_text_field(wp_unslash($_POST['uri'])) : '';
+        $targets = array();
+
+        if (!empty($single_uri)) {
+            $targets[] = $single_uri;
+        } else {
+            $logs = get_option('gmb_ranker_404_logs', array());
+            if (is_array($logs) && !empty($logs)) {
+                $count = 0;
+                foreach ($logs as $l) {
+                    if (isset($l['uri']) && !empty($l['uri'])) {
+                        $targets[] = $l['uri'];
+                        $count++;
+                        if ($count >= 25) break;
+                    }
+                }
+            }
+        }
+
+        if (empty($targets)) {
+            wp_send_json_error('No 404 log entries available for AI analysis.');
+        }
+
+        // Gather live site published pages
+        $live_pages = array();
+        $posts = get_posts(array(
+            'post_type'      => array('page', 'post', 'service', 'services', 'product', 'portfolio', 'case_studies'),
+            'post_status'    => 'publish',
+            'posts_per_page' => 100,
+        ));
+
+        foreach ($posts as $p) {
+            $permalink = get_permalink($p->ID);
+            $path = wp_parse_url($permalink, PHP_URL_PATH) ?: '/';
+            $live_pages[] = array(
+                'title' => get_the_title($p->ID),
+                'url'   => $path,
+            );
+        }
+
+        // Add homepage
+        $live_pages[] = array(
+            'title' => 'Home Page',
+            'url'   => '/',
+        );
+
+        // Add categories
+        $categories = get_categories(array('hide_empty' => false, 'number' => 20));
+        foreach ($categories as $cat) {
+            $link = get_category_link($cat->term_id);
+            $path = wp_parse_url($link, PHP_URL_PATH) ?: '/';
+            $live_pages[] = array(
+                'title' => $cat->name,
+                'url'   => $path,
+            );
+        }
+
+        $suggestions = array();
+        $ai_used = false;
+
+        // Try AI completion first if AI provider is available
+        if (class_exists('GMB_Ranker_SEO_AI_Provider')) {
+            $system_prompt = "You are an expert SEO AI assistant. Match broken 404 URLs to the most semantically relevant live site URL. For security scans or junk files (.env, .json, .php scripts, wp-admin), set destination to '' and code to 410. Return ONLY a raw valid JSON array of objects with keys: source (string), destination (string), code (301 or 410), confidence (high/medium/low), reason (short string). Do NOT wrap in markdown backticks or commentary.";
+
+            $user_prompt = "404 Broken Request URLs:\n" . wp_json_encode($targets) . "\n\nAvailable Live Site Pages:\n" . wp_json_encode($live_pages);
+
+            $messages = array(
+                array('role' => 'system', 'content' => $system_prompt),
+                array('role' => 'user', 'content' => $user_prompt)
+            );
+
+            $response = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages, 0.2);
+            if (!is_wp_error($response) && !empty($response['choices'][0]['message']['content'])) {
+                $raw = trim($response['choices'][0]['message']['content']);
+                $raw = preg_replace('/^```(?:json)?/i', '', $raw);
+                $raw = preg_replace('/```$/', '', $raw);
+                $raw = trim($raw);
+                $decoded = json_decode($raw, true);
+
+                if (is_array($decoded) && !empty($decoded)) {
+                    $suggestions = $decoded;
+                    $ai_used = true;
+                }
+            }
+        }
+
+        // Algorithmic Smart Fallback if AI was unavailable or failed
+        if (empty($suggestions)) {
+            foreach ($targets as $uri) {
+                $best_match = '/';
+                $highest_sim = 0;
+                $slug = trim(strtolower(basename($uri)));
+                $slug_clean = str_replace(array('-', '_', '.html', '.php'), ' ', $slug);
+
+                $is_junk = (bool) preg_match('/\.(env|json|sql|log|txt|xml|bak|zip|gz|tar|php)$/i', $uri);
+
+                if ($is_junk) {
+                    $suggestions[] = array(
+                        'source'      => $uri,
+                        'destination' => '',
+                        'code'        => 410,
+                        'confidence'  => 'high',
+                        'reason'      => 'Security scan or non-existent static file (410 Gone)',
+                    );
+                    continue;
+                }
+
+                foreach ($live_pages as $page) {
+                    $page_url = $page['url'];
+                    if ($page_url === '/') continue;
+
+                    $page_slug = trim(strtolower(basename($page_url)));
+                    $page_title_clean = strtolower($page['title']);
+
+                    similar_text($slug_clean, $page_slug, $sim_slug);
+                    similar_text($slug_clean, $page_title_clean, $sim_title);
+                    $sim = max($sim_slug, $sim_title);
+
+                    if ($sim > $highest_sim) {
+                        $highest_sim = $sim;
+                        $best_match = $page_url;
+                    }
+                }
+
+                $confidence = ($highest_sim > 60) ? 'high' : (($highest_sim > 35) ? 'medium' : 'low');
+                $reason = ($highest_sim > 35) ? 'Smart slug & semantic title match' : 'Fallback to homepage';
+                if ($highest_sim <= 35) {
+                    $best_match = '/';
+                }
+
+                $suggestions[] = array(
+                    'source'      => $uri,
+                    'destination' => $best_match,
+                    'code'        => 301,
+                    'confidence'  => $confidence,
+                    'reason'      => $reason,
+                );
+            }
+        }
+
+        wp_send_json_success(array(
+            'suggestions' => $suggestions,
+            'ai_used'     => $ai_used,
+            'provider'    => class_exists('GMB_Ranker_SEO_AI_Provider') ? GMB_Ranker_SEO_AI_Provider::get_active_provider() : 'Smart Matcher',
+        ));
+    }
+
+    public function ajax_apply_ai_redirects() {
+        $this->enforce_ajax_csrf_protection();
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $rules_json = isset($_POST['rules']) ? wp_unslash($_POST['rules']) : '';
+        $rules_data = json_decode($rules_json, true);
+
+        if (!is_array($rules_data) || empty($rules_data)) {
+            wp_send_json_error('No valid rules supplied for AI batch import.');
+        }
+
+        $existing_rules = get_option('gmb_ranker_redirects_rules', array());
+        if (!is_array($existing_rules)) {
+            $existing_rules = array();
+        }
+
+        $applied_count = 0;
+        $applied_sources = array();
+
+        foreach ($rules_data as $rule) {
+            $source = isset($rule['source']) ? sanitize_text_field($rule['source']) : '';
+            $destination = isset($rule['destination']) ? sanitize_text_field($rule['destination']) : '';
+            $code = isset($rule['code']) ? intval($rule['code']) : 301;
+
+            if (empty($source)) continue;
+
+            $existing_rules[] = array(
+                'id'            => uniqid('ai_r_'),
+                'source'        => $source,
+                'destination'   => $destination,
+                'code'          => $code,
+                'match_type'    => 'exact',
+                'status'        => 'active',
+                'note'          => 'AI Auto-Generated Redirect Rule',
+                'hits'          => 0,
+                'created'       => time(),
+                'last_accessed' => '',
+            );
+
+            $applied_sources[] = $source;
+            $applied_count++;
+        }
+
+        // Deduplicate and sanitize rules
+        $sanitized_rules = $this->sanitize_redirects_rules($existing_rules);
+        update_option('gmb_ranker_redirects_rules', $sanitized_rules);
+
+        // Remove applied 404 logs
+        $logs = get_option('gmb_ranker_404_logs', array());
+        if (is_array($logs) && !empty($applied_sources)) {
+            $filtered_logs = array_filter($logs, function($l) use ($applied_sources) {
+                return !isset($l['uri']) || !in_array($l['uri'], $applied_sources, true);
+            });
+            update_option('gmb_ranker_404_logs', array_values($filtered_logs));
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf('%d AI redirection rules successfully created & 404 logs cleaned!', $applied_count),
+            'count'   => $applied_count
+        ));
+    }
 }
+

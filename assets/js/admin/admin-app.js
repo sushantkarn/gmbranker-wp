@@ -3700,6 +3700,181 @@ function initGmbAdminApp() {
     });
   }
 
+
+  // AI Auto-Fix 404 Redirections Handler
+  const aiSuggestBtn = document.getElementById("gmb-ai-suggest-404-btn");
+  const aiModal = document.getElementById("gmb-ai-redirect-modal");
+  const aiModalClose = document.getElementById("gmb-ai-modal-close");
+  const aiModalCancel = document.getElementById("gmb-ai-modal-cancel");
+  const aiApplyBtn = document.getElementById("gmb-ai-apply-btn");
+  const aiLoadingBox = document.getElementById("gmb-ai-modal-loading");
+  const aiModalContent = document.getElementById("gmb-ai-modal-content");
+  const aiTbody = document.getElementById("gmb-ai-suggestions-tbody");
+  const aiSelectAll = document.getElementById("gmb-ai-select-all");
+
+  function openAiModal() {
+    if (!aiModal) return;
+    aiModal.classList.add("active");
+    if (aiLoadingBox) aiLoadingBox.style.display = "flex";
+    if (aiModalContent) aiModalContent.classList.add("gmb-hidden");
+    if (aiApplyBtn) aiApplyBtn.disabled = true;
+    if (aiTbody) aiTbody.innerHTML = "";
+  }
+
+  function closeAiModal() {
+    if (aiModal) aiModal.classList.remove("active");
+  }
+
+  if (aiModalClose) aiModalClose.addEventListener("click", closeAiModal);
+  if (aiModalCancel) aiModalCancel.addEventListener("click", closeAiModal);
+
+  function fetchAiSuggestions(singleUri) {
+    openAiModal();
+    const formData = new FormData();
+    formData.append("action", "gmb_ai_suggest_404_redirects");
+    if (typeof gmb_ranker_admin !== "undefined") {
+      formData.append("nonce", gmb_ranker_admin.admin_nonce || gmb_ranker_admin.nonce);
+    }
+    if (singleUri) {
+      formData.append("uri", singleUri);
+    }
+
+    fetch(ajaxurl, {
+      method: "POST",
+      body: new URLSearchParams(formData)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (aiLoadingBox) aiLoadingBox.style.display = "none";
+      if (!data.success || !data.data || !data.data.suggestions || data.data.suggestions.length === 0) {
+        alert("AI suggestions failed: " + (data.data || "No 404 entries to process"));
+        closeAiModal();
+        return;
+      }
+
+      if (aiModalContent) aiModalContent.classList.remove("gmb-hidden");
+      if (aiApplyBtn) aiApplyBtn.disabled = false;
+
+      let html = "";
+      data.data.suggestions.forEach((item, idx) => {
+        const confClass = item.confidence === 'high' ? 'gmb-pill-badge--green' : (item.confidence === 'medium' ? 'gmb-pill-badge--blue' : 'gmb-pill-badge--red');
+        html += `
+          <tr class="gmb-ai-suggestion-row">
+            <td class="gmb-text-center">
+              <input type="checkbox" class="gmb-ai-rule-check" data-idx="${idx}" checked />
+            </td>
+            <td>
+              <code class="gmb-code-path">${item.source}</code>
+            </td>
+            <td>
+              <input type="text" class="gmb-input gmb-input-sm gmb-ai-dest-input" value="${item.destination || ''}" placeholder="/destination-path or empty for 410" />
+            </td>
+            <td>
+              <select class="gmb-select gmb-select-sm gmb-ai-code-select">
+                <option value="301" ${item.code == 301 ? 'selected' : ''}>301 Move</option>
+                <option value="302" ${item.code == 302 ? 'selected' : ''}>302 Temp</option>
+                <option value="410" ${item.code == 410 ? 'selected' : ''}>410 Gone</option>
+              </select>
+            </td>
+            <td>
+              <span class="gmb-pill-badge ${confClass}">${item.confidence || 'medium'}</span>
+              <div class="gmb-text-xs gmb-text-muted">${item.reason || ''}</div>
+            </td>
+          </tr>
+        `;
+      });
+
+      if (aiTbody) aiTbody.innerHTML = html;
+    })
+    .catch(err => {
+      if (aiLoadingBox) aiLoadingBox.style.display = "none";
+      alert("Error generating AI suggestions: " + err.message);
+      closeAiModal();
+    });
+  }
+
+  if (aiSuggestBtn) {
+    aiSuggestBtn.addEventListener("click", function() {
+      fetchAiSuggestions("");
+    });
+  }
+
+  // Single row AI fix button
+  const singleAiBtns = document.querySelectorAll(".gmb-ai-single-suggest-btn");
+  singleAiBtns.forEach(btn => {
+    btn.addEventListener("click", function() {
+      const url = btn.getAttribute("data-url");
+      fetchAiSuggestions(url);
+    });
+  });
+
+  // Select all AI checkboxes
+  if (aiSelectAll) {
+    aiSelectAll.addEventListener("change", function() {
+      const checks = document.querySelectorAll(".gmb-ai-rule-check");
+      checks.forEach(c => c.checked = aiSelectAll.checked);
+    });
+  }
+
+  // Batch Apply AI Rules
+  if (aiApplyBtn) {
+    aiApplyBtn.addEventListener("click", function() {
+      const rows = document.querySelectorAll(".gmb-ai-suggestion-row");
+      const rulesToApply = [];
+
+      rows.forEach(row => {
+        const check = row.querySelector(".gmb-ai-rule-check");
+        if (check && check.checked) {
+          const source = row.querySelector(".gmb-code-path").innerText.trim();
+          const dest = row.querySelector(".gmb-ai-dest-input").value.trim();
+          const code = row.querySelector(".gmb-ai-code-select").value;
+
+          rulesToApply.push({
+            source: source,
+            destination: dest,
+            code: parseInt(code) || 301
+          });
+        }
+      });
+
+      if (rulesToApply.length === 0) {
+        alert("Please select at least one AI recommendation to apply.");
+        return;
+      }
+
+      aiApplyBtn.disabled = true;
+      aiApplyBtn.innerText = "Applying AI Rules...";
+
+      const formData = new FormData();
+      formData.append("action", "gmb_apply_ai_redirects");
+      if (typeof gmb_ranker_admin !== "undefined") {
+        formData.append("nonce", gmb_ranker_admin.admin_nonce || gmb_ranker_admin.nonce);
+      }
+      formData.append("rules", JSON.stringify(rulesToApply));
+
+      fetch(ajaxurl, {
+        method: "POST",
+        body: new URLSearchParams(formData)
+      })
+      .then(res => res.json())
+      .then(data => {
+        aiApplyBtn.disabled = false;
+        aiApplyBtn.innerText = "Batch Apply AI Rules";
+        if (data.success) {
+          alert(data.data.message || "AI Redirections successfully applied!");
+          window.location.reload();
+        } else {
+          alert("Failed to apply AI rules: " + (data.data || "Unknown error"));
+        }
+      })
+      .catch(err => {
+        aiApplyBtn.disabled = false;
+        aiApplyBtn.innerText = "Batch Apply AI Rules";
+        alert("Error applying AI rules: " + err.message);
+      });
+    });
+  }
+
   // Redirections subnavigation tab switching logic
   const redirectSubnavs = document.querySelectorAll(".gmb-redirect-subnav");
   const redirectPanels = document.querySelectorAll(".gmb-redirect-view-panel");

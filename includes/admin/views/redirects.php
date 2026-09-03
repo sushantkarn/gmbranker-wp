@@ -252,11 +252,15 @@ if (!defined('ABSPATH')) exit;
                                         <input type="text" id="gmb-404-search" class="gmb-search-input" placeholder="Filter 404 URLs..." />
                                     </div>
                                 </div>
-                                <div class="gmb-redirect-toolbar-right">
-                                    <button type="button" id="gmb-clear-404-btn" class="gmb-btn-purge-404">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                        Purge All Logs
-                                    </button>
+                                <div class="gmb-redirect-toolbar-right gmb-flex-gap-xs">
+                                     <button type="button" id="gmb-ai-suggest-404-btn" class="gmb-btn-ai-404 gmb-btn--ai">
+                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                                         <span>✨ AI Auto-Fix 404s</span>
+                                     </button>
+                                     <button type="button" id="gmb-clear-404-btn" class="gmb-btn-purge-404">
+                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                         Purge All Logs
+                                     </button>
                                 </div>
                             </div>
                             
@@ -289,6 +293,7 @@ if (!defined('ABSPATH')) exit;
                                                         <?php echo esc_html(human_time_diff($log_time, time()) . ' ago'); ?>
                                                     </td>
                                                     <td class="gmb-td-actions">
+                                                        <button type="button" class="gmb-ai-single-suggest-btn gmb-btn-ai-sm" data-url="<?php echo esc_attr($log_uri); ?>">✨ AI Fix</button>
                                                         <button type="button" class="gmb-create-redirect-btn gmb-btn-create-redirect" data-url="<?php echo esc_attr($log_uri); ?>">Redirect &rarr;</button>
                                                         <button type="button" class="gmb-delete-single-404-btn gmb-table-action-btn gmb-table-action-btn--danger" data-url="<?php echo esc_attr($log_uri); ?>">Delete</button>
                                                     </td>
@@ -450,6 +455,45 @@ if (!defined('ABSPATH')) exit;
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Auto-Fix Redirection Modal -->
+                <div id="gmb-ai-redirect-modal" class="gmb-modal-overlay">
+                    <div class="gmb-modal-container gmb-modal-lg">
+                        <div class="gmb-modal-header">
+                            <h3 class="gmb-modal-title">✨ AI Auto-Fix 404 Redirections</h3>
+                            <button type="button" class="gmb-modal-close" id="gmb-ai-modal-close">&times;</button>
+                        </div>
+                        <div class="gmb-modal-body">
+                            <div id="gmb-ai-modal-loading" class="gmb-ai-loading-box">
+                                <div class="gmb-spinner"></div>
+                                <p class="gmb-ai-loading-text">Analyzing 404 logs against your website's published content with AI...</p>
+                            </div>
+                            <div id="gmb-ai-modal-content" class="gmb-hidden">
+                                <p class="gmb-text-muted gmb-mb-12">Below are the AI-recommended redirection targets mapped to your live site pages. Uncheck any rules you do not wish to apply.</p>
+                                <div class="gmb-table-wrap gmb-max-h-400">
+                                    <table class="gmb-data-table gmb-table-compact">
+                                        <thead>
+                                            <tr>
+                                                <th class="gmb-th-checkbox"><input type="checkbox" id="gmb-ai-select-all" checked /></th>
+                                                <th>404 Source Path</th>
+                                                <th>AI Suggested Destination</th>
+                                                <th>Code</th>
+                                                <th>Confidence</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="gmb-ai-suggestions-tbody">
+                                            <!-- Dynamically populated via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gmb-modal-footer">
+                            <button type="button" class="button gmb-btn-secondary" id="gmb-ai-modal-cancel">Cancel</button>
+                            <button type="button" class="button button-primary gmb-btn--primary" id="gmb-ai-apply-btn" disabled>Batch Apply AI Rules</button>
                         </div>
                     </div>
                 </div>
