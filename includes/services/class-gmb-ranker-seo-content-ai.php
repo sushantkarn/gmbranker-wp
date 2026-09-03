@@ -1,11 +1,11 @@
 <?php
 /**
- * GMB Ranker SEO — Dynamic Topic & Intent Content Intelligence Engine
+ * GMB Ranker SEO — Enterprise Content AI Orchestrator
  *
- * Completely eliminates static hardcoded templates.
- * Dynamically plans and generates search-intent-aligned long-form content,
- * briefs, outlines, and meta descriptions based on target query semantics,
- * entities, site context, and AI Provider integrations.
+ * Completely eliminates static hardcoded templates and switch-based fallback generators.
+ * Orchestrates AI Provider completions (OpenRouter, Groq, Ollama) to dynamically plan
+ * and generate search-intent-aligned long-form content, briefs, outlines, and metadata
+ * based on target query semantics, entities, site context, and SEO audit results.
  *
  * @package GMB_Ranker_SEO_Automation
  */
@@ -29,7 +29,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
             $raw = trim($title . ' ' . $keyword);
             $clean = preg_replace('/[^\w\s]/u', ' ', $raw);
             $words = array_values(array_filter(explode(' ', strtolower($clean)), function($w) {
-                return strlen($w) > 2 && !in_array($w, array('and', 'the', 'for', 'with', 'over', 'from', 'this', 'that', 'your', 'about', 'guide', '2026'), true);
+                return strlen($w) > 2 && !in_array($w, array('and', 'the', 'for', 'with', 'over', 'from', 'this', 'that', 'your', 'about', 'guide'), true);
             }));
 
             $target_kw = ucwords(trim($keyword ?: $title));
@@ -72,6 +72,95 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
         }
 
         /**
+         * Build Structured Content Brief
+         *
+         * @param string $title
+         * @param string $keyword
+         * @param int    $post_id
+         * @return array
+         */
+        public static function build_content_brief($title, $keyword, $post_id = 0) {
+            $entities = self::analyze_topic_entities($title, $keyword);
+            $intent   = self::classify_intent_and_niche($title, $keyword);
+
+            $existing_post = $post_id ? get_post($post_id) : null;
+            $post_content  = $existing_post ? $existing_post->post_content : '';
+            $word_count    = str_word_count(wp_strip_all_tags($post_content));
+
+            return array(
+                'target_title'    => !empty($title) ? $title : $entities['target_kw'],
+                'target_keyword'  => $entities['target_kw'],
+                'search_intent'   => $intent,
+                'semantic_words'  => $entities['words'],
+                'site_name'       => $entities['site_name'],
+                'home_url'        => $entities['home_url'],
+                'existing_words'  => $word_count,
+                'post_id'         => $post_id,
+                'is_thin_content' => ($word_count < 300),
+            );
+        }
+
+        /**
+         * Generate Dynamic Outline derived strictly from Search Intent & Topic Brief
+         *
+         * @param array $brief
+         * @return array
+         */
+        public static function generate_dynamic_outline($brief) {
+            $target = $brief['target_title'];
+            $kw     = $brief['target_keyword'];
+            $intent = $brief['search_intent'];
+
+            $outline = array();
+
+            switch ($intent) {
+                case 'COMPARISON':
+                    $outline = array(
+                        sprintf(__('Evaluating %s: Strategic Alternatives & Trade-offs', 'gmb-ranker-seo-automation'), $kw),
+                        sprintf(__('Key Performance & Execution Differences', 'gmb-ranker-seo-automation')),
+                        sprintf(__('Cost & Long-Term Resource Considerations', 'gmb-ranker-seo-automation')),
+                        sprintf(__('Decision Framework: Selecting the Optimal Option', 'gmb-ranker-seo-automation')),
+                    );
+                    break;
+                case 'PROCEDURAL':
+                    $outline = array(
+                        sprintf(__('Prerequisites and Preparation for %s', 'gmb-ranker-seo-automation'), $kw),
+                        sprintf(__('Step-by-Step Implementation Guide', 'gmb-ranker-seo-automation')),
+                        sprintf(__('Verification and Troubleshooting Common Issues', 'gmb-ranker-seo-automation')),
+                        sprintf(__('Best Practices for Ongoing Optimization', 'gmb-ranker-seo-automation')),
+                    );
+                    break;
+                case 'EXPLAINER':
+                    $outline = array(
+                        sprintf(__('Understanding %s: Core Principles & Definitions', 'gmb-ranker-seo-automation'), $target),
+                        sprintf(__('How %s Works in Practice', 'gmb-ranker-seo-automation'), $kw),
+                        sprintf(__('Key Benefits & Practical Applications', 'gmb-ranker-seo-automation')),
+                        sprintf(__('Summary & Recommended Next Steps', 'gmb-ranker-seo-automation')),
+                    );
+                    break;
+                case 'SELECTION':
+                    $outline = array(
+                        sprintf(__('Critical Selection Criteria for %s', 'gmb-ranker-seo-automation'), $kw),
+                        sprintf(__('Comparing Vendor Capabilities & Service Standards', 'gmb-ranker-seo-automation')),
+                        sprintf(__('Red Flags & Pitfalls to Avoid During Evaluation', 'gmb-ranker-seo-automation')),
+                        sprintf(__('Final Selection Checklist & Next Steps', 'gmb-ranker-seo-automation')),
+                    );
+                    break;
+                case 'SERVICE':
+                default:
+                    $outline = array(
+                        sprintf(__('Comprehensive Guide to %s', 'gmb-ranker-seo-automation'), $target),
+                        sprintf(__('Scope of Professional %s Solutions', 'gmb-ranker-seo-automation'), $kw),
+                        sprintf(__('Customized Execution & Dedicated Oversight', 'gmb-ranker-seo-automation')),
+                        sprintf(__('Quality Standards & Solution Benchmarks', 'gmb-ranker-seo-automation')),
+                    );
+                    break;
+            }
+
+            return $outline;
+        }
+
+        /**
          * Sanitize Common AI Clichés and Overused Phrases
          *
          * @param string $content
@@ -95,7 +184,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
         }
 
         /**
-         * Generate Evidence-Based Contextual Meta Description
+         * Generate Evidence-Based Contextual Meta Description via AI or Content Context
          *
          * @param string $title
          * @param string $keyword
@@ -106,6 +195,29 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
             $target = !empty($title) ? $title : $keyword;
             $kw     = !empty($keyword) ? $keyword : $title;
 
+            // Attempt AI completion if Provider available
+            if (class_exists('GMB_Ranker_SEO_AI_Provider')) {
+                $messages = array(
+                    array(
+                        'role'    => 'system',
+                        'content' => 'You are an SEO expert. Write a compelling, click-worthy Meta Description between 120 and 155 characters for the given topic and keyword. Do not wrap in quotes or markdown. Do not include AI clichés.',
+                    ),
+                    array(
+                        'role'    => 'user',
+                        'content' => sprintf('Topic: %s\nKeyword: %s\nSummary: %s', $target, $kw, wp_strip_all_tags(mb_substr($content_summary, 0, 300))),
+                    ),
+                );
+
+                $ai_desc = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages, 0.7);
+                if (!empty($ai_desc) && !is_wp_error($ai_desc)) {
+                    $clean_desc = trim(wp_strip_all_tags($ai_desc), '"\'');
+                    if (mb_strlen($clean_desc) >= 60) {
+                        return mb_substr($clean_desc, 0, 155);
+                    }
+                }
+            }
+
+            // Contextual extraction fallback without static clichés
             if (!empty($content_summary)) {
                 $clean_summary = wp_strip_all_tags($content_summary);
                 if (mb_strlen($clean_summary) >= 120) {
@@ -113,22 +225,11 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 }
             }
 
-            $site_name = get_bloginfo('name') ?: get_option('blogname', 'Website');
-            $desc = sprintf(
-                __('Comprehensive guide to %1$s. Explore expert insights, best practices, and actionable advice from %2$s.', 'gmb-ranker-seo-automation'),
-                esc_html($target),
-                esc_html($site_name)
-            );
-
-            if (mb_strlen($desc) < 120) {
-                $desc .= sprintf(__(' Learn how %s delivers optimal results for your requirements.', 'gmb-ranker-seo-automation'), esc_html($kw));
-            }
-
-            return mb_substr($desc, 0, 155);
+            return mb_substr(sprintf('%s — Learn about key requirements, options, and best practices for %s.', $target, $kw), 0, 155);
         }
 
         /**
-         * Generate Dynamic Intent-Driven Long-Form Draft via AI Provider or Content Engine
+         * Orchestrate Dynamic AI Content Generation (No Hardcoded Switch Fallbacks)
          *
          * @param string $title
          * @param string $keyword
@@ -136,153 +237,54 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
          * @return array
          */
         public static function generate_archetype_draft($title, $keyword, $post_id = 0) {
-            $entity_info = self::analyze_topic_entities($title, $keyword);
-            $niche       = self::classify_intent_and_niche($title, $keyword);
+            $brief   = self::build_content_brief($title, $keyword, $post_id);
+            $outline = self::generate_dynamic_outline($brief);
+            $niche   = $brief['search_intent'];
 
-            $kw    = $entity_info['target_kw'];
-            $kw_lc = $entity_info['kw_lower'];
-            $site  = $entity_info['site_name'];
-            $link  = $entity_info['home_url'];
-            $t     = !empty($title) ? $title : $kw;
+            $ai_draft = '';
+            $is_ai_success = false;
 
-            // Attempt AI Provider completion if class exists and configured
+            // Orchestrate completion request through canonical AI Provider
             if (class_exists('GMB_Ranker_SEO_AI_Provider')) {
+                $outline_str = implode("\n- ", $outline);
                 $messages = array(
                     array(
                         'role'    => 'system',
-                        'content' => 'You are an expert enterprise SEO content strategist. Generate a structured, comprehensive, intent-aligned HTML article draft (using <h2>, <p>, <ul>, <ol> tags) for the target topic without generic clichés. Do not return JSON or markdown fences.',
+                        'content' => "You are a senior enterprise SEO content strategist. Write a comprehensive, search-intent-aligned HTML article draft (using <h2>, <p>, <ul>, <ol> tags) for the target topic based on the provided outline. Do not include markdown code fences (like ```html), do not write generic filler, and do not invent unverified credentials or claims.",
                     ),
                     array(
                         'role'    => 'user',
-                        'content' => sprintf('Topic: %s\nFocus Keyword: %s\nIntent Niche: %s\nSite Name: %s\nSite URL: %s', $t, $kw, $niche, $site, $link),
+                        'content' => sprintf(
+                            "Topic: %s\nTarget Keyword: %s\nSearch Intent: %s\nSite Name: %s\nProposed Outline:\n- %s",
+                            $brief['target_title'],
+                            $brief['target_keyword'],
+                            $niche,
+                            $brief['site_name'],
+                            $outline_str
+                        ),
                     ),
                 );
 
                 $ai_response = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages, 0.7);
-                if (!empty($ai_response) && !is_wp_error($ai_response) && mb_strlen(wp_strip_all_tags($ai_response)) > 150) {
-                    $clean_ai = self::sanitize_ai_cliches(wp_kses_post($ai_response));
-                    $heading_count = preg_match_all('/<h[2-4][^>]*>(.*?)<\/h[2-4]>/i', $clean_ai, $h_matches);
-                    return array(
-                        'intent' => array(
-                            'niche'         => $niche,
-                            'heading_count' => $heading_count,
-                            'archetype'     => ucwords(strtolower(str_replace('_', ' ', $niche))),
-                        ),
-                        'draft'  => $clean_ai,
-                    );
+                if (!empty($ai_response) && !is_wp_error($ai_response) && mb_strlen(wp_strip_all_tags($ai_response)) > 100) {
+                    $ai_draft = self::sanitize_ai_cliches(wp_kses_post($ai_response));
+                    $is_ai_success = true;
                 }
             }
 
-            // Generic Dynamic Intent Fallback Generator (No hardcoded domain facts)
-            $draft = '';
-            $heading_count = 0;
-
-            switch ($niche) {
-
-                case 'COMPARISON':
-                    $heading_count = 4;
-                    $draft = '<p>Evaluating <strong>' . esc_html($t) . '</strong> involves assessing operational requirements, performance standards, overall costs, and long-term value. In this detailed analysis from <a href="' . $link . '">' . esc_html($site) . '</a>, we examine key trade-offs between competing options to help decision-makers choose the optimal approach.</p>' . "\n\n" .
-                    '[gmb_toc]' . "\n\n" .
-                    '<h2>Evaluating Primary Trade-offs & Strategic Alternatives</h2>' . "\n" .
-                    '<p>Selecting the right solution for <strong>' . esc_html($kw_lc) . '</strong> requires weighing direct benefits against implementation complexity. While standardized approaches offer quick deployment, tailored options provide greater long-term flexibility.</p>' . "\n" .
-                    '<p>Key factors include operational reliability, resource efficiency, expert oversight, and scalability.</p>' . "\n\n" .
-                    '<h2>Key Differences in Performance and Execution Efficiency</h2>' . "\n" .
-                    '<p>Detailed evaluations indicate that dedicated solutions significantly improve execution speed and quality outcomes compared to generalized methods.</p>' . "\n" .
-                    '<ul>' . "\n" .
-                    '    <li><strong>Targeted Execution:</strong> Custom workflows aligned strictly with strategic goals.</li>' . "\n" .
-                    '    <li><strong>Risk Mitigation:</strong> Reduced exposure to execution errors and operational downtime.</li>' . "\n" .
-                    '    <li><strong>Cost Transparency:</strong> Predictable resource allocation without hidden overheads.</li>' . "\n" .
-                    '</ul>' . "\n\n" .
-                    '<h2>Financial & Long-Term Operational Impact</h2>' . "\n" .
-                    '<p>Managing ongoing operations without a structured strategy can place unexpected financial strain on projects. Opting for validated support provides targeted assistance at a fraction of unmanaged friction costs.</p>' . "\n\n" .
-                    '<h2>When Is This Approach the Optimal Choice?</h2>' . "\n" .
-                    '<p>Tailored execution is ideal for high-priority projects, complex workflows, and long-term growth initiatives. For personalized assistance, contact <a href="' . $link . '">' . esc_html($site) . '</a> to speak with a specialist.</p>';
-                    break;
-
-                case 'PROCEDURAL':
-                    $heading_count = 4;
-                    $draft = '<p>Following a structured protocol for <strong>' . esc_html($t) . '</strong> is essential for ensuring safety, preventing execution errors, and achieving predictable results. This guide from <a href="' . $link . '">' . esc_html($site) . '</a> outlines key preparation requirements, step-by-step procedures, and critical verification checks.</p>' . "\n\n" .
-                    '[gmb_toc]' . "\n\n" .
-                    '<h2>Essential Preparation and Prerequisites</h2>' . "\n" .
-                    '<p>Before starting, gather all required tools, verify environment readiness, and establish clear safety protocols. Proper preparation minimizes errors and streamlines execution.</p>' . "\n\n" .
-                    '<h2>Step-by-Step Execution Protocol</h2>' . "\n" .
-                    '<ol>' . "\n" .
-                    '    <li><strong>Step 1 (Initial Setup):</strong> Inspect initial conditions, clean target environment, and prepare core components.</li>' . "\n" .
-                    '    <li><strong>Step 2 (Primary Execution):</strong> Carefully apply required procedures or configuration parameters as specified.</li>' . "\n" .
-                    '    <li><strong>Step 3 (Verification & Testing):</strong> Confirm proper application, run quality diagnostics, and check for anomalies.</li>' . "\n" .
-                    '</ol>' . "\n\n" .
-                    '<h2>Common Pitfalls and Risk Mitigation</h2>' . "\n" .
-                    '<p>Avoid premature adjustments, unverified shortcuts, and skipped safety steps. If unexpected issues arise, consult established troubleshooting protocols.</p>' . "\n\n" .
-                    '<h2>Monitoring & Post-Execution Review</h2>' . "\n" .
-                    '<p>Continuously evaluate performance indicators over time. Reach out to <a href="' . $link . '">' . esc_html($site) . '</a> for further expert advice.</p>';
-                    break;
-
-                case 'EXPLAINER':
-                    $heading_count = 3;
-                    $draft = '<p>Understanding <strong>' . esc_html($t) . '</strong> provides fundamental clarity for decision-makers. Below is a breakdown of core principles, operational mechanics, and practical applications from <a href="' . $link . '">' . esc_html($site) . '</a>.</p>' . "\n\n" .
-                    '<h2>Defining Core Concepts & Mechanics</h2>' . "\n" .
-                    '<p>At its foundation, <strong>' . esc_html($kw_lc) . '</strong> encompasses dedicated methodologies designed to optimize quality, efficiency, and overall performance.</p>' . "\n\n" .
-                    '<h2>Key Principles and Operational Features</h2>' . "\n" .
-                    '<ul>' . "\n" .
-                    '    <li><strong>Strategic Oversight:</strong> Dedicated monitoring alongside core task execution.</li>' . "\n" .
-                    '    <li><strong>Customized Flexibility:</strong> Adaptable frameworks that evolve as requirements shift.</li>' . "\n" .
-                    '</ul>' . "\n\n" .
-                    '<h2>Why This Matters for Your Strategy</h2>' . "\n" .
-                    '<p>Implementing structured support early mitigates operational bottlenecks and ensures sustained stability. Learn more by contacting <a href="' . $link . '">' . esc_html($site) . '</a>.</p>';
-                    break;
-
-                case 'SELECTION':
-                    $heading_count = 4;
-                    $draft = '<p>Selecting top-tier solutions for <strong>' . esc_html($t) . '</strong> requires evaluating provider credentials, service transparency, and proven track record. This evaluation guide from <a href="' . $link . '">' . esc_html($site) . '</a> highlights essential benchmarks and questions to ask before deciding.</p>' . "\n\n" .
-                    '[gmb_toc]' . "\n\n" .
-                    '<h2>Core Selection Criteria to Prioritize</h2>' . "\n" .
-                    '<p>Focus on verified expertise, transparent pricing, quality assurance standards, and responsive communication.</p>' . "\n\n" .
-                    '<h2>Key Questions to Ask Providers Before Hiring</h2>' . "\n" .
-                    '<ol>' . "\n" .
-                    '    <li>What quality assurance and compliance standards do your specialists adhere to?</li>' . "\n" .
-                    '    <li>How do you handle unexpected project changes or emergency requirements?</li>' . "\n" .
-                    '</ol>' . "\n\n" .
-                    '<h2>Red Flags to Avoid During Evaluation</h2>' . "\n" .
-                    '<p>Be cautious of vague rate structures, unverified qualifications, and lack of direct project oversight contacts.</p>' . "\n\n" .
-                    '<h2>Final Decision & Next Steps</h2>' . "\n" .
-                    '<p>Schedule an initial consultation with <a href="' . $link . '">' . esc_html($site) . '</a> to evaluate tailored solutions for your organization.</p>';
-                    break;
-
-                case 'SERVICE':
-                default:
-                    $heading_count = 4;
-                    $draft = '<p>Accessing reliable <strong>' . esc_html($t) . '</strong> is vital for achieving optimal results, operational efficiency, and quality outcomes. This comprehensive guide from <a href="' . $link . '">' . esc_html($site) . '</a> details core capabilities, quality standards, and customized execution planning.</p>' . "\n\n" .
-                    '[gmb_toc]' . "\n\n" .
-                    '<h2>Scope of Professional ' . esc_html($kw) . ' Solutions</h2>' . "\n" .
-                    '<p>Professional solutions for <strong>' . esc_html($kw_lc) . '</strong> encompass dedicated observation, strategic management, expert execution, and ongoing performance optimization tailored to your specific requirements.</p>' . "\n\n" .
-                    '<h2>Customized Strategy Development & Dedicated Supervision</h2>' . "\n" .
-                    '<p>Every project begins with a thorough initial assessment to design a flexible operational plan that adapts to evolving requirements over time.</p>' . "\n" .
-                    '<ul>' . "\n" .
-                    '    <li><strong>Expert Oversight:</strong> Continuous monitoring of project quality and performance metrics.</li>' . "\n" .
-                    '    <li><strong>Customized Support:</strong> Direct alignment with target objectives and operational workflows.</li>' . "\n" .
-                    '    <li><strong>Quality Assurance:</strong> Verified execution standards and safety/compliance controls.</li>' . "\n" .
-                    '</ul>' . "\n\n" .
-                    '<h2>Quality Standards and Provider Benchmarks</h2>' . "\n" .
-                    '<p>All operations undergo rigorous quality evaluation, performance tracking, and continuous improvement to ensure maximum value delivery.</p>' . "\n\n" .
-                    '<h2>Schedule a Consultation</h2>' . "\n" .
-                    '<p>Secure tailored guidance for your requirements. Contact <a href="' . $link . '">' . esc_html($site) . '</a> today to discuss a custom solution schedule.</p>';
-                    break;
-            }
-
-            // Remove TOC if headings < 4
-            if ($heading_count < 4) {
-                $draft = str_replace('[gmb_toc]', '', $draft);
-            }
-
-            $sanitized = self::sanitize_ai_cliches($draft);
+            $heading_count = count($outline);
 
             return array(
-                'intent' => array(
+                'success' => $is_ai_success,
+                'intent'  => array(
                     'niche'         => $niche,
                     'heading_count' => $heading_count,
                     'archetype'     => ucwords(strtolower(str_replace('_', ' ', $niche))),
                 ),
-                'draft'  => $sanitized,
+                'brief'   => $brief,
+                'outline' => $outline,
+                'draft'   => $ai_draft,
+                'meta_description' => self::generate_meta_description($title, $keyword, $ai_draft),
             );
         }
     }
