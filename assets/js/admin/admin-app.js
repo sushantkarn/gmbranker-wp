@@ -447,6 +447,13 @@ function initGmbAdminApp() {
           name: "%title%",
           image: "%featured_image%",
           description: "%excerpt%",
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "USD",
+            price: "99.00",
+            availability: "https://schema.org/InStock",
+            url: "%url%",
+          },
         },
         reviewRating: {
           "@type": "Rating",
@@ -472,6 +479,13 @@ function initGmbAdminApp() {
           name: "%title%",
           image: "%featured_image%",
           description: "%excerpt%",
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "USD",
+            price: "99.00",
+            availability: "https://schema.org/InStock",
+            url: "%url%",
+          },
         },
         ratingValue: "4.9",
         bestRating: "5",
