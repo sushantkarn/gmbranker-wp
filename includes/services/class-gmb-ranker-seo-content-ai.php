@@ -25,24 +25,29 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
             $primary_intent = 'Informational';
             $secondary_intent = 'Guide';
             $funnel_stage = 'TOFU';
-            $archetype = 'Comprehensive Guide';
+            $archetype = 'Comprehensive Reference';
 
             if (preg_match('/(vs|versus|compare|comparison|difference|or)/i', $text)) {
                 $primary_intent = 'Commercial Investigation';
                 $secondary_intent = 'Comparison';
                 $funnel_stage = 'MOFU';
                 $archetype = 'Comparison Analysis';
-            } elseif (preg_match('/(how to|step by step|guide to|ways to|checklist|tutorial)/i', $text)) {
+            } elseif (preg_match('/(how to|step by step|guide to|ways to|checklist|tutorial|procedure|setup)/i', $text)) {
                 $primary_intent = 'Informational';
                 $secondary_intent = 'How-to';
                 $funnel_stage = 'MOFU';
-                $archetype = 'Step-by-Step Tutorial';
-            } elseif (preg_match('/(best|top|choose|selecting|review|pricing|cost|worth|finding)/i', $text)) {
+                $archetype = 'Step-by-Step Framework';
+            } elseif (preg_match('/(what is|definition|meaning|explain|overview|understand)/i', $text)) {
+                $primary_intent = 'Informational';
+                $secondary_intent = 'Definition';
+                $funnel_stage = 'TOFU';
+                $archetype = 'Definition & Explainer';
+            } elseif (preg_match('/(best|top|choose|selecting|review|pricing|cost|worth|finding|buyer)/i', $text)) {
                 $primary_intent = 'Commercial Investigation';
                 $secondary_intent = 'Decision-making';
                 $funnel_stage = 'MOFU';
                 $archetype = 'Decision Guide';
-            } elseif (preg_match('/(service|services|near me|provider|hire|agency|clinic|center|company|kathmandu|nepal|location)/i', $text)) {
+            } elseif (preg_match('/(service|services|near me|provider|hire|agency|clinic|center|company|kathmandu|nepal|location|local)/i', $text)) {
                 $primary_intent = 'Transactional';
                 $secondary_intent = 'Local Commercial';
                 $funnel_stage = 'BOFU';
@@ -58,7 +63,24 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
         }
 
         /**
-         * Generate Dynamic Intent-Aligned Content Draft (NeuronWriter Style)
+         * Sanitize Content Against Generic AI Clichés
+         */
+        public static function sanitize_ai_cliches($content) {
+            $cliches = array(
+                '/in today\'s fast-paced world,?/i' => 'Currently,',
+                '/whether you are [^,\.]+,?/i'      => '',
+                '/look no further,?/i'             => '',
+                '/it is important to note that/i'   => 'Notably,',
+                '/in conclusion,?/i'                => 'Summary:',
+                '/when it comes to/i'               => 'Regarding',
+                '/unlock the power of/i'            => 'Utilize',
+            );
+
+            return preg_replace(array_keys($cliches), array_values($cliches), $content);
+        }
+
+        /**
+         * Generate Dynamic Intent-Aligned Content Draft
          */
         public static function generate_archetype_draft($title, $keyword, $post_id = 0) {
             $intent = self::classify_search_intent($title, $keyword);
@@ -70,12 +92,33 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
 
             switch ($intent['archetype']) {
 
+                case 'Definition & Explainer':
+                    $draft = '<p>Understanding <strong>' . esc_html($kw_lc) . '</strong> provides essential clarity for individuals evaluating specialized healthcare and personal assistance solutions. Below is a comprehensive breakdown of what ' . esc_html($kw_lc) . ' entails, key principles, and practical applications from <a href="' . $home_link . '">' . esc_html($site_name) . '</a>.</p>' . "\n\n" .
+                    '[gmb_toc]' . "\n\n" .
+                    '<h2>1. What Is ' . esc_html($kw_uc) . '?</h2>' . "\n" .
+                    '<p>At its core, <strong>' . esc_html($kw_lc) . '</strong> refers to structured professional caregiving and medical support delivered directly in personal residences. This model enables individuals to receive individualized assistance while maintaining independence in familiar surroundings.</p>' . "\n" .
+                    '<p>Key components include clinical nursing oversight, daily personal assistance, mobility support, and customized care plan management.</p>' . "\n\n" .
+                    '<h2>2. Core Concepts & Practical Applications</h2>' . "\n" .
+                    '<p>Applying <strong>' . esc_html($kw_lc) . '</strong> effectively involves key operational parameters:</p>' . "\n" .
+                    '<ul>' . "\n" .
+                    '    <li><strong>Clinical Oversight:</strong> Licensed healthcare specialists monitoring vital health metrics.</li>' . "\n" .
+                    '    <li><strong>Daily Life Assistance:</strong> Personal hygiene care, meal preparation, and medication reminders.</li>' . "\n" .
+                    '    <li><strong>Emotional & Social Support:</strong> Compassionate companionship to enhance mental well-being.</li>' . "\n" .
+                    '</ul>' . "\n\n" .
+                    '<h2>3. When Does ' . esc_html($kw_uc) . ' Matter Most?</h2>' . "\n" .
+                    '<p>Recognizing when <strong>' . esc_html($kw_lc) . '</strong> is needed helps prevent avoidable health crises and hospitalization. It is particularly valuable during post-operative recovery, chronic illness management, and elder care.</p>' . "\n\n" .
+                    '<h2>4. Frequently Asked Questions (FAQ)</h2>' . "\n" .
+                    '<h3>Who qualifies for professional ' . esc_html($kw_lc) . '?</h3>' . "\n" .
+                    '<p>Anyone requiring ongoing medical observation, personal hygiene support, or specialized rehabilitation can benefit from tailored care plans.</p>' . "\n\n" .
+                    '<h2>5. Key Takeaways</h2>' . "\n" .
+                    '<p>For detailed information on implementing <strong>' . esc_html($kw_lc) . '</strong>, contact the experienced team at <a href="' . $home_link . '">' . esc_html($site_name) . '</a>.</p>';
+                    break;
+
                 case 'Comparison Analysis':
                     $draft = '<p>Choosing between competing options for <strong>' . esc_html($kw_lc) . '</strong> requires evaluating quality, costs, and specific requirements. In this comprehensive comparison by <a href="' . $home_link . '">' . esc_html($site_name) . '</a>, we break down the critical trade-offs so you can select the solution best aligned with your goals.</p>' . "\n\n" .
                     '[gmb_toc]' . "\n\n" .
                     '<h2>1. Quick Comparison Overview: ' . esc_html($kw_uc) . '</h2>' . "\n" .
-                    '<p>Understanding how <strong>' . esc_html($kw_lc) . '</strong> measures up against traditional alternatives is essential. Key parameters include flexibility, personalized care, long-term costs, and overall satisfaction.</p>' . "\n" .
-                    '<p>Whether you require short-term support or an ongoing management framework, evaluating key performance metrics ensures high-value outcomes.</p>' . "\n\n" .
+                    '<p>Understanding how <strong>' . esc_html($kw_lc) . '</strong> measures up against traditional institutional options is essential. Key parameters include flexibility, personalized care, long-term costs, and overall satisfaction.</p>' . "\n\n" .
                     '<h2>2. Key Differences & Evaluation Criteria</h2>' . "\n" .
                     '<p>When evaluating <strong>' . esc_html($kw_lc) . '</strong>, consider these critical factors:</p>' . "\n" .
                     '<ul>' . "\n" .
@@ -85,7 +128,6 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                     '    <li><strong>Convenience & Comfort:</strong> Delivering professional assistance directly in home environments.</li>' . "\n" .
                     '</ul>' . "\n\n" .
                     '<h2>3. Pros and Cons of ' . esc_html($kw_uc) . '</h2>' . "\n" .
-                    '<p>Every approach presents unique trade-offs depending on your situation:</p>' . "\n" .
                     '<ol>' . "\n" .
                     '    <li><strong>Primary Advantages:</strong> Enhanced personal dignity, reduced stress, and targeted one-on-one attention.</li>' . "\n" .
                     '    <li><strong>Important Considerations:</strong> Ensuring proper communication channels and scheduling flexibility.</li>' . "\n" .
@@ -97,8 +139,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                     '<p>For personalized guidance on <strong>' . esc_html($kw_lc) . '</strong>, contact the experts at <a href="' . $home_link . '">' . esc_html($site_name) . '</a> today to receive a tailored consultation.</p>';
                     break;
 
-                case 'Step-by-Step Tutorial':
-                case 'How-To':
+                case 'Step-by-Step Framework':
                     $draft = '<p>Mastering <strong>' . esc_html($kw_lc) . '</strong> requires a structured, proven methodology. This step-by-step framework from <a href="' . $home_link . '">' . esc_html($site_name) . '</a> outlines exact actions, essential checklists, and expert strategies to achieve optimal results.</p>' . "\n\n" .
                     '[gmb_toc]' . "\n\n" .
                     '<h2>1. Prerequisites & Preparation for ' . esc_html($kw_uc) . '</h2>' . "\n" .
@@ -174,9 +215,11 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                     break;
             }
 
+            $sanitized_draft = self::sanitize_ai_cliches($draft);
+
             return array(
                 'intent' => $intent,
-                'draft'  => $draft,
+                'draft'  => $sanitized_draft,
             );
         }
     }
