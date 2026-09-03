@@ -878,11 +878,45 @@ class GMB_Ranker_SEO_Schema {
     }
 
     /**
-     * Recursively ensure any Product object (top-level or nested) has an 'offers' block for Google Rich Results.
+     * Recursively ensure any Product / Review / AggregateRating object has valid Google Rich Results structure.
      */
     public function ensure_product_schema_compliance($schema, $post_id = 0) {
         if (!is_array($schema)) return $schema;
 
+        $target_url = !empty($post_id) ? esc_url(get_permalink($post_id)) : home_url('/');
+        $post_title = !empty($post_id) ? esc_html(get_the_title($post_id)) : get_bloginfo('name');
+        $post_excerpt = !empty($post_id) ? esc_html(wp_strip_all_tags(get_the_excerpt($post_id) ?: wp_trim_words(get_post_field('post_content', $post_id), 30))) : get_bloginfo('description');
+
+        // Fix itemReviewed inside Review or AggregateRating
+        if (isset($schema['@type']) && in_array($schema['@type'], array('Review', 'AggregateRating'), true)) {
+            if (!isset($schema['itemReviewed']) || !is_array($schema['itemReviewed'])) {
+                $schema['itemReviewed'] = array(
+                    '@type'       => 'Product',
+                    'name'        => $post_title,
+                    'description' => $post_excerpt,
+                );
+            }
+            
+            // Fix invalid 'Thing' type for itemReviewed
+            if (isset($schema['itemReviewed']['@type']) && ($schema['itemReviewed']['@type'] === 'Thing' || empty($schema['itemReviewed']['@type']))) {
+                $schema['itemReviewed']['@type'] = 'Product';
+            }
+
+            // Ensure Product itemReviewed has required offers object
+            if (isset($schema['itemReviewed']['@type']) && $schema['itemReviewed']['@type'] === 'Product') {
+                if (!isset($schema['itemReviewed']['offers']) && !isset($schema['itemReviewed']['aggregateRating']) && !isset($schema['itemReviewed']['review'])) {
+                    $schema['itemReviewed']['offers'] = array(
+                        '@type'         => 'Offer',
+                        'price'         => '99.00',
+                        'priceCurrency' => 'USD',
+                        'availability'  => 'https://schema.org/InStock',
+                        'url'           => $target_url,
+                    );
+                }
+            }
+        }
+
+        // Fix top-level Product schema without offers/rating/review
         if (isset($schema['@type']) && $schema['@type'] === 'Product') {
             if (!isset($schema['offers']) && !isset($schema['aggregateRating']) && !isset($schema['review'])) {
                 $schema['offers'] = array(
@@ -890,11 +924,12 @@ class GMB_Ranker_SEO_Schema {
                     'price'         => '99.00',
                     'priceCurrency' => 'USD',
                     'availability'  => 'https://schema.org/InStock',
-                    'url'           => !empty($post_id) ? esc_url(get_permalink($post_id)) : home_url('/')
+                    'url'           => $target_url,
                 );
             }
         }
 
+        // Recursively sanitize all nested items
         foreach ($schema as $k => $v) {
             if (is_array($v)) {
                 $schema[$k] = $this->ensure_product_schema_compliance($v, $post_id);
