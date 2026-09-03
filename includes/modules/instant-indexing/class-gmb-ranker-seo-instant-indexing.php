@@ -124,68 +124,36 @@ class GMB_Ranker_SEO_Instant_Indexing {
             return array('success' => false, 'error' => __('No valid HTTP/HTTPS URLs provided.', 'gmb-ranker-seo-automation'));
         }
 
-        $host = wp_parse_url(home_url(), PHP_URL_HOST);
-        $key = self::get_indexnow_key();
+        $host         = wp_parse_url(home_url(), PHP_URL_HOST);
+        $key          = self::get_indexnow_key();
         $key_location = self::get_key_location();
         
-        $body = array(
-            'host'        => $host,
-            'key'         => $key,
-            'keyLocation' => $key_location,
-            'urlList'     => array_values($urls)
-        );
+        $client = new GMB_Ranker_SEO_IndexNow_Client();
+        $res    = $client->submit_to_indexnow($host, $key, $urls, $key_location);
 
-        $endpoint = 'https://api.indexnow.org/indexnow';
-        $response = wp_remote_post($endpoint, array(
-            'headers' => array('Content-Type' => 'application/json; charset=utf-8'),
-            'body'    => wp_json_encode($body),
-            'timeout' => 20
-        ));
-
-        $status_code = 500;
-        $message = 'Unknown error';
-
-        if (is_wp_error($response)) {
-            $message = $response->get_error_message();
+        if (is_wp_error($res)) {
+            $message = $res->get_error_message();
             self::log_indexnow_submission($urls, $is_manual, 'WP_Error: ' . $message);
-            return array('success' => false, 'code' => $status_code, 'message' => $message);
+            return array('success' => false, 'code' => 500, 'message' => $message);
         }
 
-        $status_code = wp_remote_retrieve_response_code($response);
-        $res_body = wp_remote_retrieve_body($response);
+        $status_code = isset($res['status_code']) ? $res['status_code'] : 500;
+        $message     = isset($res['message']) ? $res['message'] : 'Unknown response';
+        $is_success  = !empty($res['success']);
 
-        switch ($status_code) {
-            case 200:
-                $message = '200 OK — URL successfully submitted to IndexNow API.';
-                break;
-            case 202:
-                $message = '202 Accepted — URL accepted by IndexNow API for verification.';
-                break;
-            case 400:
-                $message = '400 Bad Request — Invalid request format.';
-                break;
-            case 403:
-                $message = '403 Forbidden — Invalid API key or key location verification failed.';
-                break;
-            case 422:
-                $message = '422 Unprocessable Entity — Submitted URLs do not belong to this website host (' . esc_html($host) . '). Submissions to IndexNow must match your domain.';
-                break;
-            case 429:
-                $message = '429 Too Many Requests — Rate limit exceeded.';
-                break;
-            default:
-                $message = 'HTTP Code ' . $status_code . ': ' . ($res_body ?: 'Server response');
-                break;
+        if ($is_success) {
+            self::log_indexnow_submission($urls, $is_manual, 'Success: ' . $message);
+        } else {
+            self::log_indexnow_submission($urls, $is_manual, 'Failed: ' . $message);
         }
 
-        self::log_indexnow_submission($urls, $is_manual, $message);
         self::log_request('bing_submit', count($urls));
 
         return array(
-            'success' => ($status_code >= 200 && $status_code < 300),
+            'success' => $is_success,
             'code'    => $status_code,
             'message' => $message,
-            'raw'     => $res_body ?: array('status' => $status_code, 'message' => $message)
+            'raw'     => isset($res['body']) ? $res['body'] : '',
         );
     }
 
