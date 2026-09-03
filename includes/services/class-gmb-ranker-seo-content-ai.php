@@ -199,23 +199,23 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
 
                 case 'SERVICE':
                 default:
-                    // Topic-specific service guide
+                    // Topic-specific generic service guide
                     $heading_count = 4;
-                    $draft = '<p>Accessing reliable <strong>' . esc_html($t) . '</strong> is vital for maintaining health, mobility, and dignity. This comprehensive guide from <a href="' . $link . '">' . esc_html($site) . '</a> details service offerings, caregiver standards, and personalized care planning.</p>' . "\n\n" .
+                    $draft = '<p>Accessing reliable <strong>' . esc_html($t) . '</strong> is vital for achieving optimal results, operational efficiency, and quality outcomes. This comprehensive guide from <a href="' . $link . '">' . esc_html($site) . '</a> details core capabilities, quality standards, and customized execution planning.</p>' . "\n\n" .
                     '[gmb_toc]' . "\n\n" .
-                    '<h2>Scope of Professional Medical & Personal Care Services</h2>' . "\n" .
-                    '<p>Professional care solutions include skilled nursing observation, medication management, physical therapy assistance, and compassionate personal hygiene support right in your residence. According to standards published by the <a href="https://www.who.int/" target="_blank" rel="noopener">World Health Organization (WHO)</a>, home health management significantly improves patient comfort and recovery outcomes.</p>' . "\n\n" .
-                    '<h2>Customized Care Plan Development & Nursing Supervision</h2>' . "\n" .
-                    '<p>Every individual receives a thorough medical assessment to design a flexible care schedule that adapts to changing health requirements over time.</p>' . "\n" .
+                    '<h2>Scope of Professional ' . esc_html($kw) . ' Solutions</h2>' . "\n" .
+                    '<p>Professional solutions for <strong>' . esc_html($kw_lc) . '</strong> encompass dedicated observation, strategic management, expert execution, and ongoing performance optimization tailored to your specific requirements.</p>' . "\n\n" .
+                    '<h2>Customized Strategy Development & Dedicated Supervision</h2>' . "\n" .
+                    '<p>Every project begins with a thorough initial assessment to design a flexible operational plan that adapts to evolving requirements over time.</p>' . "\n" .
                     '<ul>' . "\n" .
-                    '    <li><strong>Registered Nurse Oversight:</strong> Ongoing monitoring of vital signs and medication safety.</li>' . "\n" .
-                    '    <li><strong>Daily Life Support:</strong> Dignified assistance with bathing, mobility, and nutrition.</li>' . "\n" .
-                    '    <li><strong>Family Relief:</strong> Alleviates family caregiver stress through reliable respite support.</li>' . "\n" .
+                    '    <li><strong>Expert Oversight:</strong> Continuous monitoring of project quality and performance metrics.</li>' . "\n" .
+                    '    <li><strong>Customized Support:</strong> Direct alignment with target objectives and operational workflows.</li>' . "\n" .
+                    '    <li><strong>Quality Assurance:</strong> Verified execution standards and safety/compliance controls.</li>' . "\n" .
                     '</ul>' . "\n\n" .
-                    '<h2>Quality Standards and Provider Licensing</h2>' . "\n" .
-                    '<p>All caregivers undergo background screening, clinical verification, and ongoing medical training to ensure safety and quality care delivery.</p>' . "\n\n" .
-                    '<h2>Schedule a Personal Consultation</h2>' . "\n" .
-                    '<p>Secure personalized support for your loved ones. Contact <a href="' . $link . '">' . esc_html($site) . '</a> today to discuss a custom care schedule.</p>';
+                    '<h2>Quality Standards and Provider Benchmarks</h2>' . "\n" .
+                    '<p>All operations undergo rigorous quality evaluation, performance tracking, and continuous improvement to ensure maximum value delivery.</p>' . "\n\n" .
+                    '<h2>Schedule a Consultation</h2>' . "\n" .
+                    '<p>Secure tailored guidance for your requirements. Contact <a href="' . $link . '">' . esc_html($site) . '</a> today to discuss a custom solution schedule.</p>';
                     break;
             }
 

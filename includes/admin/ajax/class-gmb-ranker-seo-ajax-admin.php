@@ -694,10 +694,10 @@ class GMB_Ranker_SEO_Ajax_Admin {
                 'category'    => __('Meta Description', 'gmb-ranker-seo-automation'),
                 'current'     => '',
                 'recommended' => $suggested_desc,
-                'status'      => 'MISSING',
+                'status'      => 'RECOMMENDED',
                 'risk_level'  => 'LOW',
                 'action'      => 'ADD DESCRIPTION',
-                'evidence'    => __('Meta Description is missing completely. AI generated a contextual meta description for target topic.', 'gmb-ranker-seo-automation'),
+                'evidence'    => __('Meta Description is missing on page. AI generated a contextual meta description for target topic.', 'gmb-ranker-seo-automation'),
             );
         } elseif ($desc_len < 120 || $desc_len > 160) {
             $suggested_desc = mb_substr($current_desc, 0, 155);
@@ -757,10 +757,10 @@ class GMB_Ranker_SEO_Ajax_Admin {
                 'category'    => __('Schema Markup', 'gmb-ranker-seo-automation'),
                 'current'     => __('None', 'gmb-ranker-seo-automation'),
                 'recommended' => ucfirst($pt_schema),
-                'status'      => 'MISSING',
+                'status'      => 'RECOMMENDED',
                 'risk_level'  => 'LOW',
                 'action'      => sprintf(__('APPLY %s SCHEMA', 'gmb-ranker-seo-automation'), strtoupper($pt_schema)),
-                'evidence'    => __('No structured data schema assigned to post.', 'gmb-ranker-seo-automation'),
+                'evidence'    => __('No structured data schema assigned to post. Recommended schema assigned.', 'gmb-ranker-seo-automation'),
             );
         }
 
