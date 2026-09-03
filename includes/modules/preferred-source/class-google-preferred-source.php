@@ -21,35 +21,35 @@ class Google_Preferred_Source {
     }
 
     public function register_settings() {
-        register_setting('gps_settings_group', 'gps_enabled', array(
+        register_setting('gmb_gps_settings_group', 'gmb_gps_enabled', array(
             'default' => '1',
             'sanitize_callback' => 'sanitize_text_field'
         ));
-        register_setting('gps_settings_group', 'gps_target_domain', array(
+        register_setting('gmb_gps_settings_group', 'gmb_gps_target_domain', array(
             'default' => wp_parse_url(home_url(), PHP_URL_HOST),
             'sanitize_callback' => 'sanitize_text_field'
         ));
-        register_setting('gps_settings_group', 'gps_button_text', array(
+        register_setting('gmb_gps_settings_group', 'gmb_gps_button_text', array(
             'default' => __('Add to Preferred Sources', 'gmb-ranker-seo-automation'),
             'sanitize_callback' => 'sanitize_text_field'
         ));
-        register_setting('gps_settings_group', 'gps_post_types', array(
+        register_setting('gmb_gps_settings_group', 'gmb_gps_post_types', array(
             'default' => array('post'),
             'sanitize_callback' => array($this, 'sanitize_array')
         ));
-        register_setting('gps_settings_group', 'gps_insertion_location', array(
+        register_setting('gmb_gps_settings_group', 'gmb_gps_insertion_location', array(
             'default' => 'content_end',
             'sanitize_callback' => 'sanitize_text_field'
         ));
-        register_setting('gps_settings_group', 'gps_button_theme', array(
+        register_setting('gmb_gps_settings_group', 'gmb_gps_button_theme', array(
             'default' => 'google_white',
             'sanitize_callback' => 'sanitize_text_field'
         ));
-        register_setting('gps_settings_group', 'gps_button_size', array(
+        register_setting('gmb_gps_settings_group', 'gmb_gps_button_size', array(
             'default' => 'medium',
             'sanitize_callback' => 'sanitize_text_field'
         ));
-        register_setting('gps_settings_group', 'gps_custom_css', array(
+        register_setting('gmb_gps_settings_group', 'gmb_gps_custom_css', array(
             'sanitize_callback' => 'sanitize_textarea_field'
         ));
     }
@@ -69,21 +69,21 @@ class Google_Preferred_Source {
             '2.1.0'
         );
 
-        $custom_css = get_option('gps_custom_css', '');
+        $custom_css = get_option('gmb_gps_custom_css', '');
         if (!empty($custom_css)) {
             wp_add_inline_style('gmb-ranker-seo-frontend', wp_strip_all_tags($custom_css));
         }
     }
 
     public function generate_button_html() {
-        $domain = get_option('gps_target_domain', '');
+        $domain = get_option('gmb_gps_target_domain', '');
         if (empty($domain)) {
             $domain = wp_parse_url(home_url(), PHP_URL_HOST);
         }
 
-        $text = get_option('gps_button_text', __('Add to Preferred Sources', 'gmb-ranker-seo-automation'));
-        $theme = get_option('gps_button_theme', 'google_white');
-        $size = get_option('gps_button_size', 'medium');
+        $text = get_option('gmb_gps_button_text', __('Add to Preferred Sources', 'gmb-ranker-seo-automation'));
+        $theme = get_option('gmb_gps_button_theme', 'google_white');
+        $size = get_option('gmb_gps_button_size', 'medium');
         $link = 'https://www.google.com/preferences/source?q=' . urlencode($domain);
 
         $google_svg = '
@@ -106,19 +106,19 @@ class Google_Preferred_Source {
     }
 
     public function render_shortcode($atts) {
-        if (!get_option('gps_enabled', '1')) return '';
+        if (!get_option('gmb_gps_enabled', '1')) return '';
         return $this->generate_button_html();
     }
 
     public function auto_insert_button($content) {
-        if (!get_option('gps_enabled', '1')) return $content;
+        if (!get_option('gmb_gps_enabled', '1')) return $content;
 
-        $post_types = get_option('gps_post_types', array('post'));
+        $post_types = get_option('gmb_gps_post_types', array('post'));
         if (!is_array($post_types)) $post_types = array('post');
 
         if (!is_singular($post_types)) return $content;
 
-        $location = get_option('gps_insertion_location', 'content_end');
+        $location = get_option('gmb_gps_insertion_location', 'content_end');
         $button_html = $this->generate_button_html();
 
         if ($location === 'content_start') {
@@ -137,16 +137,11 @@ class Google_Preferred_Source {
             '2.1.0'
         );
         ?>
-        <div class="wrap gmb-admin-wrap gps-settings-wrap">
-            <div class="gmb-card">
-                <div class="gmb-card__header">
-                    <div class="gmb-logo-area">
-                        <div class="gmb-logo-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#ffffff"/>
-                            </svg>
-                        </div>
-                        <div>
+        <div class="wrap gmb-wrap gmb-preferred-source-wrap">
+            <div class="gmb-settings-layout">
+                <div class="gmb-header-hero">
+                    <div class="gmb-header-hero-content">
+                        <div class="gmb-header-hero-text">
                             <h1 class="gmb-heading-1"><?php esc_html_e('Google Preferred Source Button', 'gmb-ranker-seo-automation'); ?></h1>
                             <p class="gmb-text-muted"><?php esc_html_e('Boost your E-E-A-T and organic visibility in Google Search by encouraging readers to set your site as a preferred source.', 'gmb-ranker-seo-automation'); ?></p>
                         </div>
@@ -154,15 +149,15 @@ class Google_Preferred_Source {
                 </div>
 
                 <form method="post" action="options.php">
-                    <?php settings_fields('gps_settings_group'); ?>
-                    <?php do_settings_sections('gps_settings_group'); ?>
+                    <?php settings_fields('gmb_gps_settings_group'); ?>
+                    <?php do_settings_sections('gmb_gps_settings_group'); ?>
 
                     <table class="form-table">
                         <tr valign="top">
                             <th scope="row"><?php esc_html_e('Enable Button', 'gmb-ranker-seo-automation'); ?></th>
                             <td>
                                 <label class="gmb-switch">
-                                    <input type="checkbox" name="gps_enabled" value="1" <?php checked('1', get_option('gps_enabled', '1')); ?> />
+                                    <input type="checkbox" name="gmb_gps_enabled" value="1" <?php checked('1', get_option('gmb_gps_enabled', '1')); ?> />
                                     <span class="gmb-slider"></span>
                                 </label>
                             </td>
@@ -171,7 +166,7 @@ class Google_Preferred_Source {
                         <tr valign="top">
                             <th scope="row"><?php esc_html_e('Target Domain', 'gmb-ranker-seo-automation'); ?></th>
                             <td>
-                                <input type="text" name="gps_target_domain" value="<?php echo esc_attr(get_option('gps_target_domain', wp_parse_url(home_url(), PHP_URL_HOST))); ?>" class="gmb-input regular-text" />
+                                <input type="text" name="gmb_gps_target_domain" value="<?php echo esc_attr(get_option('gmb_gps_target_domain', wp_parse_url(home_url(), PHP_URL_HOST))); ?>" class="gmb-input regular-text" />
                                 <p class="gmb-form-help"><?php printf(__('The domain you want users to prefer. (Must match your domain level, e.g., %s)', 'gmb-ranker-seo-automation'), esc_html(wp_parse_url(home_url(), PHP_URL_HOST))); ?></p>
                             </td>
                         </tr>
@@ -179,7 +174,7 @@ class Google_Preferred_Source {
                         <tr valign="top">
                             <th scope="row"><?php esc_html_e('Button Text', 'gmb-ranker-seo-automation'); ?></th>
                             <td>
-                                <input type="text" name="gps_button_text" value="<?php echo esc_attr(get_option('gps_button_text', __('Add to Preferred Sources', 'gmb-ranker-seo-automation'))); ?>" class="gmb-input regular-text" />
+                                <input type="text" name="gmb_gps_button_text" value="<?php echo esc_attr(get_option('gmb_gps_button_text', __('Add to Preferred Sources', 'gmb-ranker-seo-automation'))); ?>" class="gmb-input regular-text" />
                             </td>
                         </tr>
 
@@ -188,14 +183,14 @@ class Google_Preferred_Source {
                             <td>
                                 <div class="gmb-checkbox-group">
                                     <?php
-                                    $post_types = get_option('gps_post_types', array('post'));
+                                    $post_types = get_option('gmb_gps_post_types', array('post'));
                                     if (!is_array($post_types)) $post_types = array('post');
                                     $available_post_types = get_post_types(array('public' => true), 'objects');
                                     foreach ($available_post_types as $pt) {
                                         if ($pt->name === 'attachment') continue;
                                         ?>
                                         <label class="gmb-checkbox-label">
-                                            <input type="checkbox" name="gps_post_types[]" value="<?php echo esc_attr($pt->name); ?>" <?php checked(in_array($pt->name, $post_types)); ?> />
+                                            <input type="checkbox" name="gmb_gps_post_types[]" value="<?php echo esc_attr($pt->name); ?>" <?php checked(in_array($pt->name, $post_types)); ?> />
                                             <?php echo esc_html($pt->label); ?>
                                         </label>
                                         <?php
@@ -209,10 +204,10 @@ class Google_Preferred_Source {
                         <tr valign="top">
                             <th scope="row"><?php esc_html_e('Auto Insertion', 'gmb-ranker-seo-automation'); ?></th>
                             <td>
-                                <select name="gps_insertion_location" class="gmb-select gmb-select--medium">
-                                    <option value="content_start" <?php selected('content_start', get_option('gps_insertion_location', 'content_end')); ?>><?php esc_html_e('Insert at Start of Post Content', 'gmb-ranker-seo-automation'); ?></option>
-                                    <option value="content_end" <?php selected('content_end', get_option('gps_insertion_location', 'content_end')); ?>><?php esc_html_e('Insert at End of Post Content', 'gmb-ranker-seo-automation'); ?></option>
-                                    <option value="manual" <?php selected('manual', get_option('gps_insertion_location', 'content_end')); ?>><?php esc_html_e('Manual Placement Only (Use Shortcode/Widget)', 'gmb-ranker-seo-automation'); ?></option>
+                                <select name="gmb_gps_insertion_location" class="gmb-select gmb-select--medium">
+                                    <option value="content_start" <?php selected('content_start', get_option('gmb_gps_insertion_location', 'content_end')); ?>><?php esc_html_e('Insert at Start of Post Content', 'gmb-ranker-seo-automation'); ?></option>
+                                    <option value="content_end" <?php selected('content_end', get_option('gmb_gps_insertion_location', 'content_end')); ?>><?php esc_html_e('Insert at End of Post Content', 'gmb-ranker-seo-automation'); ?></option>
+                                    <option value="manual" <?php selected('manual', get_option('gmb_gps_insertion_location', 'content_end')); ?>><?php esc_html_e('Manual Placement Only (Use Shortcode/Widget)', 'gmb-ranker-seo-automation'); ?></option>
                                 </select>
                             </td>
                         </tr>
@@ -220,10 +215,10 @@ class Google_Preferred_Source {
                         <tr valign="top">
                             <th scope="row"><?php esc_html_e('Button Theme', 'gmb-ranker-seo-automation'); ?></th>
                             <td>
-                                <select name="gps_button_theme" class="gmb-select gmb-select--medium">
-                                    <option value="google_white" <?php selected('google_white', get_option('gps_button_theme', 'google_white')); ?>><?php esc_html_e('Google Minimalist (White)', 'gmb-ranker-seo-automation'); ?></option>
-                                    <option value="google_blue" <?php selected('google_blue', get_option('gps_button_theme', 'google_white')); ?>><?php esc_html_e('Google Primary (Blue)', 'gmb-ranker-seo-automation'); ?></option>
-                                    <option value="google_dark" <?php selected('google_dark', get_option('gps_button_theme', 'google_white')); ?>><?php esc_html_e('Google Dark Mode (Charcoal)', 'gmb-ranker-seo-automation'); ?></option>
+                                <select name="gmb_gps_button_theme" class="gmb-select gmb-select--medium">
+                                    <option value="google_white" <?php selected('google_white', get_option('gmb_gps_button_theme', 'google_white')); ?>><?php esc_html_e('Google Minimalist (White)', 'gmb-ranker-seo-automation'); ?></option>
+                                    <option value="google_blue" <?php selected('google_blue', get_option('gmb_gps_button_theme', 'google_white')); ?>><?php esc_html_e('Google Primary (Blue)', 'gmb-ranker-seo-automation'); ?></option>
+                                    <option value="google_dark" <?php selected('google_dark', get_option('gmb_gps_button_theme', 'google_white')); ?>><?php esc_html_e('Google Dark Mode (Charcoal)', 'gmb-ranker-seo-automation'); ?></option>
                                 </select>
                             </td>
                         </tr>
@@ -231,10 +226,10 @@ class Google_Preferred_Source {
                         <tr valign="top">
                             <th scope="row"><?php esc_html_e('Button Size', 'gmb-ranker-seo-automation'); ?></th>
                             <td>
-                                <select name="gps_button_size" class="gmb-select gmb-select--medium">
-                                    <option value="small" <?php selected('small', get_option('gps_button_size', 'medium')); ?>><?php esc_html_e('Small', 'gmb-ranker-seo-automation'); ?></option>
-                                    <option value="medium" <?php selected('medium', get_option('gps_button_size', 'medium')); ?>><?php esc_html_e('Medium', 'gmb-ranker-seo-automation'); ?></option>
-                                    <option value="large" <?php selected('large', get_option('gps_button_size', 'medium')); ?>><?php esc_html_e('Large', 'gmb-ranker-seo-automation'); ?></option>
+                                <select name="gmb_gps_button_size" class="gmb-select gmb-select--medium">
+                                    <option value="small" <?php selected('small', get_option('gmb_gps_button_size', 'medium')); ?>><?php esc_html_e('Small', 'gmb-ranker-seo-automation'); ?></option>
+                                    <option value="medium" <?php selected('medium', get_option('gmb_gps_button_size', 'medium')); ?>><?php esc_html_e('Medium', 'gmb-ranker-seo-automation'); ?></option>
+                                    <option value="large" <?php selected('large', get_option('gmb_gps_button_size', 'medium')); ?>><?php esc_html_e('Large', 'gmb-ranker-seo-automation'); ?></option>
                                 </select>
                             </td>
                         </tr>
@@ -242,7 +237,7 @@ class Google_Preferred_Source {
                         <tr valign="top">
                             <th scope="row"><?php esc_html_e('Custom CSS', 'gmb-ranker-seo-automation'); ?></th>
                             <td>
-                                <textarea name="gps_custom_css" rows="5" cols="50" class="gmb-textarea gmb-code-font" placeholder=".gps-btn { margin: 20px auto; }"><?php echo esc_textarea(get_option('gps_custom_css')); ?></textarea>
+                                <textarea name="gmb_gps_custom_css" rows="5" cols="50" class="gmb-textarea gmb-code-font" placeholder=".gps-btn { margin: 20px auto; }"><?php echo esc_textarea(get_option('gmb_gps_custom_css')); ?></textarea>
                                 <p class="gmb-form-help"><?php esc_html_e('Override classes like .gps-btn, .gps-icon, or .gps-btn-container to match your theme perfectly.', 'gmb-ranker-seo-automation'); ?></p>
                             </td>
                         </tr>

@@ -68,6 +68,7 @@ class GMB_Ranker_SEO_Autoloader {
             'GMB_Ranker_SEO_Analytics'         => self::$base_path . '/modules/analytics/class-gmb-ranker-seo-analytics.php',
             'GMB_Ranker_SEO_WooCommerce'       => self::$base_path . '/modules/woocommerce/class-gmb-ranker-seo-woocommerce.php',
             'GMB_Ranker_SEO_Blocks'            => self::$base_path . '/modules/blocks/class-gmb-ranker-seo-blocks.php',
+            'GMB_Ranker_SEO_Research_Engine'   => self::$base_path . '/services/class-gmb-ranker-seo-research-engine.php',
         );
 
         spl_autoload_register(array(__CLASS__, 'autoload'));

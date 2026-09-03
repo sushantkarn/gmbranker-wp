@@ -75,7 +75,7 @@
 }
 
 .gmb-toc-box.gmb-toc-collapsed .gmb-toc-list {
-  display: none;
+  display: none !important;
 }
 
 .gmb-toc-item {

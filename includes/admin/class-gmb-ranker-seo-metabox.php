@@ -60,6 +60,9 @@ class GMB_Ranker_SEO_Metabox {
 
         if ($hook === 'post.php' || $hook === 'post-new.php') {
             wp_enqueue_media();
+            $js_ver = defined('GMB_RANKER_SEO_PATH') && file_exists(GMB_RANKER_SEO_PATH . 'assets/js/admin-metabox.js') 
+                ? filemtime(GMB_RANKER_SEO_PATH . 'assets/js/admin-metabox.js') 
+                : '2.1.0';
             wp_enqueue_script(
                 'gmb-ranker-admin-metabox',
                 GMB_Ranker_SEO_Helpers::asset_url('js/admin-metabox.js'),
@@ -73,13 +76,6 @@ class GMB_Ranker_SEO_Metabox {
 
             wp_localize_script('gmb-ranker-admin-metabox', 'gmbMetaboxData', array(
                 'ajaxUrl'            => admin_url('admin-ajax.php'),
-                'nonce'              => wp_create_nonce('gmb_seo_save_nonce'),
-                'homeUrl'            => home_url(),
-                'siteName'           => get_bloginfo('name'),
-                'postType'           => $post_type,
-                'defaultPtSchema'    => $default_pt_schema,
-                'moduleToc'          => get_option('gmb_ranker_module_toc', '1') === '1',
-                'tocAutoInsert'      => get_option('gmb_toc_auto_insert', '1') === '1',
                 'tocMinHeadings'     => (int) get_option('gmb_toc_min_headings', 2),
                 'moduleSchema'       => get_option('gmb_ranker_module_schema', '1') === '1',
                 'moduleImageSeo'     => get_option('gmb_ranker_module_image_seo', '1') === '1',
@@ -493,8 +489,7 @@ class GMB_Ranker_SEO_Metabox {
      * Render Single Post AI SEO Auto-Fix Modal in admin_footer
      */
     public function render_ai_post_modal() {
-        $screen = get_current_screen();
-        if (!$screen || ($screen->base !== 'post' && $screen->base !== 'page')) {
+        if (!is_admin()) {
             return;
         }
         ?>
@@ -503,7 +498,10 @@ class GMB_Ranker_SEO_Metabox {
             <div class="gmb-modal-container gmb-modal-lg">
                 <div class="gmb-modal-header">
                     <div class="gmb-modal-header-flex">
-                        <h3 class="gmb-modal-title">✨ AI SEO Master Strategist</h3>
+                        <div>
+                            <h3 class="gmb-modal-title">AI SEO Master Strategist</h3>
+                            <p class="gmb-modal-subtitle">Data-driven SEO research. Real insights. Better rankings.</p>
+                        </div>
                         <div class="gmb-modal-stepper">
                             <span class="gmb-step-badge active" id="gmb-step-badge-1">1. Query Setup</span>
                             <span class="gmb-step-arrow">&rarr;</span>
@@ -528,19 +526,19 @@ class GMB_Ranker_SEO_Metabox {
                             </div>
                             <div class="gmb-form-group gmb-col-12">
                                 <label class="gmb-form-label">What query do you want to rank for? (Target Focus Keyword)</label>
-                                <input type="text" id="gmb-ai-setup-query" class="gmb-integration-input gmb-input-lg" placeholder="e.g. Signs Elderly Parent Need Care..." />
+                                <input type="text" id="gmb-ai-setup-query" class="gmb-integration-input gmb-input-lg" value="<?php echo esc_attr($focus_keyword); ?>" placeholder="e.g. Best SEO Strategies..." />
                             </div>
                             <div class="gmb-form-group gmb-col-4">
                                 <label class="gmb-form-label">Mode</label>
                                 <select id="gmb-ai-setup-mode" class="gmb-integration-select">
-                                    <option value="optimize" selected>Optimize (Improve existing content)</option>
-                                    <option value="create">Create new (Start from keyword)</option>
-                                    <option value="deep_serp">Deep SERP Entity Benchmark</option>
+                                    <option value="optimize" selected>⚡ Optimize (Improve existing content)</option>
+                                    <option value="create">✍️ Create new (Start from keyword)</option>
+                                    <option value="deep_serp">🎯 Deep SERP Entity Benchmark</option>
                                 </select>
                             </div>
                             <div class="gmb-form-group gmb-col-4">
                                 <label class="gmb-form-label">Target Search Engine / Country</label>
-                                                                <select id="gmb-ai-setup-country" class="gmb-integration-select">
+                                <select id="gmb-ai-setup-country" class="gmb-integration-select">
                                     <optgroup label="Popular Regions">
                                         <option value="NP|google.com.np" selected>🇳🇵 NEPAL | google.com.np</option>
                                         <option value="US|google.com">🇺🇸 UNITED STATES | google.com</option>
@@ -600,89 +598,241 @@ class GMB_Ranker_SEO_Metabox {
                             </div>
                             <div class="gmb-form-group gmb-col-4">
                                 <label class="gmb-form-label">Language</label>
-                                                                <select id="gmb-ai-setup-language" class="gmb-integration-select">
-                                    <option value="en" selected>English</option>
-                                    <option value="ne">Nepali (नेपाली)</option>
-                                    <option value="es">Spanish (Español)</option>
-                                    <option value="fr">French (Français)</option>
-                                    <option value="de">German (Deutsch)</option>
-                                    <option value="it">Italian (Italiano)</option>
-                                    <option value="pt">Portuguese (Português)</option>
-                                    <option value="nl">Dutch (Nederlands)</option>
-                                    <option value="ja">Japanese (日本語)</option>
-                                    <option value="zh-cn">Chinese Simplified (简体中文)</option>
-                                    <option value="zh-tw">Chinese Traditional (繁體中文)</option>
-                                    <option value="ar">Arabic (العربية)</option>
-                                    <option value="hi">Hindi (हिन्दी)</option>
-                                    <option value="bn">Bengali (বাংলা)</option>
-                                    <option value="ru">Russian (Русский)</option>
-                                    <option value="sv">Swedish (Svenska)</option>
-                                    <option value="no">Norwegian (Norsk)</option>
-                                    <option value="da">Danish (Dansk)</option>
-                                    <option value="fi">Finnish (Suomi)</option>
-                                    <option value="pl">Polish (Polski)</option>
-                                    <option value="tr">Turkish (Türkçe)</option>
-                                    <option value="id">Indonesian (Bahasa Indonesia)</option>
-                                    <option value="vi">Vietnamese (Tiếng Việt)</option>
-                                    <option value="th">Thai (ไทย)</option>
-                                    <option value="ko">Korean (한국어)</option>
+                                <select id="gmb-ai-setup-language" class="gmb-integration-select">
+                                    <option value="en" selected>🇬🇧 English</option>
+                                    <option value="ne">🇳🇵 Nepali (नेपाली)</option>
+                                    <option value="es">🇪🇸 Spanish (Español)</option>
+                                    <option value="fr">🇫🇷 French (Français)</option>
+                                    <option value="de">🇩🇪 German (Deutsch)</option>
+                                    <option value="it">🇮🇹 Italian (Italiano)</option>
+                                    <option value="pt">🇵🇹 Portuguese (Português)</option>
+                                    <option value="nl">🇳🇱 Dutch (Nederlands)</option>
+                                    <option value="ja">🇯🇵 Japanese (日本語)</option>
+                                    <option value="zh-cn">🇨🇳 Chinese Simplified (简体中文)</option>
+                                    <option value="zh-tw">🇹🇼 Chinese Traditional (繁體中文)</option>
+                                    <option value="ar">🇸🇦 Arabic (العربية)</option>
+                                    <option value="hi">🇮🇳 Hindi (हिन्दी)</option>
+                                    <option value="bn">🇧🇩 Bengali (বাংলা)</option>
+                                    <option value="ru">🇷🇺 Russian (Русский)</option>
+                                    <option value="sv">🇸🇪 Swedish (Svenska)</option>
+                                    <option value="no">🇳🇴 Norwegian (Norsk)</option>
+                                    <option value="da">🇩🇰 Danish (Dansk)</option>
+                                    <option value="fi">🇫🇮 Finnish (Suomi)</option>
+                                    <option value="pl">🇵🇱 Polish (Polski)</option>
+                                    <option value="tr">🇹🇷 Turkish (Türkçe)</option>
+                                    <option value="id">🇮🇩 Indonesian (Bahasa Indonesia)</option>
+                                    <option value="vi">🇻🇳 Vietnamese (Tiếng Việt)</option>
+                                    <option value="th">🇹🇭 Thai (ไทย)</option>
+                                    <option value="ko">🇰🇷 Korean (한국어)</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
-                                        <!-- STEP 2: NeuronWriter Analysis in Progress Screen -->
-                    <div id="gmb-ai-post-modal-loading" class="gmb-neuron-analysis-box gmb-hidden">
-                        <div class="gmb-neuron-analysis-center">
-                            <h2 class="gmb-neuron-analysis-title">Analysis in progress</h2>
-                            <div class="gmb-neuron-spinner-container">
-                                <div class="gmb-neuron-ring"></div>
+                    <!-- STEP 2: Modern 3-Column AI Research Workspace -->
+                    <div id="gmb-ai-post-modal-loading" class="gmb-ai-research-dashboard gmb-hidden">
+                        <!-- Top Live SERP Status Bar -->
+                        <div class="gmb-serp-status-bar gmb-mb-16">
+                            <div class="gmb-serp-status-left">
+                                <svg class="gmb-google-svg" viewBox="0 0 24 24" width="18" height="18">
+                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                                </svg>
+                                <strong class="gmb-serp-title">Real SERP Data</strong>
+                                <span class="gmb-serp-divider">|</span>
+                                <span class="gmb-serp-label">Fetching live results for:</span>
+                                <span class="gmb-serp-kw-pill" id="gmb-serp-kw-pill">Target Query</span>
                             </div>
-                            <p class="gmb-ai-loading-text" id="gmb-ai-loading-step-text">🔍 Fetching SERP entities & search intent...</p>
                         </div>
-                        
-                        <div class="gmb-skeleton-table-wrap gmb-mt-24">
-                            <div class="gmb-skeleton-row">
-                                <div class="gmb-skeleton-box gmb-sk-ch"></div>
-                                <div class="gmb-skeleton-box gmb-sk-title"></div>
-                                <div class="gmb-skeleton-box gmb-sk-content"></div>
-                                <div class="gmb-skeleton-box gmb-sk-badge"></div>
+
+                        <!-- 3-Column Research Workspace Grid -->
+                        <div class="gmb-research-3col-grid">
+                            <!-- COLUMN 1: Research Steps Timeline (8 Steps) -->
+                            <div class="gmb-research-col-steps">
+                                <h4 class="gmb-research-col-heading">Research Steps</h4>
+                                <div class="gmb-steps-timeline">
+                                    <div class="gmb-step-item active" id="gmb-res-step-1">
+                                        <div class="gmb-step-num-icon">1</div>
+                                        <div class="gmb-step-text">
+                                            <strong>Analyzing Current Page</strong>
+                                            <small>Extracting content, metadata & SEO signals</small>
+                                        </div>
+                                        <div class="gmb-step-active-ring"></div>
+                                    </div>
+                                    <div class="gmb-step-item" id="gmb-res-step-2">
+                                        <div class="gmb-step-num-icon">2</div>
+                                        <div class="gmb-step-text">
+                                            <strong>Detecting Search Intent</strong>
+                                            <small>Analyzing query intent & SERP features</small>
+                                        </div>
+                                        <span class="gmb-step-status-pill pending">Pending</span>
+                                    </div>
+                                    <div class="gmb-step-item" id="gmb-res-step-3">
+                                        <div class="gmb-step-num-icon">3</div>
+                                        <div class="gmb-step-text">
+                                            <strong>Fetching SERP Results</strong>
+                                            <small>Collecting top ranking pages</small>
+                                        </div>
+                                        <span class="gmb-step-status-pill pending">Pending</span>
+                                    </div>
+                                    <div class="gmb-step-item" id="gmb-res-step-4">
+                                        <div class="gmb-step-num-icon">4</div>
+                                        <div class="gmb-step-text">
+                                            <strong>Analyzing Competitors</strong>
+                                            <small>Extracting content & SEO data</small>
+                                        </div>
+                                        <span class="gmb-step-status-pill pending">Pending</span>
+                                    </div>
+                                    <div class="gmb-step-item" id="gmb-res-step-5">
+                                        <div class="gmb-step-num-icon">5</div>
+                                        <div class="gmb-step-text">
+                                            <strong>Semantic & Entity Analysis</strong>
+                                            <small>Building topic and entity model</small>
+                                        </div>
+                                        <span class="gmb-step-status-pill pending">Pending</span>
+                                    </div>
+                                    <div class="gmb-step-item" id="gmb-res-step-6">
+                                        <div class="gmb-step-num-icon">6</div>
+                                        <div class="gmb-step-text">
+                                            <strong>Content Gap Analysis</strong>
+                                            <small>Identifying missing opportunities</small>
+                                        </div>
+                                        <span class="gmb-step-status-pill pending">Pending</span>
+                                    </div>
+                                    <div class="gmb-step-item" id="gmb-res-step-7">
+                                        <div class="gmb-step-num-icon">7</div>
+                                        <div class="gmb-step-text">
+                                            <strong>Optimization Strategy</strong>
+                                            <small>Generating evidence-based recommendations</small>
+                                        </div>
+                                        <span class="gmb-step-status-pill pending">Pending</span>
+                                    </div>
+                                    <div class="gmb-step-item" id="gmb-res-step-8">
+                                        <div class="gmb-step-num-icon">8</div>
+                                        <div class="gmb-step-text">
+                                            <strong>Finalizing Results</strong>
+                                            <small>Validating data & preparing your report</small>
+                                        </div>
+                                        <span class="gmb-step-status-pill pending">Pending</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="gmb-skeleton-row">
-                                <div class="gmb-skeleton-box gmb-sk-ch"></div>
-                                <div class="gmb-skeleton-box gmb-sk-title"></div>
-                                <div class="gmb-skeleton-box gmb-sk-content"></div>
-                                <div class="gmb-skeleton-box gmb-sk-badge"></div>
+
+                            <!-- COLUMN 2: Active Step Execution Panel -->
+                            <div class="gmb-research-col-center">
+                                <div class="gmb-active-step-card">
+                                    <span class="gmb-step-counter-badge" id="gmb-active-step-counter">Step 1 of 8</span>
+                                    <h3 class="gmb-active-step-title" id="gmb-active-step-title">Analyzing Current Page Structure & Metadata</h3>
+                                    <p class="gmb-active-step-desc" id="gmb-active-step-desc">We're extracting and evaluating key elements from your WordPress post.</p>
+
+                                    <!-- Animated Progress Bar -->
+                                    <div class="gmb-progress-bar-wrap">
+                                        <div class="gmb-progress-bar-track">
+                                            <div class="gmb-progress-bar-fill" id="gmb-active-progress-fill" style="width: 65%;"></div>
+                                        </div>
+                                        <span class="gmb-progress-percent" id="gmb-active-progress-percent">65%</span>
+                                    </div>
+
+                                    <!-- Live Dynamic Tasks List -->
+                                    <div class="gmb-live-tasks-list" id="gmb-live-tasks-list">
+                                        <div class="gmb-task-row done"><span class="task-check-circle">✓</span> Post content loaded (<span id="gmb-task-word-count">2,314</span> words)</div>
+                                        <div class="gmb-task-row done"><span class="task-check-circle">✓</span> Extracting SEO metadata (title, description, schema)</div>
+                                        <div class="gmb-task-row done"><span class="task-check-circle">✓</span> Analyzing headings structure (H1-H3)</div>
+                                        <div class="gmb-task-row running"><span class="task-spinner"></span> Scanning images and alt text...</div>
+                                        <div class="gmb-task-row pending"><span class="task-hollow-circle"></span> Analyzing internal and external links</div>
+                                        <div class="gmb-task-row pending"><span class="task-hollow-circle"></span> Calculating readability metrics</div>
+                                        <div class="gmb-task-row pending"><span class="task-hollow-circle"></span> Detecting semantic terms and entities</div>
+                                    </div>
+                                </div>
+
                             </div>
-                            <div class="gmb-skeleton-row">
-                                <div class="gmb-skeleton-box gmb-sk-ch"></div>
-                                <div class="gmb-skeleton-box gmb-sk-title"></div>
-                                <div class="gmb-skeleton-box gmb-sk-content"></div>
-                                <div class="gmb-skeleton-box gmb-sk-badge"></div>
+
+                            <!-- COLUMN 3: Overview & What We'll Analyze -->
+                            <div class="gmb-research-col-right">
+                                <!-- Research Overview Card -->
+                                <div class="gmb-side-card">
+                                    <h4 class="gmb-side-card-title">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2563eb" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+                                        </svg>
+                                        Research Overview
+                                    </h4>
+                                    <div class="gmb-overview-kv-list">
+                                        <div class="gmb-kv-row">
+                                            <span class="kv-key">Target Query</span>
+                                            <strong class="kv-val" id="gmb-overview-query"><?php echo esc_html($focus_keyword ?: '--'); ?></strong>
+                                        </div>
+                                        <div class="gmb-kv-row">
+                                            <span class="kv-key">Target URL</span>
+                                            <a href="<?php echo esc_url($post_id ? get_permalink($post_id) : home_url('/')); ?>" target="_blank" class="kv-val kv-link" id="gmb-overview-url">
+                                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                                                <?php echo esc_html(home_url('/...')); ?>
+                                            </a>
+                                        </div>
+                                        <div class="gmb-kv-row">
+                                            <span class="kv-key">Country / Search Engine</span>
+                                            <strong class="kv-val" id="gmb-overview-country">Global (google.com)</strong>
+                                        </div>
+                                        <div class="gmb-kv-row">
+                                            <span class="kv-key">Language</span>
+                                            <strong class="kv-val" id="gmb-overview-language">English</strong>
+                                        </div>
+                                        <div class="gmb-kv-row">
+                                            <span class="kv-key">Mode</span>
+                                            <strong class="kv-val" id="gmb-overview-mode">Optimize Existing Content</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- What We'll Analyze Card -->
+                                <div class="gmb-side-card gmb-mt-16">
+                                    <h4 class="gmb-side-card-title">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2563eb" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2 5.6-5.6 2 2-5.6z"/>
+                                        </svg>
+                                        What We'll Analyze
+                                    </h4>
+                                    <ul class="gmb-bullets-checklist">
+                                        <li><span class="chk-blue">✓</span> Current page SEO health</li>
+                                        <li><span class="chk-blue">✓</span> Top 10 SERP competitors</li>
+                                        <li><span class="chk-blue">✓</span> Semantic terms & entity coverage</li>
+                                        <li><span class="chk-blue">✓</span> Content gaps & missing topics</li>
+                                        <li><span class="chk-blue">✓</span> Search intent alignment</li>
+                                        <li><span class="chk-blue">✓</span> Readability & content structure</li>
+                                        <li><span class="chk-blue">✓</span> Internal link opportunities</li>
+                                        <li><span class="chk-blue">✓</span> Evidence-based recommendations</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- STEP 3: Recommendations & Apply Screen -->
+                    <!-- STEP 3: Evidence-Based Recommendations & Controlled Apply Screen -->
                     <div id="gmb-ai-post-modal-content" class="gmb-hidden">
-                        <div class="gmb-results-score-banner gmb-mb-16">
-                            <div>
-                                <strong>Target Query:</strong> <span id="gmb-ai-result-query-label">--</span> 
-                                <span class="gmb-badge-country" id="gmb-ai-result-country-badge">🇳🇵 NEPAL</span>
+                        <div class="gmb-results-score-banner">
+                            <div class="gmb-score-meta">
+                                <div class="gmb-target-query-box">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#166534" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <strong>Target Query:</strong> <span id="gmb-ai-result-query-label">--</span>
+                                </div>
                             </div>
-                            <div class="gmb-predicted-score-chip">
-                                Predicted SEO Score: <strong id="gmb-ai-predicted-score">98 / 100 🚀</strong>
+                            <div class="gmb-score-chips-group">
+                                <div class="gmb-score-chip potential-score">
+                                    Optimization Potential: <strong id="gmb-ai-potential-score">92 – 99 / 100</strong>
+                                </div>
                             </div>
                         </div>
-                        <p class="gmb-text-muted gmb-mb-12">Below are the AI-recommended SEO optimizations for this page. Uncheck or edit any items before applying.</p>
+
                         <div class="gmb-table-wrap gmb-ai-table-scroll">
                             <table class="gmb-data-table gmb-table-compact">
                                 <thead>
                                     <tr>
                                         <th class="gmb-th-checkbox"><input type="checkbox" id="gmb-ai-post-select-all" checked /></th>
-                                        <th style="width: 140px;">SEO Factor</th>
+                                        <th style="width: 180px;">SEO Factor</th>
                                         <th>AI Recommended Optimization</th>
-                                        <th style="width: 120px;">Status</th>
+                                        <th style="width: 130px;">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="gmb-ai-post-suggestions-tbody">
@@ -694,8 +844,10 @@ class GMB_Ranker_SEO_Metabox {
                 </div>
                 <div class="gmb-modal-footer">
                     <button type="button" class="button gmb-btn-secondary" id="gmb-ai-post-modal-cancel">Cancel</button>
-                    <button type="button" class="button button-primary gmb-btn--primary" id="gmb-ai-setup-start-btn">🚀 Start AI Analysis</button>
-                    <button type="button" class="button button-primary gmb-btn--primary gmb-hidden" id="gmb-ai-post-apply-btn" disabled>✨ Apply Selected AI Optimizations</button>
+                    <button type="button" class="button gmb-btn-secondary gmb-hidden" id="gmb-ai-post-modal-prev" style="display: none !important;">Previous</button>
+                    <button type="button" class="button button-primary gmb-btn--primary" id="gmb-ai-setup-start-btn">Start AI Analysis</button>
+                    <button type="button" class="button button-primary gmb-btn--primary gmb-hidden" id="gmb-ai-running-btn" disabled style="display: none !important;"><span class="task-spinner"></span> Running Analysis...</button>
+                    <button type="button" class="button button-primary gmb-btn--primary gmb-hidden" id="gmb-ai-post-apply-btn" disabled style="display: none !important;">Apply Selected AI Optimizations</button>
                 </div>
             </div>
         </div>

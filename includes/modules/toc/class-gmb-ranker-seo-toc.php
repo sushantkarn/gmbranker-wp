@@ -6,6 +6,7 @@ class GMB_Ranker_SEO_TOC {
         add_filter('the_content', array($this, 'inject_table_of_contents'), 12);
         add_shortcode('toc', array($this, 'toc_shortcode_callback'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
+        add_action('wp_footer', array($this, 'print_frontend_script'));
     }
 
     public function enqueue_frontend_assets() {
@@ -14,9 +15,16 @@ class GMB_Ranker_SEO_TOC {
                 'gmb-ranker-seo-frontend',
                 GMB_Ranker_SEO_Helpers::asset_url('css/frontend.css'),
                 array(),
-                '2.1.0'
+                '2.1.2'
             );
         }
+    }
+
+    public function print_frontend_script() {
+        if (!is_singular()) {
+            return;
+        }
+        echo '<script>document.addEventListener("click",function(e){var t=e.target.closest(".gmb-toc-toggle");if(!t)return;e.preventDefault();var b=t.closest(".gmb-toc-box");if(!b)return;b.classList.toggle("gmb-toc-collapsed");t.textContent=b.classList.contains("gmb-toc-collapsed")?"[Show]":"[Hide]";});</script>' . "\n";
     }
 
     public function toc_shortcode_callback() {
@@ -28,12 +36,18 @@ class GMB_Ranker_SEO_TOC {
     }
 
     public function inject_table_of_contents($content) {
-        $toc_post_types = get_option('gmb_toc_post_types', array('post'));
-        if (!is_array($toc_post_types)) {
-            $toc_post_types = array('post');
+        if (!is_singular()) {
+            return $content;
         }
-        
-        if (!is_singular($toc_post_types)) {
+
+        $all_public_types = array_values(get_post_types(array('public' => true)));
+        $toc_post_types   = get_option('gmb_toc_post_types', $all_public_types);
+        if (!is_array($toc_post_types) || empty($toc_post_types)) {
+            $toc_post_types = $all_public_types;
+        }
+
+        $current_type = get_post_type();
+        if ($current_type && !in_array($current_type, $toc_post_types, true) && !in_array($current_type, $all_public_types, true)) {
             return $content;
         }
 
@@ -44,7 +58,6 @@ class GMB_Ranker_SEO_TOC {
 
         // Check if shortcode [toc] is present
         if (has_shortcode($content, 'toc')) {
-            // Shortcode callback will handle it, but we still need to insert anchor IDs to headers!
             return $this->add_heading_anchors($content);
         }
 
@@ -92,17 +105,17 @@ class GMB_Ranker_SEO_TOC {
     }
 
     private function get_target_headings() {
-        $levels = get_option('gmb_toc_levels', array('h2', 'h3'));
+        $levels = get_option('gmb_toc_levels', array('h1', 'h2', 'h3', 'h4'));
         if (!is_array($levels) || empty($levels)) {
-            $levels = array('h2', 'h3');
+            $levels = array('h1', 'h2', 'h3', 'h4');
         }
         $valid = array_intersect($levels, array('h1', 'h2', 'h3', 'h4', 'h5', 'h6'));
-        return !empty($valid) ? array_values($valid) : array('h2', 'h3');
+        return !empty($valid) ? array_values($valid) : array('h1', 'h2', 'h3', 'h4');
     }
 
     private function generate_toc_markup($content, $force = false) {
         $headings = $this->parse_headings($content);
-        $min_headings = intval(get_option('gmb_toc_min_headings', 2));
+        $min_headings = intval(get_option('gmb_toc_min_headings', 1));
 
         if (count($headings) < $min_headings && !$force) {
             return '';

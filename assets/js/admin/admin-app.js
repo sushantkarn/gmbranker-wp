@@ -1522,7 +1522,7 @@ function initGmbAdminApp() {
         .writeText(tplJsonArea.value)
         .then(() => {
           const original = tplCopyJsonBtn.textContent;
-          tplCopyJsonBtn.textContent = "✓ Copied!";
+          tplCopyJsonBtn.textContent = " Copied!";
           setTimeout(() => {
             tplCopyJsonBtn.textContent = original;
           }, 1800);
@@ -1546,12 +1546,12 @@ function initGmbAdminApp() {
     }
     try {
       JSON.parse(val);
-      tplSyntaxIndicator.textContent = "✓ Valid JSON-LD Syntax";
+      tplSyntaxIndicator.textContent = " Valid JSON-LD Syntax";
       tplSyntaxIndicator.className =
         "gmb-ide-badge gmb-syntax-indicator--valid";
       return true;
     } catch (err) {
-      tplSyntaxIndicator.textContent = "✕ Syntax Error: " + err.message;
+      tplSyntaxIndicator.textContent = " Syntax Error: " + err.message;
       tplSyntaxIndicator.className =
         "gmb-ide-badge gmb-syntax-indicator--invalid";
       return false;
@@ -1850,7 +1850,7 @@ function initGmbAdminApp() {
     row.innerHTML = `
                         <input type="text" class="gmb-prop-key gmb-input gmb-input--w-130" placeholder="property (e.g. name)" value="${String(key).replace(/"/g, "&quot;")}" />
                         <input type="text" class="gmb-prop-val gmb-input gmb-flex-1" placeholder="value or token (e.g. %title%)" value="${String(val).replace(/"/g, "&quot;")}" />
-                        <button type="button" class="gmb-del-prop-btn" title="Remove property">✕</button>
+                        <button type="button" class="gmb-del-prop-btn" title="Remove property"></button>
                     `;
 
     row.querySelector(".gmb-del-prop-btn").addEventListener("click", () => {
@@ -2849,8 +2849,10 @@ function initGmbAdminApp() {
       if (elem) {
         if (sec === currentVal) {
           elem.classList.remove("gmb-hidden");
+          elem.style.display = "block";
         } else {
           elem.classList.add("gmb-hidden");
+          elem.style.display = "none";
         }
       }
     });
@@ -4672,13 +4674,13 @@ function initGmbAdminApp() {
             } else {
               alert(data.data.message || "Error applying security hardening.");
               secBtn.disabled = false;
-              secBtn.textContent = "⚡ Apply Recommended Hardening";
+              secBtn.textContent = " Apply Recommended Hardening";
             }
           })
           .catch((err) => {
             alert("Network error occurred.");
             secBtn.disabled = false;
-            secBtn.textContent = "⚡ Apply Recommended Hardening";
+            secBtn.textContent = " Apply Recommended Hardening";
           });
       });
     }

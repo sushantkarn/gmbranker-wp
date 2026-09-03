@@ -236,7 +236,7 @@ class GMB_Ranker_SEO_Blocks {
         }
 
         if (!empty($schemas)) {
-            echo '<script type="application/ld+json">' . wp_json_encode($schemas, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>' . "\n";
+            echo '<script type="application/ld+json">' . wp_json_encode($schemas, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>' . "\n";
         }
     }
 }

@@ -321,7 +321,7 @@ $image_title_temp            = isset($image_title_temp) ? $image_title_temp : ge
                                                 <div class="gmb-sec-check-row <?php echo $is_passed ? 'gmb-sec-check-row--passed' : 'gmb-sec-check-row--issue'; ?>" data-status="<?php echo $is_passed ? 'passed' : 'issue'; ?>">
                                                     <div class="gmb-sec-check-left">
                                                         <div class="gmb-sec-check-icon <?php echo $is_passed ? 'gmb-sec-check-icon--passed' : 'gmb-sec-check-icon--issue'; ?>">
-                                                            <?php echo $is_passed ? '✓' : '✕'; ?>
+                                                            <?php echo $is_passed ? '' : ''; ?>
                                                         </div>
                                                         <div class="gmb-flex-1 min-w-0">
                                                             <div class="gmb-sec-check-label"><?php echo esc_html($check['label']); ?></div>
@@ -573,9 +573,11 @@ $image_title_temp            = isset($image_title_temp) ? $image_title_temp : ge
                                         ?>
                                         <div class="gmb-flex-wrap-gap-sm">
                                             <select id="gmb-sec-select-user" class="gmb-select gmb-input--max-280">
-                                                <?php foreach ($site_users as $u) : ?>
+                                                <?php foreach ($site_users as $u) : 
+                                                    $u_roles = isset($u->roles) ? (array) $u->roles : array();
+                                                ?>
                                                     <option value="<?php echo esc_attr($u->ID); ?>" data-login="<?php echo esc_attr($u->user_login); ?>" <?php selected($u->ID, get_current_user_id()); ?>>
-                                                        <?php echo esc_html($u->user_login); ?> (<?php echo esc_html(implode(', ', (array) $u->roles)); ?>)
+                                                        <?php echo esc_html($u->user_login); ?><?php echo !empty($u_roles) ? ' (' . esc_html(implode(', ', $u_roles)) . ')' : ''; ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
@@ -1338,10 +1340,12 @@ $image_title_temp            = isset($image_title_temp) ? $image_title_temp : ge
                         <label class="gmb-username-modal-label"><?php esc_html_e('Selected Account', 'gmb-ranker-seo-automation'); ?></label>
                         <select id="gmb-modal-user-select" class="gmb-username-modal-select">
                             <?php 
-                            $modal_users = function_exists('get_users') ? get_users(array('fields' => array('ID', 'user_login', 'display_name', 'roles'))) : array();
-                            foreach ($modal_users as $u) : ?>
+                            $modal_users = function_exists('get_users') ? get_users() : array();
+                            foreach ($modal_users as $u) : 
+                                $u_roles = isset($u->roles) ? (array) $u->roles : array();
+                            ?>
                                 <option value="<?php echo esc_attr($u->ID); ?>" data-login="<?php echo esc_attr($u->user_login); ?>" <?php selected($u->ID, get_current_user_id()); ?>>
-                                    <?php echo esc_html($u->user_login); ?> (<?php echo esc_html(implode(', ', (array) $u->roles)); ?>)
+                                    <?php echo esc_html($u->user_login); ?><?php echo !empty($u_roles) ? ' (' . esc_html(implode(', ', $u_roles)) . ')' : ''; ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -1362,165 +1366,6 @@ $image_title_temp            = isset($image_title_temp) ? $image_title_temp : ge
                 </div>
             </div>
 
-            <script>
-            (function() {
-                document.addEventListener('DOMContentLoaded', function() {
-                    var modal = document.getElementById('gmb-change-username-modal');
-                    if (!modal) return;
-
-                    var userSelect = document.getElementById('gmb-modal-user-select');
-                    var currentInput = document.getElementById('gmb-modal-current-username');
-                    var newInput = document.getElementById('gmb-modal-new-username');
-                    var errorSpan = document.getElementById('gmb-modal-username-error');
-                    var submitBtn = document.getElementById('gmb-submit-username-modal');
-                    var closeBtn = document.getElementById('gmb-close-username-modal');
-                    var cancelBtn = document.getElementById('gmb-cancel-username-modal');
-
-                    function syncCurrentLogin() {
-                        if (!userSelect || !currentInput) return;
-                        var opt = userSelect.options[userSelect.selectedIndex];
-                        if (opt) {
-                            currentInput.value = opt.getAttribute('data-login') || opt.textContent.trim();
-                        }
-                    }
-
-                    if (userSelect) {
-                        userSelect.addEventListener('change', syncCurrentLogin);
-                    }
-
-                    function openModal(preselectedUsername) {
-                        modal.classList.add('is-active');
-                        if (preselectedUsername && userSelect) {
-                            for (var i = 0; i < userSelect.options.length; i++) {
-                                if (userSelect.options[i].getAttribute('data-login') === preselectedUsername) {
-                                    userSelect.selectedIndex = i;
-                                    break;
-                                }
-                            }
-                        }
-                        syncCurrentLogin();
-                        if (newInput) {
-                            newInput.value = '';
-                            setTimeout(function() { newInput.focus(); }, 100);
-                        }
-                        if (errorSpan) errorSpan.style.display = 'none';
-                    }
-
-                    function closeModal() {
-                        modal.classList.remove('is-active');
-                    }
-
-                    document.querySelectorAll('.gmb-open-change-username-modal-btn').forEach(function(btn) {
-                        btn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            var uname = btn.getAttribute('data-username');
-                            openModal(uname);
-                        });
-                    });
-
-                    var toolBtn = document.getElementById('gmb-sec-trigger-rename-btn');
-                    if (toolBtn) {
-                        toolBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            var sel = document.getElementById('gmb-sec-select-user');
-                            var uname = sel ? sel.options[sel.selectedIndex].getAttribute('data-login') : null;
-                            openModal(uname);
-                        });
-                    }
-
-                    if (closeBtn) closeBtn.addEventListener('click', closeModal);
-                    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
-
-                    if (submitBtn) {
-                        submitBtn.addEventListener('click', function() {
-                            var newName = newInput.value.trim();
-                            if (!newName) {
-                                errorSpan.textContent = 'Please enter a valid new username.';
-                                errorSpan.style.display = 'block';
-                                return;
-                            }
-
-                            var userId = userSelect ? userSelect.value : '';
-                            submitBtn.disabled = true;
-                            submitBtn.textContent = 'Updating...';
-                            errorSpan.style.display = 'none';
-
-                            var formData = new FormData();
-                            formData.append('action', 'gmb_change_username');
-                            formData.append('user_id', userId);
-                            formData.append('new_username', newName);
-                            if (window.gmb_ranker_admin && window.gmb_ranker_admin.nonce) {
-                                formData.append('nonce', window.gmb_ranker_admin.nonce);
-                            }
-
-                            fetch(ajaxurl || '/wp-admin/admin-ajax.php', {
-                                method: 'POST',
-                                body: formData
-                            })
-                            .then(function(res) { return res.json(); })
-                            .then(function(data) {
-                                submitBtn.disabled = false;
-                                submitBtn.textContent = 'Update Username';
-                                if (data && data.success) {
-                                    alert(data.data.message || 'Username updated successfully!');
-                                    window.location.reload();
-                                } else {
-                                    errorSpan.textContent = (data && data.data && data.data.message) ? data.data.message : 'Error updating username.';
-                                    errorSpan.style.display = 'block';
-                                }
-                            })
-                            .catch(function() {
-                                submitBtn.disabled = false;
-                                submitBtn.textContent = 'Update Username';
-                                errorSpan.textContent = 'Network error occurred.';
-                                errorSpan.style.display = 'block';
-                            });
-                        });
-                    }
-
-                    var autoFixBtn = document.getElementById('gmb-auto-fix-display-name-btn');
-                    if (autoFixBtn) {
-                        autoFixBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            autoFixBtn.disabled = true;
-                            autoFixBtn.textContent = 'Fixing...';
-
-                            var formData = new FormData();
-                            formData.append('action', 'gmb_auto_fix_display_names');
-                            if (window.gmb_ranker_admin && window.gmb_ranker_admin.nonce) {
-                                formData.append('nonce', window.gmb_ranker_admin.nonce);
-                            }
-
-                            fetch(ajaxurl || '/wp-admin/admin-ajax.php', {
-                                method: 'POST',
-                                body: formData
-                            })
-                            .then(function(res) { return res.json(); })
-                            .then(function(data) {
-                                if (data && data.success) {
-                                    var card = document.getElementById('gmb-display-name-risk-card');
-                                    if (card) {
-                                        card.style.transition = 'opacity 0.3s ease';
-                                        card.style.opacity = '0';
-                                        setTimeout(function() { card.remove(); }, 300);
-                                    }
-                                    alert('Public display names updated successfully to safe personas!');
-                                } else {
-                                    autoFixBtn.disabled = false;
-                                    autoFixBtn.textContent = 'Auto-Fix Display Name';
-                                    alert('Failed to auto-fix display names.');
-                                }
-                            })
-                            .catch(function() {
-                                autoFixBtn.disabled = false;
-                                autoFixBtn.textContent = 'Auto-Fix Display Name';
-                                alert('Network error occurred.');
-                            });
-                        });
-                    }
-                });
-            })();
-            </script>
             <?php endif; ?>
 
             <!-- Page: Titles & Meta Settings Page -->

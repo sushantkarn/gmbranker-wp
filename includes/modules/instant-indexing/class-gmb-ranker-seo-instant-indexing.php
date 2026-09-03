@@ -50,15 +50,9 @@ class GMB_Ranker_SEO_Instant_Indexing {
     }
 
     public static function ensure_physical_key_file($key) {
-        if (empty($key) || !defined('ABSPATH')) {
-            return;
-        }
-        $file_path = ABSPATH . $key . '.txt';
-        if (!file_exists($file_path)) {
-            if (wp_is_writable(ABSPATH)) {
-                @file_put_contents($file_path, $key);
-            }
-        }
+        // Physical ABSPATH file creation removed per WordPress.org Guidelines.
+        // Handled dynamically via handle_key_request virtual endpoint.
+        return;
     }
 
     public static function get_key_location() {
@@ -547,9 +541,14 @@ class GMB_Ranker_SEO_Instant_Indexing {
             return $redirect_to;
         }
 
+        if (!current_user_can('edit_posts')) {
+            return $redirect_to;
+        }
+
         $urls = array();
         foreach ($post_ids as $pid) {
-            if (get_post_status($pid) === 'publish') {
+            $pid = (int) $pid;
+            if ($pid > 0 && current_user_can('edit_post', $pid) && get_post_status($pid) === 'publish') {
                 $permalink = get_permalink($pid);
                 if ($permalink) {
                     $urls[] = $permalink;

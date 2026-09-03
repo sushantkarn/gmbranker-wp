@@ -232,7 +232,7 @@ class GMB_Ranker_SEO_Local {
 
         if (!empty($schemas)) {
             echo "\n<!-- GMB Ranker Local Business Schema -->\n";
-            echo '<script type="application/ld+json">' . wp_json_encode($schemas, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>' . "\n";
+            echo '<script type="application/ld+json">' . wp_json_encode($schemas, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>' . "\n";
         }
     }
 }

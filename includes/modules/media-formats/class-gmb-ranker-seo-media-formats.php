@@ -308,17 +308,9 @@ class GMB_Ranker_SEO_Media_Formats {
      * Injects CSS for responsive SVG previews in WordPress Media Library
      */
     public function inject_admin_media_css() {
-        ?>
-        <style type="text/css">
-            .attachment-266x266, .thumbnail img[src$=".svg"],
-            .media-modal img[src$=".svg"],
-            .attachment-preview img[src$=".svg"],
-            .media-frame .attachment .thumbnail img[src$=".svg"] {
-                width: 100% !important;
-                height: auto !important;
-                max-height: 100% !important;
-            }
-        </style>
-        <?php
+        $css = '.attachment-266x266, .thumbnail img[src$=".svg"], .media-modal img[src$=".svg"], .attachment-preview img[src$=".svg"], .media-frame .attachment .thumbnail img[src$=".svg"] { width: 100% !important; height: auto !important; max-height: 100% !important; }';
+        wp_register_style('gmb-svg-media-preview', false);
+        wp_enqueue_style('gmb-svg-media-preview');
+        wp_add_inline_style('gmb-svg-media-preview', $css);
     }
 }

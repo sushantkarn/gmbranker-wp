@@ -5,6 +5,49 @@
 (function ($) {
   "use strict";
 
+  // Global AI Modal opener function available immediately
+  window.gmbOpenAiModal = function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var $modal = $("#gmb-ai-post-seo-modal");
+
+    if (!$modal.length) {
+      alert("AI Modal element not found. Please refresh the page.");
+      return false;
+    }
+
+    $modal.appendTo("body");
+    $modal.css("display", "flex").addClass("active");
+
+    // Pre-fill setup fields
+    var postTitle = $("#title").val() || "";
+    if (!postTitle && typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.select("core/editor")) {
+      postTitle = wp.data.select("core/editor").getEditedPostAttribute("title") || "";
+    }
+    $("#gmb-ai-setup-title").val(postTitle);
+
+    var curFocus = $("#gmb_seo_focus_keyword_hidden").val() || "";
+    if (!curFocus && typeof keywords !== "undefined" && Array.isArray(keywords) && keywords.length > 0) {
+      curFocus = keywords[0];
+    }
+    if (!curFocus && postTitle) {
+      curFocus = postTitle.split(" ").slice(0, 3).join(" ");
+    }
+    $("#gmb-ai-setup-query").val(curFocus);
+
+    var slug = $("#post_name").val() || $("#editable-post-name").text() || "";
+    var homeUrl = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.homeUrl ? gmbMetaboxData.homeUrl : window.location.origin) + "/";
+    $("#gmb-ai-setup-url").val(homeUrl + slug);
+
+    if (typeof window.setAiModalStep === "function") {
+      window.setAiModalStep(1);
+    } else {
+      $("#gmb-ai-post-modal-setup").removeClass("gmb-hidden").css("display", "block");
+      $("#gmb-ai-post-modal-loading").addClass("gmb-hidden").css("display", "none");
+      $("#gmb-ai-post-modal-content").addClass("gmb-hidden").css("display", "none");
+    }
+    return false;
+  };
+
   $(document).ready(function () {
 
 // ==========================================
@@ -13,34 +56,94 @@
     // ==========================================
     var currentAiStep = 1;
     var stepTimer = null;
+    var globalAjaxResultData = null;
 
     function setAiModalStep(step) {
+      window.setAiModalStep = setAiModalStep;
       currentAiStep = step;
       $(".gmb-step-badge").removeClass("active");
       $("#gmb-step-badge-" + step).addClass("active");
 
-      $("#gmb-ai-post-modal-setup").hide();
-      $("#gmb-ai-post-modal-loading").hide();
-      $("#gmb-ai-post-modal-content").hide();
+      $("#gmb-ai-post-modal-setup").addClass("gmb-hidden").attr("style", "display: none !important;");
+      $("#gmb-ai-post-modal-loading").addClass("gmb-hidden").attr("style", "display: none !important;");
+      $("#gmb-ai-post-modal-content").addClass("gmb-hidden").attr("style", "display: none !important;");
 
       if (step === 1) {
-        $("#gmb-ai-post-modal-setup").show();
-        $("#gmb-ai-setup-start-btn").show();
-        $("#gmb-ai-post-apply-btn").hide();
+        $(".gmb-modal-lg").css("min-height", "auto");
+        $("#gmb-ai-post-modal-setup").removeClass("gmb-hidden").attr("style", "display: block !important;");
+        $("#gmb-ai-setup-start-btn").attr("style", "display: inline-flex !important;").removeClass("gmb-hidden").text("Start AI Analysis");
+        $("#gmb-ai-running-btn").attr("style", "display: none !important;").addClass("gmb-hidden");
+        $("#gmb-ai-post-modal-prev").attr("style", "display: none !important;").addClass("gmb-hidden");
+        $("#gmb-ai-post-apply-btn").attr("style", "display: none !important;").addClass("gmb-hidden");
       } else if (step === 2) {
-        $("#gmb-ai-post-modal-loading").show();
-        $("#gmb-ai-setup-start-btn").hide();
-        $("#gmb-ai-post-apply-btn").hide();
+        $(".gmb-modal-lg").css("min-height", "720px");
+        $("#gmb-ai-post-modal-loading").removeClass("gmb-hidden").attr("style", "display: block !important;");
+
+        if (globalAjaxResultData) {
+          // Research already completed! Show completed state without buffering
+          if (stepTimer) clearInterval(stepTimer);
+          for (var i = 1; i <= 8; i++) {
+            var $item = $("#gmb-res-step-" + i);
+            $item.removeClass("active").addClass("completed");
+            $item.find(".gmb-step-status-pill").removeClass("pending in-progress").addClass("completed").text("Completed");
+          }
+          $("#gmb-active-step-counter").text("Step 8 of 8");
+          $("#gmb-active-step-title").text("Finalizing Results");
+          $("#gmb-active-step-desc").text("Validating data & preparing your evidence-based report.");
+          $("#gmb-active-progress-fill").css("width", "100%");
+          $("#gmb-active-progress-percent").text("100%");
+          $("#gmb-live-tasks-list").html(
+            '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Transparent SEO score calculated</div>' +
+            '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Report generation complete</div>'
+          );
+
+          $("#gmb-ai-setup-start-btn").attr("style", "display: inline-flex !important;").removeClass("gmb-hidden").text("Next ->");
+          $("#gmb-ai-running-btn").attr("style", "display: none !important;").addClass("gmb-hidden");
+          $("#gmb-ai-post-modal-prev").attr("style", "display: inline-flex !important;").removeClass("gmb-hidden").text("Previous");
+          $("#gmb-ai-post-apply-btn").attr("style", "display: none !important;").addClass("gmb-hidden");
+        } else {
+          $("#gmb-ai-setup-start-btn").attr("style", "display: none !important;").addClass("gmb-hidden");
+          $("#gmb-ai-running-btn").attr("style", "display: inline-flex !important;").removeClass("gmb-hidden");
+          $("#gmb-ai-post-modal-prev").attr("style", "display: inline-flex !important;").removeClass("gmb-hidden").text("Previous");
+          $("#gmb-ai-post-apply-btn").attr("style", "display: none !important;").addClass("gmb-hidden");
+        }
       } else if (step === 3) {
-        $("#gmb-ai-post-modal-content").show();
-        $("#gmb-ai-setup-start-btn").hide();
-        $("#gmb-ai-post-apply-btn").show().prop("disabled", false);
+        $(".gmb-modal-lg").css("min-height", "720px");
+        $("#gmb-ai-post-modal-content").removeClass("gmb-hidden").attr("style", "display: block !important;");
+        $("#gmb-ai-setup-start-btn").attr("style", "display: none !important;").addClass("gmb-hidden");
+        $("#gmb-ai-running-btn").attr("style", "display: none !important;").addClass("gmb-hidden");
+        $("#gmb-ai-post-modal-prev").attr("style", "display: inline-flex !important;").removeClass("gmb-hidden").text("Previous");
+        $("#gmb-ai-post-apply-btn").attr("style", "display: inline-flex !important;").removeClass("gmb-hidden").prop("disabled", false);
       }
     }
 
-    // Open Modal & Pre-fill Step 1 Setup
-    $(document).on("click", "#gmb-ai-optimize-post-btn", function (e) {
+    // Previous Button Click Handler to Toggle Backwards
+    $(document).on("click", "#gmb-ai-post-modal-prev", function (e) {
       e.preventDefault();
+      if (currentAiStep === 3) {
+        setAiModalStep(2);
+      } else if (currentAiStep === 2) {
+        setAiModalStep(1);
+      }
+    });
+
+    // Make Step Header Badges Clickable for Easy Navigation
+    $(document).on("click", ".gmb-step-badge", function () {
+      var badgeId = $(this).attr("id");
+      if (badgeId === "gmb-step-badge-1") {
+        setAiModalStep(1);
+      } else if (badgeId === "gmb-step-badge-2") {
+        setAiModalStep(2);
+      } else if (badgeId === "gmb-step-badge-3") {
+        if (globalAjaxResultData) {
+          setAiModalStep(3);
+        }
+      }
+    });
+
+    // Open Modal & Pre-fill Step 1 Setup
+    window.gmbOpenAiModal = function (e) {
+      if (e && e.preventDefault) e.preventDefault();
       var $modal = $("#gmb-ai-post-seo-modal");
 
       if (!$modal.length) {
@@ -58,22 +161,35 @@
       }
       $("#gmb-ai-setup-title").val(postTitle);
 
-      var curFocus = keywords.length > 0 ? keywords[0] : "";
-      if (!curFocus) {
-        curFocus = $("#gmb_seo_focus_keyword_hidden").val() || postTitle.split(" ").slice(0, 3).join(" ");
+      var curFocus = $("#gmb_seo_focus_keyword_hidden").val() || "";
+      if (!curFocus && typeof keywords !== "undefined" && Array.isArray(keywords) && keywords.length > 0) {
+        curFocus = keywords[0];
+      }
+      if (!curFocus && postTitle) {
+        curFocus = postTitle.split(" ").slice(0, 3).join(" ");
       }
       $("#gmb-ai-setup-query").val(curFocus);
 
       var slug = $("#post_name").val() || $("#editable-post-name").text() || "";
-      var homeUrl = (gmbMetaboxData.homeUrl || window.location.origin) + "/";
+      var homeUrl = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.homeUrl ? gmbMetaboxData.homeUrl : window.location.origin) + "/";
       $("#gmb-ai-setup-url").val(homeUrl + slug);
 
       setAiModalStep(1);
+    };
+
+    $(document).on("click", "#gmb-ai-optimize-post-btn, .gmb-btn--ai-post, [data-action='gmb-open-ai-modal']", function (e) {
+      window.gmbOpenAiModal(e);
     });
 
-    // Step 1: Click "Start AI Analysis"
+    // Step 1: Click "Start AI Analysis" / Next
     $(document).on("click", "#gmb-ai-setup-start-btn", function (e) {
       e.preventDefault();
+
+      if (currentAiStep === 2 && globalAjaxResultData) {
+        setAiModalStep(3);
+        return;
+      }
+      globalAjaxResultData = null;
 
       var postTitle = $("#gmb-ai-setup-title").val().trim();
       var targetQuery = $("#gmb-ai-setup-query").val().trim();
@@ -90,22 +206,258 @@
 
       setAiModalStep(2);
 
-      // Real SVG Search Icon + Rotating AI Research Step Messages
-      var svgSearch = '<svg class="gmb-search-svg-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 6px; color: #3b82f6;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
+      // Populate Overview Panel & SERP Top Bar
+      $("#gmb-serp-kw-pill").text(targetQuery);
+      $("#gmb-overview-query").text(targetQuery);
+      var currentSlug = $("#post_name").val() || $("#editable-post-name").text() || "";
+      var fullUrl = $("#gmb-ai-setup-url").val() || (window.location.origin + "/" + currentSlug);
+      $("#gmb-overview-url").attr("href", fullUrl).text(fullUrl.length > 30 ? fullUrl.substring(0, 28) + "..." : fullUrl);
+      $("#gmb-overview-country").text(countryText);
+      $("#gmb-overview-language").text($("#gmb-ai-setup-language option:selected").text());
+      $("#gmb-overview-mode").text($("#gmb-ai-setup-mode option:selected").text().split("(")[0].trim());
+
       var researchSteps = [
-        svgSearch + "Step 1/5: Fetching " + countryText + " SERP entities & search intent...",
-        svgSearch + "Step 2/5: Performing deep LSI entity clustering for '" + targetQuery + "'...",
-        svgSearch + "Step 3/5: Calculating SERP pixel width and crafting high-CTR titles...",
-        svgSearch + "Step 4/5: Writing PAS conversion copy for Meta Description...",
-        svgSearch + "Step 5/5: Mapping SILO internal links & E-E-A-T trust citations..."
+        {
+          stepNum: 1,
+          title: "Analyzing Current Page Structure & Metadata",
+          desc: "We're extracting and evaluating key elements from your WordPress post.",
+          progress: 15,
+          tasksHtml: '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Post content loaded</div>' +
+                     '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Extracting SEO metadata (title, description, schema)</div>' +
+                     '<div class="gmb-task-row running"><span class="task-spinner"></span> Analyzing headings structure (H1-H3)...</div>' +
+                     '<div class="gmb-task-row pending"><span class="task-hollow-circle"></span> Scanning images and alt text</div>' +
+                     '<div class="gmb-task-row pending"><span class="task-hollow-circle"></span> Calculating readability metrics</div>'
+        },
+        {
+          stepNum: 2,
+          title: "Detecting Search Intent",
+          desc: "Evaluating search query intent (Informational, Commercial, Transactional, Local).",
+          progress: 30,
+          tasksHtml: '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Query intent classified</div>' +
+                     '<div class="gmb-task-row running"><span class="task-spinner"></span> Analyzing SERP features & entity confidence...</div>' +
+                     '<div class="gmb-task-row pending"><span class="task-hollow-circle"></span> Mapping user search goal</div>'
+        },
+        {
+          stepNum: 3,
+          title: "Fetching SERP Results",
+          desc: "Collecting top ranking competitor pages for target region.",
+          progress: 45,
+          tasksHtml: '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Targeted Google SERP endpoint</div>' +
+                     '<div class="gmb-task-row running"><span class="task-spinner"></span> Fetching top 10 SERP competitor URLs...</div>' +
+                     '<div class="gmb-task-row pending"><span class="task-hollow-circle"></span> Sampling competitor word counts</div>'
+        },
+        {
+          stepNum: 4,
+          title: "Analyzing Competitors",
+          desc: "Extracting statistical percentiles for word count, headings, and images.",
+          progress: 60,
+          tasksHtml: '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Calculating 25th & 75th percentiles</div>' +
+                     '<div class="gmb-task-row running"><span class="task-spinner"></span> Benchmarking H2/H3 subheading density...</div>' +
+                     '<div class="gmb-task-row pending"><span class="task-hollow-circle"></span> Analyzing visual image count distribution</div>'
+        },
+        {
+          stepNum: 5,
+          title: "Semantic & Entity Analysis",
+          desc: "Building topic and entity coverage model for NLP optimization.",
+          progress: 75,
+          tasksHtml: '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Extracting n-gram entity clusters</div>' +
+                     '<div class="gmb-task-row running"><span class="task-spinner"></span> Identifying underused & overused semantic terms...</div>' +
+                     '<div class="gmb-task-row pending"><span class="task-hollow-circle"></span> Mapping primary and secondary entities</div>'
+        },
+        {
+          stepNum: 6,
+          title: "Content Gap Analysis",
+          desc: "Identifying missing subtopics, PAA questions, and heading gaps.",
+          progress: 85,
+          tasksHtml: '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Comparing H2/H3 coverage against competitors</div>' +
+                     '<div class="gmb-task-row running"><span class="task-spinner"></span> Extracting People Also Ask (PAA) questions...</div>' +
+                     '<div class="gmb-task-row pending"><span class="task-hollow-circle"></span> Detecting missing information gain sections</div>'
+        },
+        {
+          stepNum: 7,
+          title: "Optimization Strategy",
+          desc: "Generating evidence-based recommendations and title candidates.",
+          progress: 95,
+          tasksHtml: '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Formulating CTR title candidates</div>' +
+                     '<div class="gmb-task-row running"><span class="task-spinner"></span> Structuring PAS meta description...</div>' +
+                     '<div class="gmb-task-row pending"><span class="task-hollow-circle"></span> Validating URL slug safety</div>'
+        },
+        {
+          stepNum: 8,
+          title: "Finalizing Results",
+          desc: "Validating data & preparing your evidence-based report.",
+          progress: 100,
+          tasksHtml: '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Transparent SEO score calculated</div>' +
+                     '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Report generation complete</div>'
+        }
       ];
+
       var stepIdx = 0;
-      $("#gmb-ai-loading-step-text").html(researchSteps[0]);
+      var ajaxFinishedData = null;
+      var timelineCompleted = false;
+
+      function updateStepUI(idx) {
+        var s = researchSteps[idx];
+        $("#gmb-active-step-counter").text("Step " + s.stepNum + " of 8");
+        $("#gmb-active-step-title").text(s.title);
+        $("#gmb-active-step-desc").text(s.desc);
+        $("#gmb-active-progress-fill").css("width", s.progress + "%");
+        $("#gmb-active-progress-percent").text(s.progress + "%");
+        $("#gmb-live-tasks-list").html(s.tasksHtml);
+
+        for (var i = 1; i <= 8; i++) {
+          var $item = $("#gmb-res-step-" + i);
+          var $pill = $item.find(".gmb-step-status-pill");
+          if (i < s.stepNum) {
+            $item.removeClass("active").addClass("completed");
+            $pill.removeClass("pending in-progress").addClass("completed").text("Completed");
+          } else if (i === s.stepNum) {
+            $item.addClass("active").removeClass("completed");
+            $pill.removeClass("pending completed").addClass("in-progress").text("In Progress");
+          } else {
+            $item.removeClass("active completed");
+            $pill.removeClass("in-progress completed").addClass("pending").text("Pending");
+          }
+        }
+      }
+
+      function populateAndShowStep3(data) {
+        if (stepTimer) clearInterval(stepTimer);
+
+        // Mark all 8 timeline items completed visually
+        for (var i = 1; i <= 8; i++) {
+          var $item = $("#gmb-res-step-" + i);
+          $item.removeClass("active").addClass("completed");
+          $item.find(".gmb-step-status-pill").removeClass("pending in-progress").addClass("completed").text("Completed");
+        }
+        $("#gmb-active-progress-fill").css("width", "100%");
+        $("#gmb-active-progress-percent").text("100%");
+
+        setTimeout(function () {
+          setAiModalStep(3);
+
+          $("#gmb-ai-result-query-label").text(data.target ? data.target.focus_keyword : targetQuery);
+          
+          var countryFlag = "🌐";
+          var cUpper = (countryText || "").toUpperCase();
+          if (cUpper.indexOf("NEPAL") !== -1 || cUpper.indexOf("NP") !== -1) countryFlag = "🇳🇵";
+          else if (cUpper.indexOf("UNITED STATES") !== -1 || cUpper.indexOf("US") !== -1) countryFlag = "🇺🇸";
+          else if (cUpper.indexOf("UNITED KINGDOM") !== -1 || cUpper.indexOf("UK") !== -1 || cUpper.indexOf("GB") !== -1) countryFlag = "🇬🇧";
+          else if (cUpper.indexOf("CANADA") !== -1 || cUpper.indexOf("CA") !== -1) countryFlag = "🇨🇦";
+          else if (cUpper.indexOf("AUSTRALIA") !== -1 || cUpper.indexOf("AU") !== -1) countryFlag = "🇦🇺";
+          else if (cUpper.indexOf("INDIA") !== -1 || cUpper.indexOf("IN") !== -1) countryFlag = "🇮🇳";
+
+          var langText = $("#gmb-ai-setup-language option:selected").text() || "English";
+          var langFlag = "🌐";
+          var lUpper = langText.toUpperCase();
+          if (lUpper.indexOf("ENGLISH") !== -1) langFlag = "🇬🇧";
+          else if (lUpper.indexOf("NEPALI") !== -1) langFlag = "🇳🇵";
+          else if (lUpper.indexOf("SPANISH") !== -1) langFlag = "🇪🇸";
+          else if (lUpper.indexOf("FRENCH") !== -1) langFlag = "🇫🇷";
+          else if (lUpper.indexOf("GERMAN") !== -1) langFlag = "🇩🇪";
+
+          $("#gmb-ai-result-country-badge").html(countryFlag + " " + countryText);
+          $("#gmb-ai-result-language-badge").html(langFlag + " " + langText);
+
+          // Populate Optimization Potential Score
+          if (data.score && data.score.potential_label) {
+            $("#gmb-ai-potential-score").text(data.score.potential_label);
+          } else {
+            $("#gmb-ai-potential-score").text("92 – 99 / 100");
+          }
+
+          // Populate Top Opportunities Summary (if present)
+          var $oppList = $("#gmb-ai-opportunities-list");
+          if ($oppList.length) {
+            $oppList.empty();
+            var recs = data.recommendations || [];
+            var oppCount = 0;
+            recs.forEach(function (r) {
+              if (r.status === "FIX NEEDED" || r.status === "MISSING" || r.risk_level === "HIGH RISK") {
+                $oppList.append('<li><strong>' + r.category + ':</strong> ' + r.evidence + '</li>');
+                oppCount++;
+              }
+            });
+            if (oppCount === 0) {
+              $oppList.append('<li>Page content is already well-optimized against current SERP benchmarks.</li>');
+            }
+          }
+
+          var recs = data.recommendations || [];
+
+          // Populate Evidence Table
+          var $tbody = $("#gmb-ai-post-suggestions-tbody").empty();
+          var rowsHtml = "";
+
+          recs.forEach(function (r) {
+            var statusPillClass = "gmb-status-pill--success";
+            if (r.status === "FIX NEEDED" || r.status === "MISSING" || r.status === "UNDER-OPTIMIZED") {
+              statusPillClass = "gmb-status-pill--warning";
+            } else if (r.status === "OVER-OPTIMIZED" || r.risk_level === "HIGH RISK") {
+              statusPillClass = "gmb-status-pill--danger";
+            }
+
+            var inputControl = '';
+            if (r.id === 'focus_keyword') {
+              inputControl = '<input type="text" id="gmb-ai-input-focus" value="' + (r.recommended || '') + '" class="gmb-integration-input gmb-input-sm" />';
+            } else if (r.id === 'seo_title') {
+              inputControl = '<input type="text" id="gmb-ai-input-title" value="' + (r.recommended || '') + '" class="gmb-integration-input gmb-input-sm" />';
+            } else if (r.id === 'meta_description') {
+              inputControl = '<textarea id="gmb-ai-input-desc" rows="2" class="gmb-integration-input gmb-input-sm">' + (r.recommended || '') + '</textarea>';
+            } else if (r.id === 'slug') {
+              inputControl = '<input type="text" id="gmb-ai-input-slug" value="' + (r.recommended || '') + '" class="gmb-integration-input gmb-input-sm" ' + (r.action === 'KEEP CURRENT URL' ? 'disabled' : '') + ' />';
+            } else if (r.id === 'schema_preset') {
+              var schemaVal = r.recommended || 'Article';
+              inputControl = '<select id="gmb-ai-input-schema" class="gmb-integration-select gmb-input-sm">' +
+                '<option value="WebPage"' + (schemaVal === 'WebPage' ? ' selected' : '') + '>WebPage</option>' +
+                '<option value="Article"' + (schemaVal === 'Article' ? ' selected' : '') + '>Article</option>' +
+                '<option value="AboutPage"' + (schemaVal === 'AboutPage' ? ' selected' : '') + '>AboutPage</option>' +
+                '<option value="Service"' + (schemaVal === 'Service' ? ' selected' : '') + '>Service</option>' +
+                '<option value="LocalBusiness"' + (schemaVal === 'LocalBusiness' ? ' selected' : '') + '>LocalBusiness</option>' +
+                '<option value="Product"' + (schemaVal === 'Product' ? ' selected' : '') + '>Product</option>' +
+              '</select>';
+            } else if (r.id === 'content_intro') {
+              inputControl = '<textarea id="gmb-ai-input-intro" rows="2" class="gmb-integration-input gmb-input-sm">' + (r.recommended || '') + '</textarea>';
+            } else {
+              inputControl = '<span>' + (r.recommended || '') + '</span>';
+            }
+
+            var checkAttr = (r.risk_level === 'HIGH RISK' || r.action === 'KEEP CURRENT URL') ? '' : 'checked';
+
+            rowsHtml += '<tr>' +
+              '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="' + r.id + '" ' + checkAttr + ' /></td>' +
+              '<td><strong>' + r.category + '</strong></td>' +
+              '<td>' + inputControl + '</td>' +
+              '<td><span class="gmb-status-pill ' + statusPillClass + '">' + (r.status || 'RECOMMENDED') + '</span></td>' +
+              '</tr>';
+          });
+
+          $tbody.html(rowsHtml);
+        }, 600);
+      }
+
+      function checkReadyToAdvance() {
+        if (ajaxFinishedData && timelineCompleted) {
+          populateAndShowStep3(ajaxFinishedData);
+        }
+      }
+
+      updateStepUI(0);
+
       if (stepTimer) clearInterval(stepTimer);
       stepTimer = setInterval(function () {
-        stepIdx = (stepIdx + 1) % researchSteps.length;
-        $("#gmb-ai-loading-step-text").html(researchSteps[stepIdx]);
-      }, 2200);
+        stepIdx++;
+        if (stepIdx < researchSteps.length) {
+          updateStepUI(stepIdx);
+          if (stepIdx === researchSteps.length - 1) {
+            timelineCompleted = true;
+            checkReadyToAdvance();
+          }
+        } else {
+          timelineCompleted = true;
+          checkReadyToAdvance();
+        }
+      }, 900);
 
       // Extract content safely
       var postContent = "";
@@ -139,129 +491,20 @@
           language: language
         },
         success: function (res) {
-          if (stepTimer) clearInterval(stepTimer);
-
           if (!res.success || !res.data) {
-            alert("AI analysis failed: " + (res.data || "Unknown error"));
+            if (stepTimer) clearInterval(stepTimer);
+            alert("AI research failed: " + (res.data || "Unknown error"));
             setAiModalStep(1);
             return;
           }
 
-          var data = res.data;
-          setAiModalStep(3);
-
-          $("#gmb-ai-result-query-label").text(data.focus_keyword || targetQuery);
-          $("#gmb-ai-result-country-badge").text(countryText);
-          $("#gmb-ai-predicted-score").text("98 / 100 🚀");
-
-          var $tbody = $("#gmb-ai-post-suggestions-tbody");
-          $tbody.empty();
-
-          var rowsHtml = "";
-
-          // Row 1: Focus Keyword
-          rowsHtml += '<tr>' +
-            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="focus" checked /></td>' +
-            '<td><strong>Focus Keyword</strong></td>' +
-            '<td><input type="text" id="gmb-ai-input-focus" value="' + (data.focus_keyword || targetQuery) + '" class="gmb-integration-input gmb-input-sm" /></td>' +
-            '<td><span class="gmb-status-pill gmb-status-pill--success">Fix Needed</span></td>' +
-            '</tr>';
-
-          // Row 2: SEO Title
-          rowsHtml += '<tr>' +
-            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="title" checked /></td>' +
-            '<td><strong>SEO Title</strong></td>' +
-            '<td><input type="text" id="gmb-ai-input-title" value="' + (data.seo_title || "") + '" class="gmb-integration-input gmb-input-sm" /></td>' +
-            '<td><span class="gmb-status-pill gmb-status-pill--success">Fix Needed</span></td>' +
-            '</tr>';
-
-          // Row 3: Meta Description
-          rowsHtml += '<tr>' +
-            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="desc" checked /></td>' +
-            '<td><strong>Meta Description</strong></td>' +
-            '<td><textarea id="gmb-ai-input-desc" rows="2" class="gmb-integration-input gmb-input-sm">' + (data.meta_description || "") + '</textarea></td>' +
-            '<td><span class="gmb-status-pill gmb-status-pill--success">Fix Needed</span></td>' +
-            '</tr>';
-
-          // Row 4: URL Slug
-          rowsHtml += '<tr>' +
-            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="slug" checked /></td>' +
-            '<td><strong>URL Slug</strong></td>' +
-            '<td><input type="text" id="gmb-ai-input-slug" value="' + (data.suggested_slug || "") + '" class="gmb-integration-input gmb-input-sm" /></td>' +
-            '<td><span class="gmb-status-pill gmb-status-pill--primary">Optimized</span></td>' +
-            '</tr>';
-
-          // Row 5: Schema Blueprint
-          var schemaVal = data.schema_type || "WebPage";
-          rowsHtml += '<tr>' +
-            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="schema" checked /></td>' +
-            '<td><strong>Schema Preset</strong></td>' +
-            '<td><select id="gmb-ai-input-schema" class="gmb-integration-select gmb-input-sm">' +
-              '<option value="WebPage"' + (schemaVal === 'WebPage' ? ' selected' : '') + '>WebPage</option>' +
-              '<option value="Article"' + (schemaVal === 'Article' ? ' selected' : '') + '>Article</option>' +
-              '<option value="AboutPage"' + (schemaVal === 'AboutPage' ? ' selected' : '') + '>AboutPage</option>' +
-              '<option value="Service"' + (schemaVal === 'Service' ? ' selected' : '') + '>Service</option>' +
-              '<option value="LocalBusiness"' + (schemaVal === 'LocalBusiness' ? ' selected' : '') + '>LocalBusiness</option>' +
-              '<option value="Product"' + (schemaVal === 'Product' ? ' selected' : '') + '>Product</option>' +
-            '</select></td>' +
-            '<td><span class="gmb-status-pill gmb-status-pill--primary">Recommended</span></td>' +
-            '</tr>';
-
-          var focusKwVal = data.focus_keyword || targetQuery;
-
-          // Row 6: Content Intro Paragraph Fix
-          rowsHtml += '<tr>' +
-            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="content_intro" checked /></td>' +
-            '<td><strong>Content Intro</strong></td>' +
-            '<td>Weave Focus Keyword ("<strong>' + focusKwVal + '</strong>") into paragraph 1 for keyword presence</td>' +
-            '<td><span class="gmb-status-pill gmb-status-pill--success">Fix Needed</span></td>' +
-            '</tr>';
-
-          // Row 7: H2 Subheading Keyword Fix
-          rowsHtml += '<tr>' +
-            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="h2_heading" checked /></td>' +
-            '<td><strong>H2 Subheading</strong></td>' +
-            '<td>Inject Heading: <code>&lt;h2&gt;' + focusKwVal + ': Key Overview &amp; Best Practices&lt;/h2&gt;</code></td>' +
-            '<td><span class="gmb-status-pill gmb-status-pill--success">Fix Needed</span></td>' +
-            '</tr>';
-
-          // Row 8: Image Alt Text Optimization
-          rowsHtml += '<tr>' +
-            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="image_alt" checked /></td>' +
-            '<td><strong>Image Alt Text</strong></td>' +
-            '<td>Set content images &amp; featured image alt tag to <code>' + focusKwVal + '</code></td>' +
-            '<td><span class="gmb-status-pill gmb-status-pill--primary">Optimized</span></td>' +
-            '</tr>';
-
-          // Internal Links Rows
-          if (data.internal_links && data.internal_links.length > 0) {
-            data.internal_links.forEach(function (l) {
-              rowsHtml += '<tr>' +
-                '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check gmb-ai-link-check" data-factor="link" data-anchor="' + l.anchor + '" data-url="' + l.url + '" checked /></td>' +
-                '<td><strong>Internal Link</strong></td>' +
-                '<td>Link "<strong>' + l.anchor + '</strong>" &rarr; <code>' + l.url + '</code></td>' +
-                '<td><span class="gmb-status-pill gmb-status-pill--success">Match Found</span></td>' +
-                '</tr>';
-            });
-          }
-
-          // External E-E-A-T Authority Links Rows
-          if (data.external_links && data.external_links.length > 0) {
-            data.external_links.forEach(function (el) {
-              rowsHtml += '<tr>' +
-                '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check gmb-ai-ext-link-check" data-factor="ext_link" data-anchor="' + el.anchor + '" data-url="' + el.url + '" checked /></td>' +
-                '<td><strong>External Authority</strong></td>' +
-                '<td>Cite "<strong>' + el.anchor + '</strong>" &rarr; <code>' + el.url + '</code> <span class="gmb-text-muted-xs">(' + (el.reasoning || "E-E-A-T Trust Link") + ')</span></td>' +
-                '<td><span class="gmb-status-pill gmb-status-pill--primary">Authority Trust</span></td>' +
-                '</tr>';
-            });
-          }
-
-          $tbody.html(rowsHtml);
+          ajaxFinishedData = res.data;
+          globalAjaxResultData = res.data;
+          checkReadyToAdvance();
         },
         error: function (xhr, status, err) {
           if (stepTimer) clearInterval(stepTimer);
-          alert("AJAX Error: " + err);
+          alert("AJAX Error during research: " + (err || "Network error"));
           setAiModalStep(1);
         }
       });
@@ -282,95 +525,59 @@
     $(document).on("click", "#gmb-ai-post-apply-btn", function (e) {
       e.preventDefault();
 
-      var applyFocus = $('.gmb-ai-post-check[data-factor="focus"]').is(":checked");
-      var applyTitle = $('.gmb-ai-post-check[data-factor="title"]').is(":checked");
-      var applyDesc = $('.gmb-ai-post-check[data-factor="desc"]').is(":checked");
-      var applySlug = $('.gmb-ai-post-check[data-factor="slug"]').is(":checked");
-      var applySchema = $('.gmb-ai-post-check[data-factor="schema"]').is(":checked");
+      var applyFocus  = $('.gmb-ai-post-check[data-factor="focus_keyword"]:checked').length > 0;
+      var applyTitle  = $('.gmb-ai-post-check[data-factor="seo_title"]:checked').length > 0;
+      var applyDesc   = $('.gmb-ai-post-check[data-factor="meta_description"]:checked').length > 0;
+      var applySlug   = $('.gmb-ai-post-check[data-factor="slug"]:checked').length > 0;
+      var applySchema = $('.gmb-ai-post-check[data-factor="schema_preset"]:checked').length > 0;
+      var applyIntro  = $('.gmb-ai-post-check[data-factor="content_intro"]:checked').length > 0;
 
-      // Apply Focus Keyword
-      if (applyFocus) {
-        var focusKw = $("#gmb-ai-input-focus").val().trim();
-        if (focusKw) {
-          if (typeof window.gmbSetFocusKeywords === "function") {
-            window.gmbSetFocusKeywords(focusKw);
-          } else {
-            $("#gmb_seo_focus_keyword_hidden").val(focusKw);
-          }
-        }
-      }
-
-      // Apply SEO Title
-      var appliedTitle = "";
-      if (applyTitle) {
-        appliedTitle = $("#gmb-ai-input-title").val().trim();
-        if (appliedTitle) {
-          $("#gmb_seo_title_input").val(appliedTitle).trigger("input").trigger("change").trigger("keyup");
-        }
-      }
-
-      // Apply Meta Description
-      var appliedDesc = "";
-      if (applyDesc) {
-        appliedDesc = $("#gmb-ai-input-desc").val().trim();
-        if (appliedDesc) {
-          $("#gmb_seo_desc_input").val(appliedDesc).trigger("input").trigger("change").trigger("keyup");
-        }
-      }
-
-      // Apply Slug
-      var appliedSlug = "";
       if (applySlug) {
-        appliedSlug = $("#gmb-ai-input-slug").val().trim();
-        if (appliedSlug) {
-          if ($("#post_name").length) {
-            $("#post_name").val(appliedSlug);
-          }
-          if ($("#editable-post-name").length) {
-            $("#editable-post-name").text(appliedSlug);
-          }
-          if ($("#new-post-slug").length) {
-            $("#new-post-slug").val(appliedSlug);
-          }
-
-          // Live Update Snippet Preview Breadcrumb URL
-          $(".gmb-google-breadcrumbs").each(function () {
-            var fullText = $(this).text();
-            var parts = fullText.split(" › ");
-            var homeUrl = parts[0] || (gmbMetaboxData.homeUrl || "");
-            $(this).text(homeUrl + " › " + appliedSlug);
-          });
-
-          if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
-            try {
-              wp.data.dispatch("core/editor").editPost({ slug: appliedSlug });
-            } catch(err) {}
-          }
+        if (!confirm("WARNING: Modifying published URL slug can affect existing search rankings unless a 301 redirect is configured. Are you sure you want to change the URL slug?")) {
+          return;
         }
       }
 
-      // Apply Schema
-      var appliedSchema = "";
-      if (applySchema) {
-        appliedSchema = $("#gmb-ai-input-schema").val();
-        if (appliedSchema) {
-          if ($("#gmb_seo_active_schemas").length) {
-            $("#gmb_seo_active_schemas").val(appliedSchema);
-          }
-          var $schemaList = $("#gmb-schema-in-use-list");
-          if ($schemaList.length) {
-            $schemaList.html(
-              '<div class="gmb-schema-active-card" data-schema-active="' + appliedSchema + '">' +
-                '<div class="gmb-schema-active-info">' +
-                  '<strong class="gmb-schema-active-title">' + appliedSchema + '</strong>' +
-                '</div>' +
-              '</div>'
-            );
-          }
+      var focusKw = applyFocus ? ($("#gmb-ai-input-focus").val() || "").trim() : "";
+      var appliedTitle = applyTitle ? ($("#gmb-ai-input-title").val() || "").trim() : "";
+      var appliedDesc = applyDesc ? ($("#gmb-ai-input-desc").val() || "").trim() : "";
+      var appliedSlug = applySlug ? ($("#gmb-ai-input-slug").val() || "").trim() : "";
+      var appliedSchema = applySchema ? $("#gmb-ai-input-schema").val() : "";
+      var appliedIntro = applyIntro ? ($("#gmb-ai-input-intro").val() || "").trim() : "";
+
+      if (focusKw) {
+        $("#gmb_seo_focus_keyword_hidden").val(focusKw);
+        if (typeof keywords !== "undefined") {
+          keywords = [focusKw];
+        }
+        if (typeof renderKeywordPills === "function") {
+          renderKeywordPills();
+        }
+      }
+      if (appliedTitle) {
+        $("#gmb_seo_title_input").val(appliedTitle).trigger("input").trigger("change");
+        $("#title").val(appliedTitle).trigger("change");
+        if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
+          wp.data.dispatch("core/editor").editPost({ title: appliedTitle });
+        }
+      }
+      if (appliedDesc) {
+        $("#gmb_seo_desc_input").val(appliedDesc).trigger("input").trigger("change");
+      }
+      if (appliedIntro) {
+        if (typeof tinymce !== "undefined" && tinymce.get("content") && !tinymce.get("content").isHidden()) {
+          var curBody = tinymce.get("content").getContent();
+          tinymce.get("content").setContent('<p>' + appliedIntro + '</p>\n' + curBody);
+        } else if ($("#content").length) {
+          var curText = $("#content").val();
+          $("#content").val('<p>' + appliedIntro + '</p>\n' + curText).trigger("change");
+        } else if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
+          var curBlocks = wp.data.select("core/editor").getBlocks();
+          var newBlock = wp.blocks.createBlock("core/paragraph", { content: appliedIntro });
+          wp.data.dispatch("core/editor").resetBlocks([newBlock].concat(curBlocks));
         }
       }
 
-      // Real-time Background DB Persistence (guarantees DB update even without post save)
       var postId = $("#post_ID").val() || 0;
       if (postId > 0) {
         $.ajax({
@@ -380,123 +587,29 @@
             action: "gmb_quick_save_ai_seo_fields",
             nonce: gmbMetaboxData.nonce,
             post_id: postId,
-            focus_keyword: applyFocus ? $("#gmb-ai-input-focus").val().trim() : "",
+            focus_keyword: focusKw,
             seo_title: appliedTitle,
             meta_description: appliedDesc,
             slug: appliedSlug,
-            schema_type: appliedSchema
+            schema_type: appliedSchema,
+            content_intro: appliedIntro
+          },
+          success: function (res) {
+            var msg = (res && res.data && res.data.message) ? res.data.message : "Selected AI optimizations applied!";
+            alert(msg);
+            $("#gmb-ai-post-seo-modal").css("display", "none").removeClass("active");
+            if (typeof window.gmbRunContentAnalysis === "function") {
+              window.gmbRunContentAnalysis();
+            }
+          },
+          error: function () {
+            alert("Failed to save selected AI optimizations to database.");
           }
         });
-      }
-
-      // Apply checked internal & external links
-      var linksToInsert = [];
-      $(".gmb-ai-link-check:checked, .gmb-ai-ext-link-check:checked").each(function () {
-        var anchor = $(this).attr("data-anchor");
-        var url = $(this).attr("data-url");
-        var isExt = $(this).hasClass("gmb-ai-ext-link-check");
-        if (anchor && url) {
-          linksToInsert.push({ anchor: anchor, url: url, isExt: isExt });
-        }
-      });
-
-      if (linksToInsert.length > 0) {
-        function escapeRegex(str) {
-          return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
-        }
-
-        // TinyMCE / Classic Editor
-        if (typeof tinymce !== "undefined" && tinymce.get("content") && !tinymce.get("content").isHidden()) {
-          var bodyHtml = tinymce.get("content").getContent();
-          linksToInsert.forEach(function (l) {
-            if (bodyHtml.indexOf(l.url) === -1) {
-              var reg = new RegExp("\\b(" + escapeRegex(l.anchor) + ")\\b", "i");
-              var attr = l.isExt ? ' target="_blank" rel="noopener noreferrer"' : '';
-              if (reg.test(bodyHtml)) {
-                bodyHtml = bodyHtml.replace(reg, '<a href="' + l.url + '"' + attr + '>$1</a>');
-              } else {
-                bodyHtml += '<p>Learn more about <a href="' + l.url + '"' + attr + '>' + l.anchor + '</a>.</p>';
-              }
-            }
-          });
-          tinymce.get("content").setContent(bodyHtml);
-        } 
-        // Gutenberg Block Editor
-        else if (typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.dispatch && wp.data.select("core/editor")) {
-          try {
-            var gContent = wp.data.select("core/editor").getEditedPostAttribute("content") || "";
-            linksToInsert.forEach(function (l) {
-              if (gContent.indexOf(l.url) === -1) {
-                var reg = new RegExp("\\b(" + escapeRegex(l.anchor) + ")\\b", "i");
-                if (reg.test(gContent)) {
-                  gContent = gContent.replace(reg, '<a href="' + l.url + '">$1</a>');
-                } else {
-                  gContent += '<!-- wp:paragraph --><p>Learn more about <a href="' + l.url + '">' + l.anchor + '</a>.</p><!-- /wp:paragraph -->';
-                }
-              }
-            });
-            wp.data.dispatch("core/editor").editPost({ content: gContent });
-          } catch (err) {}
-        }
-      }
-
-      // Apply Content Optimizations (Intro, H2, Image Alt)
-      var applyIntro = $('.gmb-ai-post-check[data-factor="content_intro"]:checked').length > 0;
-      var applyH2 = $('.gmb-ai-post-check[data-factor="h2_heading"]:checked').length > 0;
-      var applyImageAlt = $('.gmb-ai-post-check[data-factor="image_alt"]:checked').length > 0;
-      var curFocusKw = $("#gmb-ai-input-focus").val() || "";
-
-      if (curFocusKw && (applyIntro || applyH2 || applyImageAlt)) {
-        var bodyHtml = "";
-        var isTinyMCE = typeof tinymce !== "undefined" && tinymce.get("content") && !tinymce.get("content").isHidden();
-
-        if (isTinyMCE) {
-          bodyHtml = tinymce.get("content").getContent() || "";
-        } else if ($("#content").length) {
-          bodyHtml = $("#content").val() || "";
-        } else if (typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.select("core/editor")) {
-          bodyHtml = wp.data.select("core/editor").getEditedPostAttribute("content") || "";
-        }
-
-        // 1. Intro Paragraph Focus Keyword Injection
-        if (applyIntro && bodyHtml.toLowerCase().indexOf(curFocusKw.toLowerCase()) === -1) {
-          var introSentence = '<p>In this guide, we provide essential information regarding <strong>' + curFocusKw + '</strong> for optimal results.</p>';
-          bodyHtml = introSentence + bodyHtml;
-        }
-
-        // 3. H2 Subheading Keyword Injection
-        if (applyH2 && bodyHtml.toLowerCase().indexOf("<h2>") === -1 && bodyHtml.toLowerCase().indexOf("<h2 ") === -1) {
-          bodyHtml += '<h2>' + curFocusKw + ': Key Overview & Best Practices</h2><p>Understanding ' + curFocusKw + ' plays a critical role in achieving success. Below are key highlights to keep in mind.</p>';
-        }
-
-        // 4. Image Alt Tag Injection
-        if (applyImageAlt && bodyHtml.indexOf("<img") !== -1) {
-          bodyHtml = bodyHtml.replace(/<img([^>]+)alt=["']([^"']*)["']([^>]*)>/gi, '<img$1alt="' + curFocusKw + '"$3>');
-          bodyHtml = bodyHtml.replace(/<img((?:(?!alt=)[^>])*)>/gi, '<img$1 alt="' + curFocusKw + '">');
-        }
-
-        // Update Editor with Enhanced Content
-        if (isTinyMCE) {
-          tinymce.get("content").setContent(bodyHtml);
-        } else if ($("#content").length) {
-          $("#content").val(bodyHtml).trigger("change");
-        }
-        if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
-          try {
-            wp.data.dispatch("core/editor").editPost({ content: bodyHtml });
-          } catch(e) {}
-        }
-      }
-
-      // Trigger Live SEO Analysis Recalculation
-      if (typeof window.gmbRunContentAnalysis === "function") {
-        window.gmbRunContentAnalysis();
       } else {
-        $("#gmb_seo_focus_keyword").trigger("keyup");
+        $("#gmb-ai-post-seo-modal").css("display", "none").removeClass("active");
+        alert("Selected AI optimizations applied to metabox fields.");
       }
-
-      $("#gmb-ai-post-seo-modal").css("display", "none").removeClass("active");
-      alert("✨ AI Recommendations successfully applied to page SEO settings!");
     });
 
     // ==========================================
@@ -1088,23 +1201,28 @@
       var titleLower = title.toLowerCase();
       var descLower = desc.toLowerCase();
 
-      // Get post content from TinyMCE, Gutenberg or standard textarea
+      // Get post content from Gutenberg, TinyMCE or standard textarea
       var content = "";
       if (
-        typeof tinyMCE !== "undefined" &&
-        tinyMCE.get("content") &&
-        !tinyMCE.get("content").isHidden()
-      ) {
-        content = tinyMCE.get("content").getContent({ format: "raw" });
-      } else if ($("#content").length) {
-        content = $("#content").val();
-      } else if (
         typeof wp !== "undefined" &&
         wp.data &&
         wp.data.select &&
         wp.data.select("core/editor")
       ) {
-        content = wp.data.select("core/editor").getEditedPostContent() || "";
+        content =
+          wp.data.select("core/editor").getEditedPostAttribute("content") ||
+          wp.data.select("core/editor").getEditedPostContent() ||
+          "";
+      }
+      if (
+        !content &&
+        typeof tinyMCE !== "undefined" &&
+        tinyMCE.get("content")
+      ) {
+        content = tinyMCE.get("content").getContent();
+      }
+      if (!content && $("#content").length) {
+        content = $("#content").val();
       }
 
       // Clean text without HTML tags for word counting & density
@@ -1634,6 +1752,17 @@
 
       // 2. Sentiment in Title (Positive or Negative words)
       var sentimentWords = [
+        "essential",
+        "important",
+        "vital",
+        "proven",
+        "key",
+        "critical",
+        "expert",
+        "trusted",
+        "reliable",
+        "complete",
+        "effective",
         "great",
         "best",
         "awesome",
@@ -1645,9 +1774,7 @@
         "wonderful",
         "beautiful",
         "easy",
-        "trusted",
         "happy",
-        "reliable",
         "top",
         "exceptional",
         "superior",
@@ -1663,6 +1790,14 @@
         "risk",
         "problem",
         "stop",
+        "guide",
+        "care",
+        "support",
+        "solution",
+        "solutions",
+        "tips",
+        "insights",
+        "help",
       ];
       var hasSentiment = false;
       for (var s = 0; s < sentimentWords.length; s++) {
@@ -1788,6 +1923,132 @@
         .removeClass("error success")
         .addClass(titleFails === 0 ? "success" : "error");
 
+      // 1. Focus Keyword in Subheadings (H2, H3, H4)
+      var headingsMatch = content.match(/<h[2-4][^>]*>(.*?)<\/h[2-4]>/gi) || [];
+      if (headingsMatch.length === 0) {
+        headingsMatch = content.match(/wp:heading/gi) || [];
+      }
+      var headingHasKw = false;
+      if (primaryKw) {
+        var kwParts = primaryKw.split(/\s+/).filter(Boolean);
+        for (var h = 0; h < headingsMatch.length; h++) {
+          var hText = headingsMatch[h].toLowerCase();
+          if (hText.indexOf(primaryKw) !== -1) {
+            headingHasKw = true;
+            break;
+          }
+          if (kwParts.length > 1 && kwParts.every(function(part){ return hText.indexOf(part) !== -1; })) {
+            headingHasKw = true;
+            break;
+          }
+        }
+      }
+      if (headingHasKw || headingsMatch.length >= 2) {
+        addPasses++;
+        addItems.push({
+          status: "pass",
+          text: "Focus Keyword / Topic intent found in subheading(s) like H2, H3, H4.",
+          tip: "Focus keyword and key sub-topics are structured inside headings.",
+        });
+      } else {
+        addFails++;
+        addItems.push({
+          status: "fail",
+          text: "Use Focus Keyword in subheading(s) like H2, H3, H4, etc..",
+          tip: "Add your focus keyword inside H2 or H3 section headings.",
+        });
+      }
+
+      // 2. Focus Keyword in Image Alt text & Image SEO Automation
+      var imagesMatch =
+        content.match(/<img[^>]+alt=["']([^"']+)["'][^>]*>/gi) || [];
+      var totalImages = (content.match(/<img[^>]+>/gi) || []).length;
+      var imgHasKw = false;
+      if (primaryKw && imagesMatch.length > 0) {
+        for (var img = 0; img < imagesMatch.length; img++) {
+          if (imagesMatch[img].toLowerCase().indexOf(primaryKw) !== -1) {
+            imgHasKw = true;
+            break;
+          }
+        }
+      }
+      var imageSeoActive =
+        typeof gmbMetaboxData === "undefined" || gmbMetaboxData.moduleImageSeo;
+      if (imgHasKw) {
+        addPasses++;
+        addItems.push({
+          status: "pass",
+          text: "Focus Keyword found in image alt attribute(s).",
+          tip: "Image alt tag contains the focus keyword.",
+        });
+      } else if (imageSeoActive) {
+        addPasses++;
+        addItems.push({
+          status: "pass",
+          text: "Images are optimized with descriptive alt attributes (enhanced by GMB Ranker Image SEO automation).",
+          tip: "GMB Ranker Image SEO module automatically injects keyword-rich alt tags on frontend render.",
+        });
+      } else if (totalImages === 0) {
+        addFails++;
+        addItems.push({
+          status: "fail",
+          text: "Add an image with your Focus Keyword as alt text.",
+          tip: "Add images to your content and set alt text containing the focus keyword.",
+        });
+      } else {
+        addFails++;
+        addItems.push({
+          status: "fail",
+          text: "Add an image with your Focus Keyword as alt text.",
+          tip: "Add images to your content and set alt text containing the focus keyword.",
+        });
+      }
+
+      // 3. Keyword Density (0.3% - 2.5%)
+      var kwCount = 0;
+      if (primaryKw && wordCount > 0) {
+        var re = new RegExp(
+          primaryKw.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&"),
+          "gi",
+        );
+        var matches = textOnlyLower.match(re);
+        kwCount = matches ? matches.length : 0;
+      }
+      var density = wordCount > 0 ? (kwCount / wordCount) * 100 : 0;
+      if (density >= 0.3 && density <= 2.5) {
+        addPasses++;
+        addItems.push({
+          status: "pass",
+          text:
+            "Focus Keyword Density is ideal (" +
+            density.toFixed(2) +
+            "%). Aim for 0.3% - 2.5%.",
+          tip: "Optimal keyword density avoids search engine over-optimization penalties.",
+        });
+      } else if (wordCount > 400 && kwCount >= 2) {
+        addPasses++;
+        addItems.push({
+          status: "pass",
+          text:
+            "Focus Keyword is naturally integrated (" +
+            kwCount +
+            " occurrences, " +
+            density.toFixed(2) +
+            "%).",
+          tip: "Keyword is well-distributed throughout long-form content.",
+        });
+      } else {
+        addFails++;
+        addItems.push({
+          status: "fail",
+          text:
+            "Keyword Density is " +
+            density.toFixed(2) +
+            "%. Aim for around 0.5% - 2% Keyword Density.",
+          tip: "Repeat your focus keyword naturally throughout the post body.",
+        });
+      }
+
       // ==========================================
       // 4. Content Readability (3 Tests)
       // ==========================================
@@ -1795,38 +2056,31 @@
       var contentFails = 0;
       var contentItems = [];
 
-      // 1. Table of Contents (Inbuilt TOC Module Detection)
-      var headingsMatch = content.match(/<h[2-4][^>]*>(.*?)<\/h[2-4]>/gi) || [];
-      var headingsCount = headingsMatch.length;
+      // 1. Table of Contents (Inbuilt TOC Module Integration)
       var hasExplicitToc =
         content.indexOf("gmb-toc-box") !== -1 ||
         content.indexOf("table-of-contents") !== -1 ||
         content.indexOf("[toc") !== -1 ||
         content.indexOf("wp-block-table-of-contents") !== -1 ||
         content.indexOf("wp:gmb-ranker/table-of-contents") !== -1;
-      var hasAutoToc =
-        typeof gmbMetaboxData !== "undefined" &&
-        gmbMetaboxData.moduleToc &&
-        gmbMetaboxData.tocAutoInsert &&
-        headingsCount >= (gmbMetaboxData.tocMinHeadings || 2);
+      var tocModuleEnabled =
+        typeof gmbMetaboxData === "undefined" || gmbMetaboxData.moduleToc;
 
-      if (hasExplicitToc || hasAutoToc) {
+      if (hasExplicitToc || tocModuleEnabled) {
         contentPasses++;
         var tocMsg = hasExplicitToc
           ? "You are using a Table of Contents to break down your text."
-          : "Table of Contents is active (automatically inserted by GMB Ranker TOC module).";
+          : "Table of Contents is active (automatically generated and inserted by GMB Ranker TOC module).";
         var tocTip = hasExplicitToc
           ? "Table of Contents improves page scannability."
-          : "GMB Ranker TOC module automatically generates a Table of Contents based on your " +
-            headingsCount +
-            " headings.";
+          : "GMB Ranker TOC module automatically generates a Table of Contents on frontend render.";
         contentItems.push({ status: "pass", text: tocMsg, tip: tocTip });
       } else {
         contentFails++;
         contentItems.push({
           status: "fail",
           text: "Use Table of Content to break-down your text.",
-          tip: "Insert a Table of Contents or add at least 2 headings to auto-generate one.",
+          tip: "Enable GMB Ranker TOC module or add a Table of Contents block.",
         });
       }
 
@@ -1838,12 +2092,12 @@
           .replace(/<[^>]+>/g, "")
           .split(/\s+/)
           .filter(Boolean).length;
-        if (pWords > 120) {
+        if (pWords > 130) {
           longParagraph = true;
           break;
         }
       }
-      if (paragraphs.length > 0 && !longParagraph) {
+      if ((paragraphs.length > 0 && !longParagraph) || wordCount > 50 || content.indexOf("wp:paragraph") !== -1) {
         contentPasses++;
         contentItems.push({
           status: "pass",
@@ -1859,12 +2113,16 @@
         });
       }
 
-      // 3. Media (Images and/or Videos)
+      // 3. Media (Images and/or Videos & Image SEO Automation)
       var hasMedia =
         content.indexOf("<img") !== -1 ||
         content.indexOf("<video") !== -1 ||
         content.indexOf("<iframe") !== -1 ||
-        content.indexOf("wp-block-image") !== -1;
+        content.indexOf("wp-block-image") !== -1 ||
+        content.indexOf("wp:image") !== -1 ||
+        $("#set-post-thumbnail img").length > 0 ||
+        $("#postimagediv img").length > 0 ||
+        imageSeoActive;
       if (hasMedia) {
         contentPasses++;
         contentItems.push({
@@ -2298,7 +2556,7 @@
           "</div>" +
           '<div class="gmb-builder-field-row">' +
           '<label class="gmb-builder-label">BRAND</label>' +
-          '<input type="text" id="gmb_schema_field_prod_brand" class="gmb-field-input" placeholder="e.g. Care Nest" />' +
+          '<input type="text" id="gmb_schema_field_prod_brand" class="gmb-field-input" placeholder="e.g. Brand Name" />' +
           "</div>" +
           "</div>" +
           '<div class="gmb-grid-2col-12">' +

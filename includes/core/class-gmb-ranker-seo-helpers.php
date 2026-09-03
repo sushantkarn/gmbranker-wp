@@ -56,10 +56,13 @@ class GMB_Ranker_SEO_Helpers {
         if (strpos($path, 'assets/') === 0) {
             $path = substr($path, 7);
         }
+        if (defined('GMB_RANKER_SEO_FILE')) {
+            return plugins_url('assets/' . $path, GMB_RANKER_SEO_FILE);
+        }
         if (defined('GMB_RANKER_SEO_URL')) {
             return GMB_RANKER_SEO_URL . 'assets/' . $path;
         }
-        return plugins_url('assets/' . $path, dirname(dirname(dirname(__FILE__))));
+        return plugins_url('assets/' . $path, dirname(dirname(dirname(__FILE__))) . '/gmb-ranker-seo-automation.php');
     }
 
     /**

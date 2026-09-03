@@ -89,9 +89,12 @@ wp_nonce_field('gmb_seo_save_nonce', 'gmb_seo_nonce');
                     </button>
                 </div>
                 <div class="gmb-seo-header-actions">
-                    <button type="button" id="gmb-ai-optimize-post-btn" class="gmb-btn--ai-post">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                        <span>✨ AI Auto-Fix Page SEO</span>
+                    <button type="button" id="gmb-ai-optimize-post-btn" class="gmb-btn--ai-post" data-action="gmb-open-ai-modal" onclick="if(window.gmbOpenAiModal) { window.gmbOpenAiModal(event); } return false;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2l2.4 5.4L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/>
+                            <path d="M19 17l.8 1.8L21.5 19.5 19.7 20.3 18.9 22l-.8-1.7-1.8-.8 1.8-.8z"/>
+                        </svg>
+                        <span>AI Auto-Fix Page SEO</span>
                     </button>
                 </div>
             </div>
@@ -803,7 +806,7 @@ wp_nonce_field('gmb_seo_save_nonce', 'gmb_seo_nonce');
                                 <button type="button" class="gmb-modal-tab-btn active" id="gmb-builder-tab-btn-edit" data-builder-tab="edit">Edit</button>
                                 <button type="button" class="gmb-modal-tab-btn" id="gmb-builder-tab-btn-validation" data-builder-tab="validation">Code Validation</button>
                             </div>
-                            <span class="gmb-builder-info-icon" title="Customize Schema properties for this post">ⓘ</span>
+                            <span class="gmb-builder-info-icon" title="Customize Schema properties for this post"></span>
                         </div>
                         <div class="gmb-modal-body gmb-modal-body-scroll gmb-builder-modal-body">
                             
@@ -948,7 +951,7 @@ wp_nonce_field('gmb_seo_save_nonce', 'gmb_seo_nonce');
                         <div class="gmb-image-upload-row">
                             <input type="text" id="gmb_seo_fb_image_metabox" name="gmb_seo_facebook_image" value="<?php echo esc_attr(get_post_meta($post->ID, '_gmb_ranker_facebook_image', true)); ?>" class="gmb-field-input" placeholder="<?php echo !empty($feat_img_val) ? esc_url($feat_img_val) : 'https://example.com/image.jpg'; ?>" />
                             <button type="button" class="button button-secondary gmb-media-upload-btn" data-target="gmb_seo_fb_image_metabox">Select Image</button>
-                            <button type="button" class="button button-link-delete gmb-social-clear-img-btn <?php echo !empty($fb_img_val) ? 'is-active' : ''; ?>" data-target="gmb_seo_fb_image_metabox">✕ Remove</button>
+                            <button type="button" class="button button-link-delete gmb-social-clear-img-btn <?php echo !empty($fb_img_val) ? 'is-active' : ''; ?>" data-target="gmb_seo_fb_image_metabox"> Remove</button>
                         </div>
                     </div>
                 </div>
@@ -1018,7 +1021,7 @@ wp_nonce_field('gmb_seo_save_nonce', 'gmb_seo_nonce');
                         <div class="gmb-image-upload-row">
                             <input type="text" id="gmb_seo_tw_image_metabox" name="gmb_seo_twitter_image" value="<?php echo esc_attr(get_post_meta($post->ID, '_gmb_ranker_twitter_image', true)); ?>" class="gmb-field-input" placeholder="<?php echo !empty($current_tw_img) ? esc_url($current_tw_img) : 'https://example.com/image.jpg'; ?>" />
                             <button type="button" class="button button-secondary gmb-media-upload-btn" data-target="gmb_seo_tw_image_metabox">Select Image</button>
-                            <button type="button" class="button button-link-delete gmb-social-clear-img-btn <?php echo !empty($tw_img_val) ? 'is-active' : ''; ?>" data-target="gmb_seo_tw_image_metabox">✕ Remove</button>
+                            <button type="button" class="button button-link-delete gmb-social-clear-img-btn <?php echo !empty($tw_img_val) ? 'is-active' : ''; ?>" data-target="gmb_seo_tw_image_metabox"> Remove</button>
                         </div>
                     </div>
                 </div>

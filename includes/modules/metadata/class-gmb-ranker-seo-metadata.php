@@ -49,6 +49,7 @@ class GMB_Ranker_SEO_Metadata {
 
         // Universal Output Buffer to guarantee <title> replacement on all custom themes
         add_action('template_redirect', array($this, 'start_buffer'), 1);
+        add_action('shutdown', array($this, 'end_buffer'), 0);
 
         // Output meta tags directly to wp_head
         add_action('wp_head', array($this, 'filter_seo_meta_tags'), 1);
@@ -64,7 +65,15 @@ class GMB_Ranker_SEO_Metadata {
 
     public function start_buffer() {
         if (!is_admin() && !wp_is_json_request() && !is_feed() && !is_robots()) {
-            ob_start(array($this, 'buffer_callback'));
+            if (ob_get_level() === 0 || !in_array('buffer_callback', (array) ob_list_handlers(), true)) {
+                ob_start(array($this, 'buffer_callback'));
+            }
+        }
+    }
+
+    public function end_buffer() {
+        if (ob_get_level() > 0 && in_array('buffer_callback', (array) ob_list_handlers(), true)) {
+            @ob_end_flush();
         }
     }
 

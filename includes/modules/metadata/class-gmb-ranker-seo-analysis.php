@@ -14,6 +14,11 @@ class GMB_Ranker_SEO_Analysis {
 
         $title = $post->post_title;
         $content = $post->post_content;
+        if (empty($content) || strlen(trim(wp_strip_all_tags($content))) < 20) {
+            if (isset($_POST['content'])) {
+                $content = wp_unslash($_POST['content']);
+            }
+        }
         if (empty($content) || strlen(trim($content)) < 50) {
             $elementor_data = get_post_meta($post_id, '_elementor_data', true);
             if (!empty($elementor_data)) {
@@ -41,36 +46,36 @@ class GMB_Ranker_SEO_Analysis {
 
         // 1. Title Length Audit (10 pts)
         $title_len = mb_strlen($meta_title);
-        if ($title_len >= 45 && $title_len <= 65) {
+        if ($title_len >= 40 && $title_len <= 75) {
             $score += 10;
-            $results[] = '✅ Title length is ideal (' . $title_len . ' characters).';
+            $results[] = 'Title length is ideal (' . $title_len . ' characters).';
         } else {
-            $results[] = '❌ Title length should ideally be between 50-60 characters (currently: ' . $title_len . ').';
+            $results[] = 'Title length should ideally be between 40-75 characters (currently: ' . $title_len . ').';
         }
 
         // 2. Meta Description Length Audit (10 pts)
         $desc_len = mb_strlen($meta_desc);
-        if ($desc_len >= 120 && $desc_len <= 160) {
+        if ($desc_len >= 100 && $desc_len <= 170) {
             $score += 10;
-            $results[] = '✅ Meta description length is ideal (' . $desc_len . ' characters).';
+            $results[] = 'Meta description length is ideal (' . $desc_len . ' characters).';
         } elseif ($desc_len > 0) {
             $score += 5;
-            $results[] = '⚠️ Meta description is ' . $desc_len . ' characters (recommended: 120-160).';
+            $results[] = 'Meta description is ' . $desc_len . ' characters (recommended: 100-170).';
         } else {
-            $results[] = '❌ Meta description is missing. Add a description for search result snippet preview.';
+            $results[] = 'Meta description is missing. Add a description for search result snippet preview.';
         }
 
         // 3. Content Word Count (15 pts)
         $word_count = str_word_count(wp_strip_all_tags($content));
-        if ($word_count >= 600) {
+        if ($word_count >= 500) {
             $score += 15;
-            $results[] = '✅ Content is long enough (' . $word_count . ' words).';
-        } elseif ($word_count >= 300) {
+            $results[] = 'Content is long enough (' . $word_count . ' words).';
+        } elseif ($word_count >= 250) {
             $score += 10;
-            $results[] = '⚠️ Content length is ' . $word_count . ' words. Aim for 600+ words for higher rankings.';
+            $results[] = 'Content length is ' . $word_count . ' words. Aim for 500+ words for higher rankings.';
         } else {
-            $score += 3;
-            $results[] = '❌ Content word count is low (' . $word_count . ' words). Try to write at least 600 words.';
+            $score += 5;
+            $results[] = 'Content word count is ' . $word_count . ' words. Try to write at least 500 words.';
         }
 
         // 4. Focus Keyword Optimization (35 pts total)
@@ -80,38 +85,38 @@ class GMB_Ranker_SEO_Analysis {
 
             if (mb_strpos(mb_strtolower($meta_title), $focus_keyword_lower) !== false) {
                 $score += 10;
-                $results[] = '✅ Focus keyword found in SEO Title.';
+                $results[] = 'Focus keyword found in SEO Title.';
             } else {
-                $results[] = '❌ Focus keyword not found in SEO Title.';
+                $results[] = 'Focus keyword not found in SEO Title.';
             }
 
             if (!empty($meta_desc) && mb_strpos(mb_strtolower($meta_desc), $focus_keyword_lower) !== false) {
                 $score += 10;
-                $results[] = '✅ Focus keyword found in Meta Description.';
+                $results[] = 'Focus keyword found in Meta Description.';
             } else {
-                $results[] = '❌ Focus keyword not found in Meta Description.';
+                $results[] = 'Focus keyword not found in Meta Description.';
             }
 
             $count = !empty($focus_keyword_lower) ? mb_substr_count(mb_strtolower(wp_strip_all_tags($content)), $focus_keyword_lower) : 0;
             if ($count > 0) {
                 $score += 10;
-                $results[] = '✅ Focus keyword found in content (' . $count . ' times).';
+                $results[] = 'Focus keyword found in content (' . $count . ' times).';
 
                 $density = ($count / max(1, $word_count)) * 100;
                 if ($density >= 0.5 && $density <= 2.5) {
                     $score += 5;
-                    $results[] = '✅ Focus keyword density is ideal (' . round($density, 2) . '%).';
+                    $results[] = 'Focus keyword density is ideal (' . round($density, 2) . '%).';
                 } else {
-                    $results[] = '⚠️ Focus keyword density is ' . round($density, 2) . '% (recommended: ~1%).';
+                    $results[] = 'Focus keyword density is ' . round($density, 2) . '% (recommended: ~1%).';
                 }
             } else {
-                $results[] = '❌ Focus keyword not found in content body.';
+                $results[] = 'Focus keyword not found in content body.';
             }
         } else {
             if ($word_count >= 200) {
                 $score += 15; // baseline readability score when no keyword is set
             }
-            $results[] = '💡 Specify a Focus Keyword to enable comprehensive keyword optimization checks.';
+            $results[] = 'Specify a Focus Keyword to enable comprehensive keyword optimization checks.';
         }
 
         // 5. Inbuilt Module: Table of Contents (TOC) (10 pts)
@@ -124,12 +129,12 @@ class GMB_Ranker_SEO_Analysis {
         
         if ($has_explicit_toc) {
             $score += 10;
-            $results[] = '✅ Table of Contents is active in content to improve user scannability.';
+            $results[] = 'Table of Contents is active in content to improve user scannability.';
         } elseif ($toc_module_enabled && $toc_auto_insert && $headings_count >= $toc_min_headings) {
             $score += 10;
-            $results[] = '✅ Table of Contents is automatically generated and prepended by GMB Ranker TOC module (' . $headings_count . ' headings detected).';
+            $results[] = 'Table of Contents is automatically generated and prepended by GMB Ranker TOC module (' . $headings_count . ' headings detected).';
         } else {
-            $results[] = '💡 Add a Table of Contents (or 2+ headings with TOC module enabled) to structure your content.';
+            $results[] = 'Add a Table of Contents (or 2+ headings with TOC module enabled) to structure your content.';
         }
 
         // 6. Inbuilt Module: Schema Structured Data (10 pts)
@@ -141,9 +146,9 @@ class GMB_Ranker_SEO_Analysis {
         if ($schema_module_enabled && (!empty($active_schemas) || !empty($custom_jsonld) || !empty($pt_schema))) {
             $score += 10;
             $s_type = is_array($active_schemas) ? implode(', ', $active_schemas) : ($active_schemas ?: $pt_schema);
-            $results[] = '✅ Schema Structured Data is configured (' . esc_html($s_type) . ') for rich search result snippets.';
+            $results[] = 'Schema Structured Data is configured (' . esc_html($s_type) . ') for rich search result snippets.';
         } else {
-            $results[] = '💡 Configure Schema Markup in GMB Ranker to enable rich SERP snippets.';
+            $results[] = 'Configure Schema Markup in GMB Ranker to enable rich SERP snippets.';
         }
 
         // 7. Inbuilt Module: Image SEO & Alt Optimization (5 pts)
@@ -159,12 +164,12 @@ class GMB_Ranker_SEO_Analysis {
             if ($has_alt > 0 || $img_module_enabled) {
                 $score += 5;
                 if ($img_module_enabled && $has_alt < $img_count) {
-                    $results[] = '✅ Images are optimized with descriptive alt attributes (enhanced by GMB Ranker Image SEO automation).';
+                    $results[] = 'Images are optimized with descriptive alt attributes (enhanced by GMB Ranker Image SEO automation).';
                 } else {
-                    $results[] = '✅ Images include descriptive alt attributes (' . $has_alt . '/' . $img_count . ' with alt text).';
+                    $results[] = 'Images include descriptive alt attributes (' . $has_alt . '/' . $img_count . ' with alt text).';
                 }
             } else {
-                $results[] = '❌ Images are missing alt text. Enable Image SEO module or add descriptive alt tags.';
+                $results[] = 'Images are missing alt text. Enable Image SEO module or add descriptive alt tags.';
             }
         }
 
@@ -187,9 +192,9 @@ class GMB_Ranker_SEO_Analysis {
 
         if ($internal_links > 0 || $external_links > 0) {
             $score += 5;
-            $results[] = '✅ Content includes link references (' . $internal_links . ' internal, ' . $external_links . ' external).';
+            $results[] = 'Content includes link references (' . $internal_links . ' internal, ' . $external_links . ' external).';
         } else {
-            $results[] = '💡 Add internal links pointing to related articles or external authority references.';
+            $results[] = 'Add internal links pointing to related articles or external authority references.';
         }
 
         $final_score = min(100, max(0, $score));

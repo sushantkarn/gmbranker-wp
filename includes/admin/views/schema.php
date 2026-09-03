@@ -348,12 +348,7 @@ if (!defined('ABSPATH')) exit;
                                             <?php endif; ?>
                                         </div>
 
-                                        <script type="text/javascript">
-                                            window.gmb_schema_pts = <?php echo wp_json_encode($all_avail_pts); ?>;
-                                            window.gmb_schema_cats = <?php echo wp_json_encode($all_avail_cats); ?>;
-                                        </script>
-
-                                        <div id="gmb-schema-templates-list-wrapper">
+                                        <div id="gmb-schema-templates-list-wrapper" data-pts="<?php echo esc_attr(wp_json_encode($all_avail_pts)); ?>" data-cats="<?php echo esc_attr(wp_json_encode($all_avail_cats)); ?>">
                                             <?php if (empty($gmb_templates)) : ?>
                                                 <div id="gmb-templates-empty-state" class="gmb-templates-empty-state">
                                                     <div class="gmb-templates-empty-state-icon">
@@ -458,7 +453,7 @@ if (!defined('ABSPATH')) exit;
                                                             Schema Generator
                                                         </h3>
                                                         <button type="button" class="gmb-modal-close-trigger gmb-modal-close-btn">
-                                                            ✕
+                                                            
                                                         </button>
                                                     </div>
 
@@ -681,7 +676,7 @@ if (!defined('ABSPATH')) exit;
                                                                 FAQPage
                                                             </span>
                                                             <button type="button" class="gmb-modal-close-trigger">
-                                                                ✕
+                                                                
                                                             </button>
                                                         </div>
                                                     </div>
@@ -746,7 +741,7 @@ if (!defined('ABSPATH')) exit;
                                                                             schema-graph.jsonld
                                                                         </span>
                                                                         <span id="gmb-json-syntax-indicator" class="gmb-ide-badge gmb-ide-badge--valid">
-                                                                            ✓ Valid JSON-LD Syntax
+                                                                             Valid JSON-LD Syntax
                                                                         </span>
                                                                     </div>
                                                                     <div class="gmb-flex-gap-sm">

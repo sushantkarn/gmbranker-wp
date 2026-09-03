@@ -160,41 +160,41 @@ $contributor_role = isset($contributor_role) ? $contributor_role : get_role('con
                 </div>
                 <div class="rm-dialog-body">
                     <form method="post" action="options.php">
-                        <?php settings_fields('gps_settings_group'); ?>
+                        <?php settings_fields('gmb_gps_settings_group'); ?>
                         
                         <div class="gmb-form-group gmb-mb-16" >
                             <label class="gmb-label gmb-form-label" >Target Domain</label>
-                            <input type="text" name="gps_target_domain" value="<?php echo esc_attr(get_option('gps_target_domain', wp_parse_url(home_url(), PHP_URL_HOST))); ?>" class="gmb-input-full-pad" placeholder="e.g. <?php echo esc_attr(wp_parse_url(home_url(), PHP_URL_HOST)); ?>" />
+                            <input type="text" name="gmb_gps_target_domain" value="<?php echo esc_attr(get_option('gmb_gps_target_domain', wp_parse_url(home_url(), PHP_URL_HOST))); ?>" class="gmb-input-full-pad" placeholder="e.g. <?php echo esc_attr(wp_parse_url(home_url(), PHP_URL_HOST)); ?>" />
                         </div>
 
                         <div class="gmb-form-group gmb-mb-16" >
                             <label class="gmb-label gmb-form-label" >Button Text</label>
-                            <input type="text" name="gps_button_text" value="<?php echo esc_attr(get_option('gps_button_text', 'Add to Preferred Sources')); ?>" class="gmb-input-full-pad" />
+                            <input type="text" name="gmb_gps_button_text" value="<?php echo esc_attr(get_option('gmb_gps_button_text', 'Add to Preferred Sources')); ?>" class="gmb-input-full-pad" />
                         </div>
 
                         <div class="gmb-form-group gmb-mb-16" >
                             <label class="gmb-label gmb-form-label" >Button Theme</label>
-                            <select name="gps_button_theme" class="gmb-select">
-                                <option value="google_white" <?php selected(get_option('gps_button_theme', 'google_white'), 'google_white'); ?>>Google White</option>
-                                <option value="google_blue" <?php selected(get_option('gps_button_theme', 'google_blue'), 'google_blue'); ?>>Google Blue</option>
-                                <option value="google_dark" <?php selected(get_option('gps_button_theme', 'google_dark'), 'google_dark'); ?>>Google Dark</option>
+                            <select name="gmb_gps_button_theme" class="gmb-select">
+                                <option value="google_white" <?php selected(get_option('gmb_gps_button_theme', 'google_white'), 'google_white'); ?>>Google White</option>
+                                <option value="google_blue" <?php selected(get_option('gmb_gps_button_theme', 'google_white'), 'google_blue'); ?>>Google Blue</option>
+                                <option value="google_dark" <?php selected(get_option('gmb_gps_button_theme', 'google_white'), 'google_dark'); ?>>Google Dark</option>
                             </select>
                         </div>
 
                         <div class="gmb-form-group gmb-mb-16" >
                             <label class="gmb-label gmb-form-label" >Button Size</label>
-                            <select name="gps_button_size" class="gmb-select">
-                                <option value="small" <?php selected(get_option('gps_button_size', 'medium'), 'small'); ?>>Small</option>
-                                <option value="medium" <?php selected(get_option('gps_button_size', 'medium'), 'medium'); ?>>Medium</option>
-                                <option value="large" <?php selected(get_option('gps_button_size', 'medium'), 'large'); ?>>Large</option>
+                            <select name="gmb_gps_button_size" class="gmb-select">
+                                <option value="small" <?php selected(get_option('gmb_gps_button_size', 'medium'), 'small'); ?>>Small</option>
+                                <option value="medium" <?php selected(get_option('gmb_gps_button_size', 'medium'), 'medium'); ?>>Medium</option>
+                                <option value="large" <?php selected(get_option('gmb_gps_button_size', 'medium'), 'large'); ?>>Large</option>
                             </select>
                         </div>
 
                         <div class="gmb-form-group gmb-mb-16" >
                             <label class="gmb-label gmb-form-label" >Insertion Location</label>
-                            <select name="gps_insertion_location" class="gmb-select">
-                                <option value="content_start" <?php selected(get_option('gps_insertion_location', 'content_end'), 'content_start'); ?>>Content Start (Top)</option>
-                                <option value="content_end" <?php selected(get_option('gps_insertion_location', 'content_end'), 'content_end'); ?>>Content End (Bottom)</option>
+                            <select name="gmb_gps_insertion_location" class="gmb-select">
+                                <option value="content_start" <?php selected(get_option('gmb_gps_insertion_location', 'content_end'), 'content_start'); ?>>Content Start (Top)</option>
+                                <option value="content_end" <?php selected(get_option('gmb_gps_insertion_location', 'content_end'), 'content_end'); ?>>Content End (Bottom)</option>
                             </select>
                         </div>
 
@@ -273,11 +273,6 @@ $contributor_role = isset($contributor_role) ? $contributor_role : get_role('con
                 </div>
             </div>
         </div>
-        <script>
-            window.gmb_ranker_admin = window.gmb_ranker_admin || {};
-            window.gmb_ranker_admin.nonce = '<?php echo esc_js( wp_create_nonce( "gmb_seo_save_nonce" ) ); ?>';
-        </script>
-
     </div>
 </div>
 

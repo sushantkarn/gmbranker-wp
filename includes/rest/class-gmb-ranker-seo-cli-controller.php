@@ -114,10 +114,10 @@ class GMB_Ranker_SEO_CLI_Controller {
                 $posts = get_posts(array('numberposts' => 10, 'post_status' => 'publish'));
                 $striking = array();
                 foreach ($posts as $p) {
-                    $impr = get_post_meta($p->ID, '_gmb_seo_impressions', true) ?: rand(250, 1200);
-                    $clicks = get_post_meta($p->ID, '_gmb_seo_clicks', true) ?: rand(2, 10);
+                    $impr = get_post_meta($p->ID, '_gmb_seo_impressions', true) ?: wp_rand(250, 1200);
+                    $clicks = get_post_meta($p->ID, '_gmb_seo_clicks', true) ?: wp_rand(2, 10);
                     $ctr = $impr > 0 ? ($clicks / $impr) : 0.005;
-                    $pos = get_post_meta($p->ID, '_gmb_seo_position', true) ?: rand(11, 18);
+                    $pos = get_post_meta($p->ID, '_gmb_seo_position', true) ?: wp_rand(11, 18);
                     
                     if ($ctr < 0.02) {
                         $striking[] = array(
@@ -177,8 +177,8 @@ class GMB_Ranker_SEO_CLI_Controller {
                     $first = get_posts(array('numberposts' => 1, 'post_status' => 'publish'));
                     $post_id = !empty($first) ? $first[0]->ID : 1;
                 }
-                $anchor = !empty($options['anchor']) ? sanitize_text_field($options['anchor']) : 'home care services in Kathmandu';
-                $target_url = home_url('/care-giver-in-nepal/');
+                $anchor = !empty($options['anchor']) ? sanitize_text_field($options['anchor']) : (get_bloginfo('name') . ' Services');
+                $target_url = home_url('/');
 
                 if (!$is_dry_run) {
                     $post = get_post($post_id);
@@ -205,19 +205,23 @@ class GMB_Ranker_SEO_CLI_Controller {
                 ));
 
             case 'schema':
-                $type = !empty($options['schemaType']) ? sanitize_text_field($options['schemaType']) : 'LocalBusiness';
+                $type = !empty($options['schemaType']) ? sanitize_text_field($options['schemaType']) : 'Article';
+                $geo  = get_option('gmb_ranker_geo_coords', '');
+                $city = get_option('gmb_local_business_city', '');
+                $country = get_option('gmb_local_business_country', '');
+                $nap_str = get_bloginfo('name') . (!empty($city) ? " ($city, $country)" : '');
+
                 if (!$is_dry_run) {
                     update_option('gmb_ranker_schema_type', $type);
-                    update_option('gmb_ranker_geo_coords', '27.6650984, 85.3358996');
                 }
                 return rest_ensure_response(array(
                     'success' => true,
                     'command' => 'schema',
-                    'message' => 'LocalBusiness JSON-LD Schema compiled & injected into wp_head.',
+                    'message' => esc_html($type) . ' JSON-LD Schema compiled & injected into wp_head.',
                     'data'    => array(
                         'type'        => $type,
-                        'geo'         => '27.6650984, 85.3358996',
-                        'nap'         => get_bloginfo('name') . ' (Lalitpur, Nepal)',
+                        'geo'         => !empty($geo) ? $geo : 'UNKNOWN',
+                        'nap'         => $nap_str,
                         'status'      => 'INJECTED_HEADER',
                         'dry_run'     => $is_dry_run,
                     ),
@@ -226,7 +230,7 @@ class GMB_Ranker_SEO_CLI_Controller {
             case 'llmstxt':
                 $llms_content = "# " . get_bloginfo('name') . " AI Sitemap\n\n> Comprehensive AI Directory\n\n- Site: " . home_url() . "\n";
                 if (!$is_dry_run) {
-                    file_put_contents(ABSPATH . 'llms.txt', $llms_content);
+                    update_option('gmb_llms_additional_content', $llms_content);
                 }
                 return rest_ensure_response(array(
                     'success' => true,

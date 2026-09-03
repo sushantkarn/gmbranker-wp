@@ -2748,8 +2748,15 @@ body.post-new-php #wpwrap {
 /* Dynamic FAQ & Builder Items */
 /* Single Post AI Optimizer Modal & Results Grid */
 .gmb-modal-lg {
-  max-width: 860px !important;
-  width: 90% !important;
+  max-width: 1260px !important;
+  width: 94vw !important;
+  min-height: auto !important;
+  max-height: 92vh !important;
+}
+
+#gmb-ai-post-modal-loading,
+#gmb-ai-post-modal-content {
+  min-height: 560px !important;
 }
 
 .gmb-ai-results-grid {
@@ -2955,7 +2962,8 @@ body.post-new-php #wpwrap {
 }
 
 .gmb-modal-container.gmb-modal-lg {
-  width: 880px !important;
+  width: 1260px !important;
+  max-width: 94vw !important;
 }
 
 .gmb-modal-header {
@@ -3176,7 +3184,14 @@ body.post-new-php #wpwrap {
   background: #f1f5f9;
   color: #64748b;
   font-weight: 600;
+  cursor: pointer;
+  user-select: none;
   transition: all 0.2s ease;
+}
+
+.gmb-step-badge:hover {
+  background: #e2e8f0;
+  color: #334155;
 }
 
 .gmb-step-badge.active {
@@ -3212,24 +3227,61 @@ body.post-new-php #wpwrap {
 .gmb-col-4 { width: calc(33.333% - 10px); }
 
 .gmb-results-score-banner {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%) !important;
+  border: 1px solid #bbf7d0 !important;
+  border-radius: 12px !important;
+  padding: 16px 20px !important;
+  margin-top: 16px !important;
+  margin-bottom: 24px !important;
+  color: #166534 !important;
+  font-size: 13px !important;
+  box-shadow: 0 4px 12px rgba(22, 101, 52, 0.05) !important;
+}
+
+.gmb-score-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gmb-target-query-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #14532d;
+}
+
+.gmb-flags-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  padding: 12px 16px;
-  border-radius: 8px;
-  color: #166534;
-  font-size: 13px;
+  gap: 10px;
+}
+
+.gmb-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 9999px;
 }
 
 .gmb-badge-country {
-  background: #dcfce7;
-  color: #15803d;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-  margin-left: 6px;
+  background: #dcfce7 !important;
+  color: #166534 !important;
+  border: 1px solid #bbf7d0 !important;
+  margin-left: 0 !important;
+}
+
+.gmb-badge-language {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border: 1px solid #bfdbfe !important;
 }
 
 .gmb-predicted-score-chip {
@@ -3279,7 +3331,470 @@ body.post-new-php #wpwrap {
   animation: gmbNeuronSpin 0.9s linear infinite;
 }
 
+/* 3-Column AI Research Dashboard Styles */
+.gmb-modal-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin: 2px 0 0 0;
+  font-weight: 400;
+}
+
+.gmb-ai-research-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px !important;
+  padding: 16px 0 8px 0 !important;
+}
+
+.gmb-serp-status-bar {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0 !important;
+  margin-bottom: 20px !important;
+}
+
+.gmb-serp-status-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.gmb-serp-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ea4335;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.gmb-serp-divider {
+  color: #cbd5e1;
+}
+
+.gmb-serp-kw-pill {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.gmb-research-3col-grid {
+  display: grid;
+  grid-template-columns: 310px 1fr 310px;
+  gap: 24px !important;
+  align-items: start;
+}
+
+.gmb-google-svg {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.gmb-step-active-ring {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #bfdbfe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: gmbNeuronSpin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.task-check-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #22c55e;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.task-hollow-circle {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  flex-shrink: 0;
+}
+
+.gmb-research-col-steps,
+.gmb-side-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.gmb-research-col-heading,
+.gmb-side-card-title {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin: 0 0 14px 0 !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gmb-steps-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gmb-step-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.gmb-step-item.active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.gmb-step-item.completed {
+  background: #f8fafc;
+}
+
+.gmb-step-num-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gmb-step-item.active .gmb-step-num-icon {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.gmb-step-item.completed .gmb-step-num-icon {
+  background: #22c55e;
+  color: #ffffff;
+}
+
+.gmb-step-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.gmb-step-text strong {
+  display: block;
+  font-size: 12.5px;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gmb-step-text small {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gmb-step-status-pill {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.gmb-step-status-pill.pending {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.gmb-step-status-pill.in-progress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.gmb-step-status-pill.completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* Center Panel */
+.gmb-research-col-center {
+  display: flex;
+  flex-direction: column;
+  gap: 20px !important;
+}
+
+/* Right Panel */
+.gmb-research-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px !important;
+}
+
+.gmb-side-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  margin-top: 0 !important;
+}
+
+.gmb-active-step-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.gmb-step-counter-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.gmb-active-step-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin: 6px 0 4px 0 !important;
+}
+
+.gmb-active-step-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 16px 0;
+}
+
+.gmb-progress-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.gmb-progress-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.gmb-progress-bar-fill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+.gmb-progress-percent {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.gmb-live-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.gmb-task-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #334155;
+}
+
+.gmb-task-row.done {
+  color: #166534;
+}
+
+.gmb-task-row.running {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.gmb-task-row.pending {
+  color: #94a3b8;
+}
+
+.task-icon-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.task-icon-dot.done {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+
+.task-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #93c5fd;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  display: inline-block;
+  animation: gmbNeuronSpin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.gmb-security-assurance-card {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.gmb-sec-card-header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.sec-shield-icon {
+  font-size: 20px;
+}
+
+.gmb-sec-card-header strong {
+  display: block;
+  font-size: 13.5px;
+  color: #1e3a8a;
+}
+
+.gmb-sec-card-header p {
+  font-size: 12px;
+  color: #2563eb;
+  margin: 2px 0 0 0;
+}
+
+.gmb-sec-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sec-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1e40af;
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+/* Right Side Cards */
+.gmb-overview-kv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gmb-kv-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kv-key {
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.kv-val {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.kv-link {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.kv-link:hover {
+  text-decoration: underline;
+}
+
+.gmb-bullets-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gmb-bullets-checklist li {
+  font-size: 12.5px;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chk-blue {
+  color: #2563eb;
+  font-weight: 700;
+}
+
 @keyframes gmbNeuronSpin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Strict Utility Classes for Modal Elements & Buttons */
+.gmb-hidden,
+.gmb-modal .gmb-hidden,
+.gmb-modal-footer .gmb-hidden,
+#gmb-ai-running-btn.gmb-hidden,
+#gmb-ai-post-modal-prev.gmb-hidden,
+#gmb-ai-post-apply-btn.gmb-hidden {
+  display: none !important;
 }

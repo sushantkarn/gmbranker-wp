@@ -307,7 +307,7 @@
 
 /* AI Provider Section */
 .gmb-ai-section {
-  display: none;
+  display: block;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -315,8 +315,8 @@
   margin-top: 14px;
 }
 
-.gmb-ai-section.is-active {
-  display: block;
+.gmb-ai-section.gmb-hidden {
+  display: none !important;
 }
 
 /* Action Footer */

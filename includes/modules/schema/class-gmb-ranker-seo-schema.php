@@ -844,10 +844,10 @@ class GMB_Ranker_SEO_Schema {
                 echo "\n<!-- GMB Ranker Auto Schema -->\n";
                 if (isset($schema_data[0]) && is_array($schema_data[0])) {
                     foreach ($schema_data as $single_schema) {
-                        echo '<script type="application/ld+json">' . "\n" . wp_json_encode($single_schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n" . '</script>' . "\n";
+                        echo '<script type="application/ld+json">' . "\n" . wp_json_encode($single_schema, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n" . '</script>' . "\n";
                     }
                 } else {
-                    echo '<script type="application/ld+json">' . "\n" . wp_json_encode($schema_data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n" . '</script>' . "\n";
+                    echo '<script type="application/ld+json">' . "\n" . wp_json_encode($schema_data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n" . '</script>' . "\n";
                 }
             }
         }
@@ -858,7 +858,7 @@ class GMB_Ranker_SEO_Schema {
             echo "\n<!-- GMB Ranker Conditional Schema Templates -->\n";
             foreach ($conditional_schemas as $c_schema) {
                 $c_schema = $this->ensure_product_schema_compliance($c_schema, $post_id);
-                echo '<script type="application/ld+json">' . "\n" . wp_json_encode($c_schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n" . '</script>' . "\n";
+                echo '<script type="application/ld+json">' . "\n" . wp_json_encode($c_schema, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n" . '</script>' . "\n";
             }
         }
 

@@ -705,7 +705,6 @@ class GMB_Ranker_SEO_REST_API {
         if (isset($params['llmsTxtContent'])) {
             $llms_content = sanitize_textarea_field($params['llmsTxtContent']);
             update_option('gmb_llms_additional_content', $llms_content);
-            @file_put_contents(ABSPATH . 'llms.txt', $llms_content);
         }
 
         return new WP_REST_Response(array('success' => true), 200);
@@ -849,14 +848,9 @@ class GMB_Ranker_SEO_REST_API {
         $params = $request->get_json_params();
         if (isset($params['sitemapXml'])) {
             $xml = $params['sitemapXml'];
-            $file_path = ABSPATH . 'sitemap.xml';
-            $written = @file_put_contents($file_path, $xml);
-            if ($written !== false) {
-                wp_remote_get('https://www.bing.com/ping?sitemap=' . urlencode(site_url('sitemap.xml')));
-                return new WP_REST_Response(array('success' => true, 'url' => site_url('sitemap.xml')), 200);
-            } else {
-                return new WP_Error('write_failed', 'Failed to write sitemap.xml to disk', array('status' => 500));
-            }
+            update_option('gmb_ranker_sitemap_custom_xml', $xml);
+            wp_remote_get('https://www.bing.com/ping?sitemap=' . urlencode(site_url('sitemap_index.xml')));
+            return new WP_REST_Response(array('success' => true, 'url' => site_url('sitemap_index.xml')), 200);
         }
         return new WP_REST_Response(array('success' => true, 'url' => site_url('sitemap_index.xml')), 200);
     }

@@ -109,7 +109,7 @@ class GMB_Ranker_SEO_Admin {
             'gmb-ranker-automation',
             array($this, 'render_settings_page'),
             $icon_url,
-            2.5
+            99.2
         );
 
         add_submenu_page(

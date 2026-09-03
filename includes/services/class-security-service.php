@@ -133,17 +133,20 @@ class GMB_Ranker_SEO_Security_Service {
                . "</Files>\n"
                . "# END GMB Ranker SEO";
 
-        if (!file_exists($htaccess_file)) {
-            @file_put_contents($htaccess_file, $rules);
-            return true;
+        if (function_exists('insert_with_markers')) {
+            $rules_array = array(
+                '<Files *.php>',
+                'Deny from all',
+                '</Files>',
+                '<Files *.phps>',
+                'Deny from all',
+                '</Files>',
+                '<Files *.phtml>',
+                'Deny from all',
+                '</Files>',
+            );
+            insert_with_markers($htaccess_file, 'GMB Ranker SEO - Block PHP Execution', $rules_array);
         }
-
-        $existing = @file_get_contents($htaccess_file);
-        if ($existing !== false && strpos($existing, 'GMB Ranker SEO - Block PHP Execution') === false) {
-            @file_put_contents($htaccess_file, $existing . "\n\n" . $rules);
-            return true;
-        }
-
         return true;
     }
 
@@ -160,12 +163,8 @@ class GMB_Ranker_SEO_Security_Service {
             return;
         }
         $htaccess_file = rtrim($basedir, '/') . '/.htaccess';
-        if (file_exists($htaccess_file) && wp_is_writable($htaccess_file)) {
-            $content = @file_get_contents($htaccess_file);
-            if ($content !== false && strpos($content, 'GMB Ranker SEO - Block PHP Execution') !== false) {
-                $cleaned = preg_replace('/# BEGIN GMB Ranker SEO - Block PHP Execution.*?# END GMB Ranker SEO\n?/s', '', $content);
-                @file_put_contents($htaccess_file, trim($cleaned));
-            }
+        if (file_exists($htaccess_file) && function_exists('insert_with_markers')) {
+            insert_with_markers($htaccess_file, 'GMB Ranker SEO - Block PHP Execution', array());
         }
     }
 
@@ -212,11 +211,9 @@ class GMB_Ranker_SEO_Security_Service {
         }
         $upload_dir = wp_upload_dir();
         $basedir = isset($upload_dir['basedir']) ? $upload_dir['basedir'] : '';
-        if (!empty($basedir) && is_dir($basedir)) {
-            $index_file = rtrim($basedir, '/') . '/index.php';
-            if (!file_exists($index_file) && wp_is_writable($basedir)) {
-                @file_put_contents($index_file, "<?php\n// Silence is golden.\n");
-            }
+        if (!empty($basedir) && is_dir($basedir) && function_exists('insert_with_markers')) {
+            $htaccess_file = rtrim($basedir, '/') . '/.htaccess';
+            insert_with_markers($htaccess_file, 'GMB Ranker SEO - Disable Indexes', array('Options -Indexes'));
         }
     }
 
@@ -394,7 +391,9 @@ class GMB_Ranker_SEO_Security_Service {
      * Hide "Remember Me" checkbox on login form
      */
     public function hide_remember_me() {
-        echo '<style>#loginform .forgetmenot { display: none !important; }</style>';
+        wp_register_style('gmb-hide-remember-me', false);
+        wp_enqueue_style('gmb-hide-remember-me');
+        wp_add_inline_style('gmb-hide-remember-me', '#loginform .forgetmenot { display: none !important; }');
     }
 
     /**
@@ -408,12 +407,9 @@ class GMB_Ranker_SEO_Security_Service {
      */
     public function enforce_strong_password_policy($errors, $update, $user) {
         if (!empty($_POST['pass1'])) {
-            $pass = (string) $_POST['pass1'];
-            $is_admin = (isset($user->roles) && in_array('administrator', (array) $user->roles, true));
-            if ($is_admin) {
-                if (strlen($pass) < 12 || !preg_match('/[A-Z]/', $pass) || !preg_match('/[a-z]/', $pass) || !preg_match('/[0-9]/', $pass) || !preg_match('/[^A-Za-z0-9]/', $pass)) {
-                    $errors->add('weak_password', __('Security Policy: Administrator passwords must be at least 12 characters long and contain uppercase, lowercase, numbers, and special symbols.', 'gmb-ranker-seo-automation'));
-                }
+            $pass = sanitize_text_field(wp_unslash($_POST['pass1']));
+            if (strlen($pass) < 12 || !preg_match('/[A-Z]/', $pass) || !preg_match('/[a-z]/', $pass) || !preg_match('/[0-9]/', $pass) || !preg_match('/[^A-Za-z0-9]/', $pass)) {
+                $errors->add('weak_password', __('Password does not meet enterprise security requirements (min 12 chars, uppercase, lowercase, number, symbol).', 'gmb-ranker-seo-automation'));
             }
         }
         return $errors;
