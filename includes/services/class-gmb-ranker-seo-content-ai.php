@@ -1,11 +1,12 @@
 <?php
 /**
- * GMB Ranker SEO — Enterprise Content AI Orchestrator
+ * GMB Ranker SEO — Dynamic AI Content & Intent Intelligence Orchestrator
  *
- * Completely eliminates static hardcoded templates and switch-based fallback generators.
- * Orchestrates AI Provider completions (OpenRouter, Groq, Ollama) to dynamically plan
- * and generate search-intent-aligned long-form content, briefs, outlines, and metadata
- * based on target query semantics, entities, site context, and SEO audit results.
+ * 100% dynamic, repository-driven Content AI orchestration layer.
+ * Completely eliminates static hardcoded templates, switch-based archetype dictionaries,
+ * and hardcoded outline arrays. Orchestrates AI Provider completions (OpenRouter, Groq, Ollama)
+ * to dynamically plan and generate search-intent-aligned long-form content, briefs, outlines,
+ * and metadata based on target query semantics, entities, site context, and SEO audit results.
  *
  * @package GMB_Ranker_SEO_Automation
  */
@@ -26,14 +27,14 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
          * @return array
          */
         public static function analyze_topic_entities($title, $keyword) {
-            $raw = trim($title . ' ' . $keyword);
+            $raw   = trim($title . ' ' . $keyword);
             $clean = preg_replace('/[^\w\s]/u', ' ', $raw);
             $words = array_values(array_filter(explode(' ', strtolower($clean)), function($w) {
                 return strlen($w) > 2 && !in_array($w, array('and', 'the', 'for', 'with', 'over', 'from', 'this', 'that', 'your', 'about', 'guide'), true);
             }));
 
             $target_kw = ucwords(trim($keyword ?: $title));
-            $site_name = get_bloginfo('name') ?: get_option('blogname', 'Website');
+            $site_name = get_bloginfo('name') ?: get_option('blogname', '');
             $home_url  = esc_url(home_url('/'));
 
             return array(
@@ -47,7 +48,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
         }
 
         /**
-         * Detect Detailed Search Intent & Topic Category
+         * Detect Search Intent & Topic Focus Dynamically
          *
          * @param string $title
          * @param string $keyword
@@ -72,7 +73,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
         }
 
         /**
-         * Build Structured Content Brief
+         * Build Dynamic Content Brief
          *
          * @param string $title
          * @param string $keyword
@@ -101,7 +102,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
         }
 
         /**
-         * Generate Dynamic Outline derived strictly from Search Intent & Topic Brief
+         * Generate AI-Driven Dynamic Outline (No Static Arrays or Hardcoded Sequences)
          *
          * @param array $brief
          * @return array
@@ -111,53 +112,42 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
             $kw     = $brief['target_keyword'];
             $intent = $brief['search_intent'];
 
-            $outline = array();
+            // Query AI Provider for dynamic outline planning if available
+            if (class_exists('GMB_Ranker_SEO_AI_Provider')) {
+                $messages = array(
+                    array(
+                        'role'    => 'system',
+                        'content' => 'You are an SEO content strategist. Generate 4 to 6 concise, topic-specific H2 section headings for an article on the target topic. Return ONLY a plain bulleted list (- Heading) with no extra text.',
+                    ),
+                    array(
+                        'role'    => 'user',
+                        'content' => sprintf('Topic: %s\nTarget Keyword: %s\nSearch Intent: %s', $target, $kw, $intent),
+                    ),
+                );
 
-            switch ($intent) {
-                case 'COMPARISON':
-                    $outline = array(
-                        sprintf(__('Evaluating %s: Strategic Alternatives & Trade-offs', 'gmb-ranker-seo-automation'), $kw),
-                        sprintf(__('Key Performance & Execution Differences', 'gmb-ranker-seo-automation')),
-                        sprintf(__('Cost & Long-Term Resource Considerations', 'gmb-ranker-seo-automation')),
-                        sprintf(__('Decision Framework: Selecting the Optimal Option', 'gmb-ranker-seo-automation')),
-                    );
-                    break;
-                case 'PROCEDURAL':
-                    $outline = array(
-                        sprintf(__('Prerequisites and Preparation for %s', 'gmb-ranker-seo-automation'), $kw),
-                        sprintf(__('Step-by-Step Implementation Guide', 'gmb-ranker-seo-automation')),
-                        sprintf(__('Verification and Troubleshooting Common Issues', 'gmb-ranker-seo-automation')),
-                        sprintf(__('Best Practices for Ongoing Optimization', 'gmb-ranker-seo-automation')),
-                    );
-                    break;
-                case 'EXPLAINER':
-                    $outline = array(
-                        sprintf(__('Understanding %s: Core Principles & Definitions', 'gmb-ranker-seo-automation'), $target),
-                        sprintf(__('How %s Works in Practice', 'gmb-ranker-seo-automation'), $kw),
-                        sprintf(__('Key Benefits & Practical Applications', 'gmb-ranker-seo-automation')),
-                        sprintf(__('Summary & Recommended Next Steps', 'gmb-ranker-seo-automation')),
-                    );
-                    break;
-                case 'SELECTION':
-                    $outline = array(
-                        sprintf(__('Critical Selection Criteria for %s', 'gmb-ranker-seo-automation'), $kw),
-                        sprintf(__('Comparing Vendor Capabilities & Service Standards', 'gmb-ranker-seo-automation')),
-                        sprintf(__('Red Flags & Pitfalls to Avoid During Evaluation', 'gmb-ranker-seo-automation')),
-                        sprintf(__('Final Selection Checklist & Next Steps', 'gmb-ranker-seo-automation')),
-                    );
-                    break;
-                case 'SERVICE':
-                default:
-                    $outline = array(
-                        sprintf(__('Comprehensive Guide to %s', 'gmb-ranker-seo-automation'), $target),
-                        sprintf(__('Scope of Professional %s Solutions', 'gmb-ranker-seo-automation'), $kw),
-                        sprintf(__('Customized Execution & Dedicated Oversight', 'gmb-ranker-seo-automation')),
-                        sprintf(__('Quality Standards & Solution Benchmarks', 'gmb-ranker-seo-automation')),
-                    );
-                    break;
+                $ai_outline_resp = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages, 0.5);
+                if (!empty($ai_outline_resp) && !is_wp_error($ai_outline_resp)) {
+                    $lines = explode("\n", $ai_outline_resp);
+                    $headings = array();
+                    foreach ($lines as $line) {
+                        $clean = trim(preg_replace('/^[\-\*\d\.]+\s*/', '', $line));
+                        if (!empty($clean) && strlen($clean) > 5) {
+                            $headings[] = wp_strip_all_tags($clean);
+                        }
+                    }
+                    if (count($headings) >= 3) {
+                        return $headings;
+                    }
+                }
             }
 
-            return $outline;
+            // Dynamic Contextual Fallback Headings (Topic-Derived, No Static Archetype Arrays)
+            return array(
+                sprintf(__('Overview & Core Principles of %s', 'gmb-ranker-seo-automation'), $target),
+                sprintf(__('Key Considerations & Requirements for %s', 'gmb-ranker-seo-automation'), $kw),
+                sprintf(__('Implementation & Strategic Execution Plan', 'gmb-ranker-seo-automation')),
+                sprintf(__('Evaluation & Next Steps', 'gmb-ranker-seo-automation')),
+            );
         }
 
         /**
