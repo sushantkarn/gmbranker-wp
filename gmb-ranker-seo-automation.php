@@ -5,7 +5,7 @@
  * Description:       Enterprise-grade WordPress SEO Automation & Intelligence Engine. Connects WordPress site content and SEO metadata to GMB Ranker for automated optimization experiments.
  * Version:           1.0.0
  * Author:            GMB Ranker
- * Author URI:        https://gmbranker.com
+ * Author URI:        https://gmbranker.org
  * License:           MIT
  * License URI:       https://opensource.org/licenses/MIT
  * Text Domain:       gmb-ranker-seo-automation

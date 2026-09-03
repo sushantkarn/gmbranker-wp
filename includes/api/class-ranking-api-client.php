@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 
 class GMB_Ranker_SEO_Ranking_Client {
 
-    const CLOUD_API_BASE = 'https://api.gmbranker.com/v1';
+    const CLOUD_API_BASE = 'https://api.gmbranker.org/v1';
 
     /**
      * Get API secret key
