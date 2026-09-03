@@ -48,7 +48,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
         }
 
         /**
-         * Detect Search Intent & Topic Focus Dynamically via AI or Semantic Inference
+         * Detect Search Intent & User Information Needs Dynamically
          *
          * @param string $title
          * @param string $keyword
@@ -64,7 +64,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 $messages = array(
                     array(
                         'role'    => 'system',
-                        'content' => 'You are an SEO intent classifier. Classify the user search intent for the target topic into one word (e.g. INFORMATIONAL, COMPARISON, PROCEDURAL, COMMERCIAL, SERVICE). Return ONLY the one-word intent.',
+                        'content' => 'You are an SEO intent analyzer. Describe the primary search intent and user information goal for the given topic in 1 to 3 words. Return ONLY the intent classification text.',
                     ),
                     array(
                         'role'    => 'user',
@@ -75,7 +75,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 $ai_intent = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages, 0.3);
                 if (!empty($ai_intent) && !is_wp_error($ai_intent)) {
                     $clean_intent = strtoupper(trim(wp_strip_all_tags($ai_intent)));
-                    if (strlen($clean_intent) >= 3 && strlen($clean_intent) <= 25) {
+                    if (strlen($clean_intent) >= 2 && strlen($clean_intent) <= 40) {
                         return $clean_intent;
                     }
                 }
@@ -85,7 +85,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
         }
 
         /**
-         * Build Dynamic Content Brief
+         * Build Dynamic Content Brief with Trusted Post & Site Context
          *
          * @param string $title
          * @param string $keyword
@@ -98,6 +98,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
 
             $existing_post = $post_id ? get_post($post_id) : null;
             $post_content  = $existing_post ? $existing_post->post_content : '';
+            $post_type     = $existing_post ? $existing_post->post_type : 'post';
             $word_count    = str_word_count(wp_strip_all_tags($post_content));
 
             return array(
@@ -107,13 +108,14 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 'semantic_words'  => $entities['words'],
                 'site_name'       => $entities['site_name'],
                 'home_url'        => $entities['home_url'],
+                'post_type'       => $post_type,
                 'existing_words'  => $word_count,
                 'post_id'         => $post_id,
             );
         }
 
         /**
-         * Generate AI-Driven Dynamic Outline (No Static Arrays or Hardcoded Sequences)
+         * Generate AI-Driven Dynamic Outline (No Static Fallback Arrays)
          *
          * @param array $brief
          * @return array
@@ -127,7 +129,7 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 $messages = array(
                     array(
                         'role'    => 'system',
-                        'content' => 'You are a senior enterprise SEO content strategist. Construct a dynamic, topic-specific H2 outline tailored strictly to the input topic and search intent. Return ONLY a plain bulleted list (- Heading) with no extra intro/outro text or markdown code blocks.',
+                        'content' => 'You are a senior enterprise SEO content strategist. Construct a dynamic, topic-specific H2 section outline tailored strictly to the target query and user intent. Return ONLY a plain bulleted list (- Heading) with no intro/outro text or markdown fences.',
                     ),
                     array(
                         'role'    => 'user',
@@ -249,8 +251,9 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
 
                 $ai_response = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages, 0.7);
                 if (!empty($ai_response) && !is_wp_error($ai_response)) {
-                    $clean_resp = trim(wp_strip_all_tags($ai_response));
-                    if (mb_strlen($clean_resp) > 100) {
+                    $has_html_structure = (strpos($ai_response, '<p>') !== false || strpos($ai_response, '<h2') !== false);
+                    $clean_text = trim(wp_strip_all_tags($ai_response));
+                    if ($has_html_structure && strlen($clean_text) > 80) {
                         $ai_draft = wp_kses_post($ai_response);
                         $is_ai_success = true;
                     }
