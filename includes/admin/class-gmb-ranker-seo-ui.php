@@ -1,7 +1,10 @@
 <?php
 /**
  * GMB Ranker SEO — Centralized UI Component Engine
- * Provides reusable, semantic, and accessible UI component renderers.
+ *
+ * Provides reusable, semantic, secure, and accessible UI component renderers
+ * for page headers, section headers, cards, stat cards, buttons, form groups,
+ * toggles, badges, notices, empty states, and tabs.
  *
  * @package GMB_Ranker_SEO_Automation
  */
@@ -11,6 +14,42 @@ if (!defined('ABSPATH')) {
 }
 
 class GMB_Ranker_SEO_UI {
+
+    /**
+     * Allowed attribute whitelists for component button/link serialization
+     *
+     * @var array<string>
+     */
+    protected static $allowed_attributes = array(
+        'id', 'class', 'href', 'target', 'rel', 'type', 'name', 'value', 'disabled', 'title', 'placeholder'
+    );
+
+    /**
+     * Helper to build safe attribute string from an associative array
+     *
+     * @param array $attributes
+     * @return string
+     */
+    protected static function build_attributes_string(array $attributes) {
+        $attr_pairs = array();
+        foreach ($attributes as $key => $val) {
+            $key = strtolower(trim($key));
+            // Prevent event handlers and inline styles
+            if (strpos($key, 'on') === 0 || $key === 'style') {
+                continue;
+            }
+            // Allow whitelisted attributes as well as aria-* and data-* attributes
+            if (in_array($key, self::$allowed_attributes, true) || strpos($key, 'data-') === 0 || strpos($key, 'aria-') === 0) {
+                if ($key === 'href') {
+                    $val = filter_var($val, FILTER_VALIDATE_URL) || strpos($val, 'admin.php') !== false || strpos($val, '#') === 0 ? esc_url($val) : '#';
+                } else {
+                    $val = esc_attr($val);
+                }
+                $attr_pairs[] = esc_attr($key) . '="' . $val . '"';
+            }
+        }
+        return !empty($attr_pairs) ? ' ' . implode(' ', $attr_pairs) : '';
+    }
 
     /**
      * Render a standardized Page Header (Title, Subtitle, Status Badge, Quick Actions)
@@ -25,13 +64,13 @@ class GMB_Ranker_SEO_UI {
     public static function render_page_header($title, $subtitle = '', $badge = '', $actions = array(), $echo = true) {
         ob_start();
         ?>
-        <div class="gmb-page-header">
+        <div class="gmb-page-header" role="region" aria-label="<?php echo esc_attr($title); ?>">
             <div class="gmb-page-header__left">
                 <div class="gmb-page-header__title-row">
                     <h1 class="gmb-page-header__title"><?php echo esc_html($title); ?></h1>
                     <?php if (!empty($badge)) : ?>
                         <div class="gmb-page-header__badge">
-                            <?php echo is_string($badge) && strpos($badge, '<') !== false ? wp_kses_post($badge) : self::render_badge($badge, 'primary', false, false); ?>
+                            <?php echo (is_string($badge) && strpos($badge, '<') !== false) ? wp_kses_post($badge) : self::render_badge($badge, 'primary', false, false); ?>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -39,16 +78,19 @@ class GMB_Ranker_SEO_UI {
                     <p class="gmb-page-header__subtitle"><?php echo esc_html($subtitle); ?></p>
                 <?php endif; ?>
             </div>
-            <?php if (!empty($actions)) : ?>
+            <?php if (!empty($actions) && is_array($actions)) : ?>
                 <div class="gmb-page-header__actions">
                     <?php foreach ($actions as $action) : ?>
                         <?php if (isset($action['html'])) : ?>
                             <?php echo wp_kses_post($action['html']); ?>
-                        <?php else : ?>
-                            <a href="<?php echo esc_url($action['url'] ?? '#'); ?>" 
+                        <?php else : 
+                            $url    = isset($action['url']) ? (filter_var($action['url'], FILTER_VALIDATE_URL) || strpos($action['url'], 'admin.php') !== false || strpos($action['url'], '#') === 0 ? esc_url($action['url']) : '#') : '#';
+                            $target = isset($action['target']) && $action['target'] === '_blank' ? ' target="_blank" rel="noopener noreferrer"' : '';
+                        ?>
+                            <a href="<?php echo $url; ?>" 
                                class="gmb-btn gmb-btn--<?php echo esc_attr($action['variant'] ?? 'secondary'); ?> <?php echo esc_attr($action['class'] ?? ''); ?>"
                                <?php echo isset($action['id']) ? 'id="' . esc_attr($action['id']) . '"' : ''; ?>
-                               <?php echo isset($action['target']) ? 'target="' . esc_attr($action['target']) . '"' : ''; ?>>
+                               <?php echo $target; ?>>
                                 <?php if (!empty($action['icon'])) echo wp_kses_post($action['icon']); ?>
                                 <span><?php echo esc_html($action['text'] ?? ''); ?></span>
                             </a>
@@ -67,6 +109,12 @@ class GMB_Ranker_SEO_UI {
 
     /**
      * Render Section Header
+     *
+     * @param string $title
+     * @param string $description
+     * @param array $actions
+     * @param bool $echo
+     * @return string
      */
     public static function render_section_header($title, $description = '', $actions = array(), $echo = true) {
         ob_start();
@@ -78,7 +126,7 @@ class GMB_Ranker_SEO_UI {
                     <p class="gmb-section-header__description"><?php echo esc_html($description); ?></p>
                 <?php endif; ?>
             </div>
-            <?php if (!empty($actions)) : ?>
+            <?php if (!empty($actions) && is_array($actions)) : ?>
                 <div class="gmb-section-header__actions">
                     <?php foreach ($actions as $action) : ?>
                         <?php echo is_string($action) ? wp_kses_post($action) : ''; ?>
@@ -95,12 +143,19 @@ class GMB_Ranker_SEO_UI {
     }
 
     /**
-     * Render a standard 12px-radius Card Container
+     * Render a standard Card Container
+     *
+     * @param string $title
+     * @param string $content
+     * @param string $footer
+     * @param array $args
+     * @param bool $echo
+     * @return string
      */
     public static function render_card($title, $content, $footer = '', $args = array(), $echo = true) {
         $class = 'gmb-card ' . ($args['class'] ?? '');
-        $id = isset($args['id']) ? 'id="' . esc_attr($args['id']) . '"' : '';
-        $icon = $args['icon'] ?? '';
+        $id    = isset($args['id']) ? 'id="' . esc_attr($args['id']) . '"' : '';
+        $icon  = $args['icon'] ?? '';
         
         ob_start();
         ?>
@@ -141,25 +196,33 @@ class GMB_Ranker_SEO_UI {
 
     /**
      * Render Analytics Stat Card
+     *
+     * @param string $label
+     * @param string|int $value
+     * @param string $trend
+     * @param string $icon
+     * @param array $args
+     * @param bool $echo
+     * @return string
      */
     public static function render_stat_card($label, $value, $trend = '', $icon = '', $args = array(), $echo = true) {
-        $trend_type = $args['trend_type'] ?? 'positive'; // positive, negative, neutral
+        $trend_type = in_array($args['trend_type'] ?? '', array('positive', 'negative', 'neutral'), true) ? $args['trend_type'] : 'positive';
         ob_start();
         ?>
         <div class="gmb-stat-card <?php echo esc_attr($args['class'] ?? ''); ?>">
             <div class="gmb-stat-card__top">
                 <span class="gmb-stat-card__label"><?php echo esc_html($label); ?></span>
                 <?php if (!empty($icon)) : ?>
-                    <span class="gmb-stat-card__icon"><?php echo wp_kses_post($icon); ?></span>
+                    <span class="gmb-stat-card__icon" aria-hidden="true"><?php echo wp_kses_post($icon); ?></span>
                 <?php endif; ?>
             </div>
             <div class="gmb-stat-card__value"><?php echo esc_html($value); ?></div>
             <?php if (!empty($trend)) : ?>
                 <div class="gmb-stat-card__trend gmb-stat-card__trend--<?php echo esc_attr($trend_type); ?>">
                     <?php if ($trend_type === 'positive') : ?>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="18 15 12 9 6 15"></polyline></svg>
                     <?php elseif ($trend_type === 'negative') : ?>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     <?php endif; ?>
                     <span><?php echo esc_html($trend); ?></span>
                 </div>
@@ -174,24 +237,42 @@ class GMB_Ranker_SEO_UI {
     }
 
     /**
-     * Render Standard Button
+     * Render Standard Button or Action Link
+     *
+     * @param string $text
+     * @param string $variant
+     * @param string $size
+     * @param string $icon
+     * @param array $attributes
+     * @param bool $echo
+     * @return string
      */
     public static function render_button($text, $variant = 'primary', $size = 'md', $icon = '', $attributes = array(), $echo = true) {
-        $tag = $attributes['href'] ?? '' ? 'a' : 'button';
-        $attr_str = '';
-        foreach ($attributes as $k => $v) {
-            if ($k !== 'class') {
-                $attr_str .= ' ' . esc_attr($k) . '="' . esc_attr($v) . '"';
-            }
+        $allowed_variants = array('primary', 'secondary', 'danger', 'outline', 'text', 'ai');
+        $variant          = in_array($variant, $allowed_variants, true) ? $variant : 'primary';
+        
+        $allowed_sizes    = array('sm', 'md', 'lg');
+        $size             = in_array($size, $allowed_sizes, true) ? $size : 'md';
+
+        $is_link = !empty($attributes['href']);
+        $tag     = $is_link ? 'a' : 'button';
+
+        if (!$is_link && !isset($attributes['type'])) {
+            $attributes['type'] = 'button';
         }
-        $class = 'gmb-btn gmb-btn--' . esc_attr($variant) . ' gmb-btn--' . esc_attr($size) . ' ' . ($attributes['class'] ?? '');
+
+        $extra_class = $attributes['class'] ?? '';
+        unset($attributes['class']);
+
+        $class = 'gmb-btn gmb-btn--' . esc_attr($variant) . ' gmb-btn--' . esc_attr($size) . (!empty($extra_class) ? ' ' . esc_attr($extra_class) : '');
+        $attr_str = self::build_attributes_string($attributes);
 
         ob_start();
         ?>
-        <<?php echo esc_html($tag); ?> class="<?php echo esc_attr(trim($class)); ?>" <?php echo $attr_str; ?>>
+        <<?php echo $tag; ?> class="<?php echo esc_attr(trim($class)); ?>"<?php echo $attr_str; ?>>
             <?php if (!empty($icon)) echo wp_kses_post($icon); ?>
             <span><?php echo esc_html($text); ?></span>
-        </<?php echo esc_html($tag); ?>>
+        </<?php echo $tag; ?>>
         <?php
         $output = ob_get_clean();
         if ($echo) {
@@ -202,9 +283,17 @@ class GMB_Ranker_SEO_UI {
 
     /**
      * Render Form Group (Label, Input, Helper text, Validation badge)
+     *
+     * @param string $label
+     * @param string $input_html
+     * @param string $help_text
+     * @param string $badge
+     * @param array $args
+     * @param bool $echo
+     * @return string
      */
     public static function render_form_group($label, $input_html, $help_text = '', $badge = '', $args = array(), $echo = true) {
-        $for = $args['for'] ?? '';
+        $for      = $args['for'] ?? '';
         $required = !empty($args['required']);
         ob_start();
         ?>
@@ -214,7 +303,7 @@ class GMB_Ranker_SEO_UI {
                     <label class="gmb-form-label" <?php echo $for ? 'for="' . esc_attr($for) . '"' : ''; ?>>
                         <?php echo esc_html($label); ?>
                         <?php if ($required) : ?>
-                            <span class="gmb-required-star">*</span>
+                            <span class="gmb-required-star" aria-hidden="true">*</span>
                         <?php endif; ?>
                     </label>
                     <?php if (!empty($badge)) : ?>
@@ -241,10 +330,18 @@ class GMB_Ranker_SEO_UI {
 
     /**
      * Render Linear / iOS Style Toggle Switch
+     *
+     * @param string $name
+     * @param bool $checked
+     * @param string $label
+     * @param string $description
+     * @param array $attributes
+     * @param bool $echo
+     * @return string
      */
     public static function render_toggle($name, $checked = false, $label = '', $description = '', $attributes = array(), $echo = true) {
-        $id = $attributes['id'] ?? 'gmb_toggle_' . sanitize_key($name);
-        $value = $attributes['value'] ?? '1';
+        $id         = $attributes['id'] ?? 'gmb_toggle_' . sanitize_key($name);
+        $value      = $attributes['value'] ?? '1';
         $is_checked = (bool) $checked;
         
         ob_start();
@@ -281,14 +378,21 @@ class GMB_Ranker_SEO_UI {
 
     /**
      * Render Status Badge / Chip
+     *
+     * @param string $text
+     * @param string $variant
+     * @param bool $dot
+     * @param bool $echo
+     * @return string
      */
     public static function render_badge($text, $variant = 'neutral', $dot = false, $echo = true) {
-        // Variants: neutral, primary, success, warning, danger, info
+        $allowed_variants = array('neutral', 'primary', 'success', 'warning', 'danger', 'info');
+        $variant          = in_array($variant, $allowed_variants, true) ? $variant : 'neutral';
         ob_start();
         ?>
         <span class="gmb-badge gmb-badge--<?php echo esc_attr($variant); ?>">
             <?php if ($dot) : ?>
-                <span class="gmb-badge__dot"></span>
+                <span class="gmb-badge__dot" aria-hidden="true"></span>
             <?php endif; ?>
             <span><?php echo esc_html($text); ?></span>
         </span>
@@ -302,14 +406,24 @@ class GMB_Ranker_SEO_UI {
 
     /**
      * Render Notice / Alert Banner
+     *
+     * @param string $message
+     * @param string $type
+     * @param bool $dismissible
+     * @param bool $icon
+     * @param bool $echo
+     * @return string
      */
     public static function render_notice($message, $type = 'info', $dismissible = true, $icon = true, $echo = true) {
-        // Types: info, success, warning, danger
+        $allowed_types = array('info', 'success', 'warning', 'danger');
+        $type          = in_array($type, $allowed_types, true) ? $type : 'info';
+        $role          = ($type === 'danger' || $type === 'warning') ? 'alert' : 'status';
+        
         ob_start();
         ?>
-        <div class="gmb-notice gmb-notice--<?php echo esc_attr($type); ?> <?php echo $dismissible ? 'is-dismissible' : ''; ?>">
+        <div class="gmb-notice gmb-notice--<?php echo esc_attr($type); ?> <?php echo $dismissible ? 'is-dismissible' : ''; ?>" role="<?php echo esc_attr($role); ?>">
             <?php if ($icon) : ?>
-                <span class="gmb-notice__icon">
+                <span class="gmb-notice__icon" aria-hidden="true">
                     <?php if ($type === 'success') : ?>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                     <?php elseif ($type === 'warning') : ?>
@@ -325,7 +439,7 @@ class GMB_Ranker_SEO_UI {
                 <?php echo wp_kses_post($message); ?>
             </div>
             <?php if ($dismissible) : ?>
-                <button type="button" class="gmb-notice__dismiss" onclick="this.closest('.gmb-notice').remove();" title="Dismiss">&times;</button>
+                <button type="button" class="gmb-notice__dismiss" data-gmb-dismiss="notice" aria-label="<?php esc_attr_e('Dismiss Notice', 'gmb-ranker-seo-automation'); ?>">&times;</button>
             <?php endif; ?>
         </div>
         <?php
@@ -338,13 +452,20 @@ class GMB_Ranker_SEO_UI {
 
     /**
      * Render Empty State
+     *
+     * @param string $icon
+     * @param string $title
+     * @param string $description
+     * @param string $action_button
+     * @param bool $echo
+     * @return string
      */
     public static function render_empty_state($icon, $title, $description, $action_button = '', $echo = true) {
         ob_start();
         ?>
         <div class="gmb-empty-state">
             <?php if (!empty($icon)) : ?>
-                <div class="gmb-empty-state__icon">
+                <div class="gmb-empty-state__icon" aria-hidden="true">
                     <?php echo wp_kses_post($icon); ?>
                 </div>
             <?php endif; ?>
@@ -366,18 +487,27 @@ class GMB_Ranker_SEO_UI {
 
     /**
      * Render Horizontal Navigation Tabs
+     *
+     * @param array $tabs
+     * @param string $active_tab
+     * @param string $query_param
+     * @param bool $echo
+     * @return string
      */
     public static function render_tabs($tabs = array(), $active_tab = '', $query_param = 'tab', $echo = true) {
+        $query_param = sanitize_key($query_param) ?: 'tab';
         ob_start();
         ?>
-        <nav class="gmb-nav-tabs">
+        <nav class="gmb-nav-tabs" role="tablist">
             <?php foreach ($tabs as $key => $tab) : ?>
                 <?php 
                 $is_active = ($key === $active_tab);
-                $url = $tab['url'] ?? add_query_arg($query_param, $key);
+                $url       = isset($tab['url']) ? (filter_var($tab['url'], FILTER_VALIDATE_URL) || strpos($tab['url'], 'admin.php') !== false ? esc_url($tab['url']) : '#') : add_query_arg($query_param, sanitize_key($key));
                 ?>
                 <a href="<?php echo esc_url($url); ?>" 
                    class="gmb-nav-tab <?php echo $is_active ? 'is-active' : ''; ?>"
+                   role="tab"
+                   aria-selected="<?php echo $is_active ? 'true' : 'false'; ?>"
                    <?php if (!empty($tab['id'])) echo 'id="' . esc_attr($tab['id']) . '"'; ?>
                    <?php if (!empty($tab['data_target'])) echo 'data-target="' . esc_attr($tab['data_target']) . '"'; ?>>
                     <?php if (!empty($tab['icon'])) echo wp_kses_post($tab['icon']); ?>
