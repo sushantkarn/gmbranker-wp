@@ -243,6 +243,18 @@
           if ($("#editable-post-name").length) {
             $("#editable-post-name").text(appliedSlug);
           }
+          if ($("#new-post-slug").length) {
+            $("#new-post-slug").val(appliedSlug);
+          }
+
+          // Live Update Snippet Preview Breadcrumb URL
+          $(".gmb-google-breadcrumbs").each(function () {
+            var fullText = $(this).text();
+            var parts = fullText.split(" › ");
+            var homeUrl = parts[0] || (gmbMetaboxData.homeUrl || "");
+            $(this).text(homeUrl + " › " + appliedSlug);
+          });
+
           if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
             try {
               wp.data.dispatch("core/editor").editPost({ slug: appliedSlug });
