@@ -219,7 +219,6 @@ wp_nonce_field('gmb_seo_save_nonce', 'gmb_seo_nonce');
                                 <div class="gmb-field-group">
                                     <div class="gmb-field-header-row">
                                         <label for="gmb_seo_desc_input" class="gmb-field-label gmb-field-label-nomargin">SEO Meta Description</label>
-                                        <span id="gmb-pas-badge" class="gmb-status-pill gmb-status-pill--primary gmb-hidden">PAS Copywriting Passed ✓</span>
                                         <span class="gmb-metric-char gmb-char-count-bold" id="gmb-desc-char-count">0 / 160 chars</span>
                                     </div>
                                     <textarea id="gmb_seo_desc_input" name="gmb_seo_description" rows="4" class="gmb-field-textarea" placeholder="Summarize your page content here..."><?php echo esc_textarea($meta_desc); ?></textarea>

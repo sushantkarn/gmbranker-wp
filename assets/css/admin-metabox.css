@@ -3082,11 +3082,13 @@ body.post-new-php #wpwrap {
 
 /* CTR Preset Modifier Buttons & SERP Pixel Indicator */
 .gmb-title-ctr-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+  margin-top: 14px !important;
+  margin-bottom: 12px !important;
 }
 
 .gmb-pixel-width-indicator {
