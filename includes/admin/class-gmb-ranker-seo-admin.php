@@ -705,4 +705,19 @@ class GMB_Ranker_SEO_Admin {
         // If validation fails on non-empty input, keep existing saved key rather than wiping it
         return get_option('gmb_ranker_google_json_key', '');
     }
+
+    /**
+     * Sanitize secret key while preserving existing saved key on empty/masked submission
+     *
+     * @param string $value
+     * @param string $option_name
+     * @return string
+     */
+    public static function sanitize_secret_key($value, $option_name = '') {
+        $trimmed = is_string($value) ? trim($value) : '';
+        if (empty($trimmed) || strpos($trimmed, '***') !== false) {
+            return !empty($option_name) ? get_option($option_name, '') : '';
+        }
+        return sanitize_text_field($trimmed);
+    }
 }

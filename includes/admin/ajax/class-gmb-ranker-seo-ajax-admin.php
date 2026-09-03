@@ -529,11 +529,10 @@ class GMB_Ranker_SEO_Ajax_Admin {
         }
 
         $url_raw = isset($_POST['target_url']) ? wp_unslash($_POST['target_url']) : '';
-        if (empty($url_raw) || !wp_http_validate_url($url_raw)) {
-            wp_send_json_error(array('message' => 'Invalid or unsafe webhook URL provided.'), 400);
+        $target_url = class_exists('GMB_Ranker_SEO_Integration_Registry') ? GMB_Ranker_SEO_Integration_Registry::validate_outbound_url($url_raw, false) : esc_url_raw($url_raw);
+        if (empty($target_url)) {
+            wp_send_json_error(array('message' => 'Invalid or unsafe webhook URL provided. Destination must be a public HTTP/HTTPS URL.'), 400);
         }
-
-        $target_url = esc_url_raw($url_raw);
         $response = wp_remote_post($target_url, array(
             'timeout' => 5,
             'body'    => wp_json_encode(array(

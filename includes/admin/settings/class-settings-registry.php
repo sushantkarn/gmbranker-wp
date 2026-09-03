@@ -319,7 +319,7 @@ if (!class_exists('GMB_Ranker_SEO_Settings_Registry')) {
                 'gmb_ai_ollama_model'     => 'sanitize_text_field',
             );
 
-            $groups = array('gmb_ranker_settings_group', 'gmb_ranker_ai_provider_group', 'gmb_ranker_general_group');
+            $groups = array('gmb_ranker_settings_group', 'gmb_ranker_ai_provider_group', 'gmb_ranker_general_group', 'gmb_ranker_integrations_group');
             foreach ($groups as $group) {
                 foreach ($ai_options as $opt => $sanitizer) {
                     $this->register_option($group, $opt, $sanitizer);
