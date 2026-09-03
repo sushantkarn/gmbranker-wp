@@ -3237,3 +3237,49 @@ body.post-new-php #wpwrap {
   font-size: 14px;
   color: #15803d;
 }
+
+/* NeuronWriter Analysis in Progress Screen */
+.gmb-neuron-analysis-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 20px;
+  text-align: center;
+  min-height: 280px;
+}
+
+.gmb-neuron-analysis-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.gmb-neuron-analysis-title {
+  font-size: 26px !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  margin: 0 0 20px 0 !important;
+  letter-spacing: -0.5px !important;
+}
+
+.gmb-neuron-spinner-container {
+  margin-bottom: 16px;
+}
+
+.gmb-neuron-ring {
+  display: inline-block;
+  width: 44px;
+  height: 44px;
+  border: 4px solid #e2e8f0;
+  border-radius: 50%;
+  border-top-color: #3b82f6;
+  animation: gmbNeuronSpin 0.9s linear infinite;
+}
+
+@keyframes gmbNeuronSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

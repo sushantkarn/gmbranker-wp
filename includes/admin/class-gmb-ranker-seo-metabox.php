@@ -540,41 +540,108 @@ class GMB_Ranker_SEO_Metabox {
                             </div>
                             <div class="gmb-form-group gmb-col-4">
                                 <label class="gmb-form-label">Target Search Engine / Country</label>
-                                <select id="gmb-ai-setup-country" class="gmb-integration-select">
-                                    <option value="NP|google.com.np" selected>🇳🇵 NEPAL | google.com.np</option>
-                                    <option value="US|google.com">🇺🇸 UNITED STATES | google.com</option>
-                                    <option value="GB|google.co.uk">🇬🇧 UNITED KINGDOM | google.co.uk</option>
-                                    <option value="CA|google.ca">🇨🇦 CANADA | google.ca</option>
-                                    <option value="AU|google.com.au">🇦🇺 AUSTRALIA | google.com.au</option>
-                                    <option value="IN|google.co.in">🇮🇳 INDIA | google.co.in</option>
-                                    <option value="AE|google.ae">🇦🇪 UAE | google.ae</option>
-                                    <option value="GLOBAL|google.com">🌐 Global Search Engine</option>
+                                                                <select id="gmb-ai-setup-country" class="gmb-integration-select">
+                                    <optgroup label="Popular Regions">
+                                        <option value="NP|google.com.np" selected>🇳🇵 NEPAL | google.com.np</option>
+                                        <option value="US|google.com">🇺🇸 UNITED STATES | google.com</option>
+                                        <option value="GB|google.co.uk">🇬🇧 UNITED KINGDOM | google.co.uk</option>
+                                        <option value="CA|google.ca">🇨🇦 CANADA | google.ca</option>
+                                        <option value="AU|google.com.au">🇦🇺 AUSTRALIA | google.com.au</option>
+                                        <option value="IN|google.co.in">🇮🇳 INDIA | google.co.in</option>
+                                        <option value="GLOBAL|google.com">🌐 GLOBAL | google.com</option>
+                                    </optgroup>
+                                    <optgroup label="Asia & Pacific">
+                                        <option value="JP|google.co.jp">🇯🇵 JAPAN | google.co.jp</option>
+                                        <option value="SG|google.com.sg">🇸🇬 SINGAPORE | google.com.sg</option>
+                                        <option value="KR|google.co.kr">🇰🇷 SOUTH KOREA | google.co.kr</option>
+                                        <option value="MY|google.com.my">🇲🇾 MALAYSIA | google.com.my</option>
+                                        <option value="ID|google.co.id">🇮🇩 INDONESIA | google.co.id</option>
+                                        <option value="TH|google.co.th">🇹🇭 THAILAND | google.co.th</option>
+                                        <option value="VN|google.com.vn">🇻🇳 VIETNAM | google.com.vn</option>
+                                        <option value="PH|google.com.ph">🇵🇭 PHILIPPINES | google.com.ph</option>
+                                        <option value="PK|google.com.pk">🇵🇰 PAKISTAN | google.com.pk</option>
+                                        <option value="BD|google.com.bd">🇧🇩 BANGLADESH | google.com.bd</option>
+                                        <option value="NZ|google.co.nz">🇳🇿 NEW ZEALAND | google.co.nz</option>
+                                    </optgroup>
+                                    <optgroup label="Europe">
+                                        <option value="DE|google.de">🇩🇪 GERMANY | google.de</option>
+                                        <option value="FR|google.fr">🇫🇷 FRANCE | google.fr</option>
+                                        <option value="ES|google.es">🇪🇸 SPAIN | google.es</option>
+                                        <option value="IT|google.it">🇮🇹 ITALY | google.it</option>
+                                        <option value="NL|google.nl">🇳🇱 NETHERLANDS | google.nl</option>
+                                        <option value="SE|google.se">🇸🇪 SWEDEN | google.se</option>
+                                        <option value="NO|google.no">🇳🇴 NORWAY | google.no</option>
+                                        <option value="DK|google.dk">🇩🇰 DENMARK | google.dk</option>
+                                        <option value="FI|google.fi">🇫🇮 FINLAND | google.fi</option>
+                                        <option value="PL|google.pl">🇵🇱 POLAND | google.pl</option>
+                                        <option value="IE|google.ie">🇮🇪 IRELAND | google.ie</option>
+                                        <option value="PT|google.pt">🇵🇹 PORTUGAL | google.pt</option>
+                                        <option value="GR|google.gr">🇬🇷 GREECE | google.gr</option>
+                                        <option value="TR|google.com.tr">🇹🇷 TURKEY | google.com.tr</option>
+                                    </optgroup>
+                                    <optgroup label="Americas">
+                                        <option value="BR|google.com.br">🇧🇷 BRAZIL | google.com.br</option>
+                                        <option value="MX|google.com.mx">🇲🇽 MEXICO | google.com.mx</option>
+                                        <option value="AR|google.com.ar">🇦🇷 ARGENTINA | google.com.ar</option>
+                                        <option value="CL|google.cl">🇨🇱 CHILE | google.cl</option>
+                                        <option value="CO|google.com.co">🇨🇴 COLOMBIA | google.com.co</option>
+                                        <option value="PE|google.com.pe">🇵🇪 PERU | google.com.pe</option>
+                                    </optgroup>
+                                    <optgroup label="Middle East & Africa">
+                                        <option value="AE|google.ae">🇦🇪 UAE | google.ae</option>
+                                        <option value="SA|google.com.sa">🇸🇦 SAUDI ARABIA | google.com.sa</option>
+                                        <option value="IL|google.co.il">🇮🇱 ISRAEL | google.co.il</option>
+                                        <option value="EG|google.com.eg">🇪🇬 EGYPT | google.com.eg</option>
+                                        <option value="ZA|google.co.za">🇿🇦 SOUTH AFRICA | google.co.za</option>
+                                        <option value="NG|google.com.ng">🇳🇬 NIGERIA | google.com.ng</option>
+                                        <option value="KE|google.co.ke">🇰🇪 KENYA | google.co.ke</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div class="gmb-form-group gmb-col-4">
                                 <label class="gmb-form-label">Language</label>
-                                <select id="gmb-ai-setup-language" class="gmb-integration-select">
+                                                                <select id="gmb-ai-setup-language" class="gmb-integration-select">
                                     <option value="en" selected>English</option>
-                                    <option value="ne">Nepali</option>
-                                    <option value="es">Spanish</option>
-                                    <option value="fr">French</option>
-                                    <option value="de">German</option>
-                                    <option value="hi">Hindi</option>
+                                    <option value="ne">Nepali (नेपाली)</option>
+                                    <option value="es">Spanish (Español)</option>
+                                    <option value="fr">French (Français)</option>
+                                    <option value="de">German (Deutsch)</option>
+                                    <option value="it">Italian (Italiano)</option>
+                                    <option value="pt">Portuguese (Português)</option>
+                                    <option value="nl">Dutch (Nederlands)</option>
+                                    <option value="ja">Japanese (日本語)</option>
+                                    <option value="zh-cn">Chinese Simplified (简体中文)</option>
+                                    <option value="zh-tw">Chinese Traditional (繁體中文)</option>
+                                    <option value="ar">Arabic (العربية)</option>
+                                    <option value="hi">Hindi (हिन्दी)</option>
+                                    <option value="bn">Bengali (বাংলা)</option>
+                                    <option value="ru">Russian (Русский)</option>
+                                    <option value="sv">Swedish (Svenska)</option>
+                                    <option value="no">Norwegian (Norsk)</option>
+                                    <option value="da">Danish (Dansk)</option>
+                                    <option value="fi">Finnish (Suomi)</option>
+                                    <option value="pl">Polish (Polski)</option>
+                                    <option value="tr">Turkish (Türkçe)</option>
+                                    <option value="id">Indonesian (Bahasa Indonesia)</option>
+                                    <option value="vi">Vietnamese (Tiếng Việt)</option>
+                                    <option value="th">Thai (ไทย)</option>
+                                    <option value="ko">Korean (한국어)</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
-                    <!-- STEP 2: Deep Research & Skeleton Shimmer Placeholder -->
-                    <div id="gmb-ai-post-modal-loading" class="gmb-ai-loading-box gmb-hidden">
-                        <div class="gmb-ai-pulse-orb-container">
-                            <div class="gmb-ai-pulse-orb"></div>
-                            <div class="gmb-spinner"></div>
+                                        <!-- STEP 2: NeuronWriter Analysis in Progress Screen -->
+                    <div id="gmb-ai-post-modal-loading" class="gmb-neuron-analysis-box gmb-hidden">
+                        <div class="gmb-neuron-analysis-center">
+                            <h2 class="gmb-neuron-analysis-title">Analysis in progress</h2>
+                            <div class="gmb-neuron-spinner-container">
+                                <div class="gmb-neuron-ring"></div>
+                            </div>
+                            <p class="gmb-ai-loading-text" id="gmb-ai-loading-step-text">🔍 Fetching SERP entities & search intent...</p>
                         </div>
-                        <p class="gmb-ai-loading-title">✨ AI Deep SERP Research in Progress...</p>
-                        <p class="gmb-ai-loading-text" id="gmb-ai-loading-step-text">🔍 Analyzing page entities, heading structures, and search intent...</p>
                         
-                        <div class="gmb-skeleton-table-wrap gmb-mt-16">
+                        <div class="gmb-skeleton-table-wrap gmb-mt-24">
                             <div class="gmb-skeleton-row">
                                 <div class="gmb-skeleton-box gmb-sk-ch"></div>
                                 <div class="gmb-skeleton-box gmb-sk-title"></div>
