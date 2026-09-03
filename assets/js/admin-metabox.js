@@ -5,48 +5,7 @@
 (function ($) {
   "use strict";
 
-  // Global AI Modal opener function available immediately
-  window.gmbOpenAiModal = function (e) {
-    if (e && e.preventDefault) e.preventDefault();
-    var $modal = $("#gmb-ai-post-seo-modal");
-
-    if (!$modal.length) {
-      alert("AI Modal element not found. Please refresh the page.");
-      return false;
-    }
-
-    $modal.appendTo("body");
-    $modal.css("display", "flex").addClass("active");
-
-    // Pre-fill setup fields
-    var postTitle = $("#title").val() || "";
-    if (!postTitle && typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.select("core/editor")) {
-      postTitle = wp.data.select("core/editor").getEditedPostAttribute("title") || "";
-    }
-    $("#gmb-ai-setup-title").val(postTitle);
-
-    var curFocus = $("#gmb_seo_focus_keyword_hidden").val() || "";
-    if (!curFocus && typeof keywords !== "undefined" && Array.isArray(keywords) && keywords.length > 0) {
-      curFocus = keywords[0];
-    }
-    if (!curFocus && postTitle) {
-      curFocus = postTitle.split(" ").slice(0, 3).join(" ");
-    }
-    $("#gmb-ai-setup-query").val(curFocus);
-
-    var slug = $("#post_name").val() || $("#editable-post-name").text() || "";
-    var homeUrl = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.homeUrl ? gmbMetaboxData.homeUrl : window.location.origin) + "/";
-    $("#gmb-ai-setup-url").val(homeUrl + slug);
-
-    if (typeof window.setAiModalStep === "function") {
-      window.setAiModalStep(1);
-    } else {
-      $("#gmb-ai-post-modal-setup").removeClass("gmb-hidden").css("display", "block");
-      $("#gmb-ai-post-modal-loading").addClass("gmb-hidden").css("display", "none");
-      $("#gmb-ai-post-modal-content").addClass("gmb-hidden").css("display", "none");
-    }
-    return false;
-  };
+  // Global AI Modal opener will be bound inside document.ready
 
   $(document).ready(function () {
 
@@ -164,9 +123,6 @@
       var curFocus = $("#gmb_seo_focus_keyword_hidden").val() || "";
       if (!curFocus && typeof keywords !== "undefined" && Array.isArray(keywords) && keywords.length > 0) {
         curFocus = keywords[0];
-      }
-      if (!curFocus && postTitle) {
-        curFocus = postTitle.split(" ").slice(0, 3).join(" ");
       }
       $("#gmb-ai-setup-query").val(curFocus);
 
@@ -2398,20 +2354,24 @@
         schema["description"] = resolveVariables(
           $("#gmb_schema_field_prod_desc").val() || description || desc,
         );
-        schema["sku"] = $("#gmb_schema_field_prod_sku").val() || "SKU-001";
+        var prodSku = $("#gmb_schema_field_prod_sku").val();
+        if (prodSku) schema["sku"] = prodSku;
         schema["brand"] = {
           "@type": "Brand",
           name: $("#gmb_schema_field_prod_brand").val() || siteName,
         };
-        schema["offers"] = {
-          "@type": "Offer",
-          price: $("#gmb_schema_field_prod_price").val() || "49.00",
-          priceCurrency: $("#gmb_schema_field_prod_currency").val() || "USD",
-          availability:
-            "https://schema.org/" +
-            ($("#gmb_schema_field_prod_avail").val() || "InStock"),
-          url: currentUrl,
-        };
+        var prodPrice = $("#gmb_schema_field_prod_price").val();
+        if (prodPrice) {
+          schema["offers"] = {
+            "@type": "Offer",
+            price: prodPrice,
+            priceCurrency: $("#gmb_schema_field_prod_currency").val() || "USD",
+            availability:
+              "https://schema.org/" +
+              ($("#gmb_schema_field_prod_avail").val() || "InStock"),
+            url: currentUrl,
+          };
+        }
       } else if (k === "faq" || k === "faqpage") {
         schema["@type"] = "FAQPage";
         var faqs = [];
@@ -2429,40 +2389,17 @@
             });
           }
         });
-        if (faqs.length === 0) {
-          faqs.push({
-            "@type": "Question",
-            name: "What services do you offer?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "We provide premium local and medical care services.",
-            },
-          });
+        if (faqs.length > 0) {
+          schema["mainEntity"] = faqs;
         }
-        schema["mainEntity"] = faqs;
       } else if (k === "howto") {
         schema["@type"] = "HowTo";
         schema["name"] = headline || title;
         schema["description"] = description || desc;
-        schema["totalTime"] = "PT30M";
-        schema["step"] = [
-          {
-            "@type": "HowToStep",
-            name: "Initial Preparation",
-            text: "Prepare the necessary materials.",
-          },
-          {
-            "@type": "HowToStep",
-            name: "Execution",
-            text: "Follow the step-by-step instructions carefully.",
-          },
-        ];
       } else if (k === "event") {
         schema["@type"] = "Event";
         schema["name"] = headline || title;
         schema["description"] = description || desc;
-        schema["startDate"] =
-          new Date().toISOString().split("T")[0] + "T09:00:00+00:00";
         schema["eventStatus"] = "https://schema.org/EventScheduled";
         schema["eventAttendanceMode"] =
           "https://schema.org/OfflineEventAttendanceMode";
@@ -2476,7 +2413,6 @@
         schema["title"] = headline || title;
         schema["description"] = description || desc;
         schema["datePosted"] = new Date().toISOString().split("T")[0];
-        schema["employmentType"] = "FULL_TIME";
         schema["hiringOrganization"] = {
           "@type": "Organization",
           name: siteName,
