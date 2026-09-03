@@ -443,8 +443,10 @@ function initGmbAdminApp() {
         "@context": "https://schema.org",
         "@type": "Review",
         itemReviewed: {
-          "@type": "Thing",
+          "@type": "Product",
           name: "%title%",
+          image: "%featured_image%",
+          description: "%excerpt%",
         },
         reviewRating: {
           "@type": "Rating",
@@ -466,11 +468,14 @@ function initGmbAdminApp() {
         "@context": "https://schema.org",
         "@type": "AggregateRating",
         itemReviewed: {
-          "@type": "Thing",
+          "@type": "Product",
           name: "%title%",
+          image: "%featured_image%",
+          description: "%excerpt%",
         },
         ratingValue: "4.9",
         bestRating: "5",
+        worstRating: "1",
         ratingCount: "128",
         reviewCount: "94",
       },
