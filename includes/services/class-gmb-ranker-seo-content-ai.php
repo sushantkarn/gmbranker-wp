@@ -24,11 +24,11 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
             $raw = trim($title . ' ' . $keyword);
             $clean = preg_replace('/[^\w\s]/u', ' ', $raw);
             $words = array_values(array_filter(explode(' ', strtolower($clean)), function($w) {
-                return strlen($w) > 2 && !in_array($w, array('and', 'the', 'for', 'with', 'over', 'from', 'this', 'that', 'your', 'about', 'guide', '2026', 'nepal'));
+                return strlen($w) > 2 && !in_array($w, array('and', 'the', 'for', 'with', 'over', 'from', 'this', 'that', 'your', 'about', 'guide'));
             }));
 
             $target_kw = ucwords(trim($keyword ?: $title));
-            $site_name = get_bloginfo('name') ?: 'Care Nest Nepal';
+            $site_name = get_bloginfo('name') ?: get_option('blogname', 'Website');
             $home_url  = esc_url(home_url('/'));
 
             return array(
@@ -39,6 +39,34 @@ if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
                 'site_name'   => $site_name,
                 'home_url'    => $home_url,
             );
+        }
+
+        /**
+         * Generate Evidence-Based Contextual Meta Description
+         */
+        public static function generate_meta_description($title, $keyword, $content_summary = '') {
+            $target = !empty($title) ? $title : $keyword;
+            $kw     = !empty($keyword) ? $keyword : $title;
+
+            if (!empty($content_summary)) {
+                $clean_summary = wp_strip_all_tags($content_summary);
+                if (mb_strlen($clean_summary) >= 120) {
+                    return mb_substr($clean_summary, 0, 155);
+                }
+            }
+
+            $site_name = get_bloginfo('name') ?: get_option('blogname', 'Website');
+            $desc = sprintf(
+                __('Comprehensive guide to %1$s. Explore expert insights, best practices, and actionable advice from %2$s.', 'gmb-ranker-seo-automation'),
+                esc_html($target),
+                esc_html($site_name)
+            );
+
+            if (mb_strlen($desc) < 120) {
+                $desc .= sprintf(__(' Learn how %s delivers optimal results.', 'gmb-ranker-seo-automation'), esc_html($kw));
+            }
+
+            return mb_substr($desc, 0, 155);
         }
 
         /**

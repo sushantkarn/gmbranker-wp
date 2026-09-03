@@ -685,28 +685,55 @@ class GMB_Ranker_SEO_Ajax_Admin {
         // 2. Meta Description Recommendation
         $desc_len = mb_strlen($current_desc);
         if (empty($current_desc)) {
-            $fallback_desc = wp_strip_all_tags(mb_substr($post->post_content, 0, 155));
+            $suggested_desc = wp_strip_all_tags(mb_substr($post->post_content, 0, 155));
+            if ((empty($suggested_desc) || mb_strlen($suggested_desc) < 60) && class_exists('GMB_Ranker_SEO_Content_AI')) {
+                $suggested_desc = GMB_Ranker_SEO_Content_AI::generate_meta_description($current_title, $focus_kw, $post->post_content);
+            }
             $recommendations[] = array(
                 'id'          => 'meta_description',
                 'category'    => __('Meta Description', 'gmb-ranker-seo-automation'),
                 'current'     => '',
-                'recommended' => $fallback_desc,
+                'recommended' => $suggested_desc,
                 'status'      => 'MISSING',
                 'risk_level'  => 'LOW',
                 'action'      => 'ADD DESCRIPTION',
-                'evidence'    => __('Meta Description is missing completely.', 'gmb-ranker-seo-automation'),
+                'evidence'    => __('Meta Description is missing completely. AI generated a contextual meta description for target topic.', 'gmb-ranker-seo-automation'),
             );
         } elseif ($desc_len < 120 || $desc_len > 160) {
+            $suggested_desc = mb_substr($current_desc, 0, 155);
+            if ($desc_len < 120 && class_exists('GMB_Ranker_SEO_Content_AI')) {
+                $suggested_desc = GMB_Ranker_SEO_Content_AI::generate_meta_description($current_title, $focus_kw, $current_desc);
+            }
             $recommendations[] = array(
                 'id'          => 'meta_description',
                 'category'    => __('Meta Description', 'gmb-ranker-seo-automation'),
                 'current'     => $current_desc,
-                'recommended' => mb_substr($current_desc, 0, 155),
+                'recommended' => $suggested_desc,
                 'status'      => $desc_len < 120 ? 'UNDER-OPTIMIZED' : 'OVER-OPTIMIZED',
                 'risk_level'  => 'LOW',
                 'action'      => 'ADJUST LENGTH',
                 'evidence'    => sprintf(__('Meta description length is %d characters (recommended: 120-160).', 'gmb-ranker-seo-automation'), $desc_len),
             );
+        }
+
+        // 2b. Content Depth & Structure Recommendation
+        $word_count = str_word_count(wp_strip_all_tags($post->post_content));
+        if ($word_count < 300 && class_exists('GMB_Ranker_SEO_Content_AI')) {
+            $ai_draft_data = GMB_Ranker_SEO_Content_AI::generate_archetype_draft($current_title, $focus_kw, $post_id);
+            $ai_intro_content = isset($ai_draft_data['draft']) ? $ai_draft_data['draft'] : '';
+            if (!empty($ai_intro_content)) {
+                $recommendations[] = array(
+                    'id'          => 'content_intro',
+                    'category'    => __('Content Intelligence', 'gmb-ranker-seo-automation'),
+                    'current'     => sprintf(__('%d words in content body', 'gmb-ranker-seo-automation'), $word_count),
+                    'recommended' => wp_strip_all_tags(mb_substr($ai_intro_content, 0, 200)) . '...',
+                    'full_content'=> $ai_intro_content,
+                    'status'      => 'UNDER-OPTIMIZED',
+                    'risk_level'  => 'LOW',
+                    'action'      => 'ENHANCE CONTENT DEPTH',
+                    'evidence'    => sprintf(__('Word count is low (%d words). AI generated structured content section to improve topic depth.', 'gmb-ranker-seo-automation'), $word_count),
+                );
+            }
         }
 
         // 3. Focus Keyword Persistence Recommendation
@@ -832,6 +859,21 @@ class GMB_Ranker_SEO_Ajax_Admin {
         }
         if (isset($_POST['table_of_contents']) && $_POST['table_of_contents'] === '1') {
             update_option('gmb_toc_auto_insert', '1');
+        }
+        if (!empty($_POST['content_intro'])) {
+            $raw_intro = wp_unslash($_POST['content_intro']);
+            $clean_intro = wp_kses_post($raw_intro);
+            $existing_post = get_post($post_id);
+            if ($existing_post) {
+                $cur_content = $existing_post->post_content;
+                if (stripos($cur_content, mb_substr(wp_strip_all_tags($clean_intro), 0, 50)) === false) {
+                    $new_content = $clean_intro . "\n\n" . $cur_content;
+                    wp_update_post(array(
+                        'ID'           => $post_id,
+                        'post_content' => $new_content,
+                    ));
+                }
+            }
         }
 
         clean_post_cache($post_id);
