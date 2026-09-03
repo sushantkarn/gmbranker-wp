@@ -172,14 +172,6 @@
             '<td><span class="gmb-status-pill gmb-status-pill--primary">Optimized</span></td>' +
             '</tr>';
 
-          // Row 9: Table of Contents Shortcode
-          rowsHtml += '<tr>' +
-            '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="toc_injection" checked /></td>' +
-            '<td><strong>Table of Contents</strong></td>' +
-            '<td>Insert Table of Contents shortcode <code>[gmb_toc]</code> for UX readability</td>' +
-            '<td><span class="gmb-status-pill gmb-status-pill--primary">Recommended</span></td>' +
-            '</tr>';
-
           // Internal Links Rows
           if (data.internal_links && data.internal_links.length > 0) {
             data.internal_links.forEach(function (l) {
@@ -388,14 +380,13 @@
         }
       }
 
-      // Apply Content Optimizations (Intro, H2, Image Alt, TOC)
+      // Apply Content Optimizations (Intro, H2, Image Alt)
       var applyIntro = $('.gmb-ai-post-check[data-factor="content_intro"]:checked').length > 0;
       var applyH2 = $('.gmb-ai-post-check[data-factor="h2_heading"]:checked').length > 0;
       var applyImageAlt = $('.gmb-ai-post-check[data-factor="image_alt"]:checked').length > 0;
-      var applyTOC = $('.gmb-ai-post-check[data-factor="toc_injection"]:checked').length > 0;
       var curFocusKw = $("#gmb-ai-input-focus").val() || "";
 
-      if (curFocusKw && (applyIntro || applyH2 || applyImageAlt || applyTOC)) {
+      if (curFocusKw && (applyIntro || applyH2 || applyImageAlt)) {
         var bodyHtml = "";
         var isTinyMCE = typeof tinymce !== "undefined" && tinymce.get("content") && !tinymce.get("content").isHidden();
 
@@ -411,16 +402,6 @@
         if (applyIntro && bodyHtml.toLowerCase().indexOf(curFocusKw.toLowerCase()) === -1) {
           var introSentence = '<p>In this guide, we provide essential information regarding <strong>' + curFocusKw + '</strong> for optimal results.</p>';
           bodyHtml = introSentence + bodyHtml;
-        }
-
-        // 2. Table of Contents Injection
-        if (applyTOC && bodyHtml.indexOf("[gmb_toc]") === -1 && bodyHtml.indexOf("gmb-toc-box") === -1) {
-          var pIdx = bodyHtml.indexOf("</p>");
-          if (pIdx !== -1) {
-            bodyHtml = bodyHtml.substring(0, pIdx + 4) + '<p>[gmb_toc]</p>' + bodyHtml.substring(pIdx + 4);
-          } else {
-            bodyHtml = '<p>[gmb_toc]</p>' + bodyHtml;
-          }
         }
 
         // 3. H2 Subheading Keyword Injection
@@ -973,12 +954,10 @@
 
     window.gmbSetFocusKeywords = function (kwString) {
       if (!kwString) return;
-      var newKws = kwString.split(",").map(function (k) { return k.trim(); }).filter(Boolean);
-      newKws.forEach(function (k) {
-        if (keywords.indexOf(k) === -1) {
-          keywords.push(k);
-        }
-      });
+      var cleanKw = kwString.split(",")[0].trim();
+      if (cleanKw) {
+        keywords = [cleanKw];
+      }
       renderKeywordPills();
     };
 
@@ -988,8 +967,8 @@
       if (e.key === "Enter" || e.key === ",") {
         e.preventDefault();
         var val = $(this).val().trim();
-        if (val && keywords.indexOf(val) === -1) {
-          keywords.push(val);
+        if (val) {
+          keywords = [val];
           $(this).val("");
           renderKeywordPills();
         }
