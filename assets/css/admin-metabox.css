@@ -2777,16 +2777,99 @@ body.post-new-php #wpwrap {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: 30px 20px;
   text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.gmb-ai-pulse-orb-container {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.gmb-ai-pulse-orb {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #3b82f6);
+  opacity: 0.8;
+  animation: gmbOrbPulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes gmbOrbPulse {
+  0% {
+    transform: scale(0.85);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+  }
+  100% {
+    transform: scale(1.15);
+    box-shadow: 0 0 35px rgba(139, 92, 246, 0.8);
+  }
+}
+
+.gmb-ai-loading-title {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .gmb-ai-loading-text {
-  margin-top: 14px;
-  font-size: 14px;
+  margin: 0 0 16px 0;
+  font-size: 13px;
   font-weight: 600;
   color: #475569;
+  min-height: 20px;
+  transition: all 0.2s ease;
 }
+
+/* Roaming Skeleton Shimmer Table Placeholder */
+.gmb-skeleton-table-wrap {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.gmb-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.gmb-skeleton-row:last-child {
+  border-bottom: none;
+}
+
+.gmb-skeleton-box {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: gmbShimmer 1.5s infinite;
+  border-radius: 4px;
+  height: 18px;
+}
+
+@keyframes gmbShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.gmb-sk-ch { width: 20px; height: 20px; border-radius: 4px; }
+.gmb-sk-title { width: 110px; }
+.gmb-sk-content { flex: 1; }
+.gmb-sk-badge { width: 80px; border-radius: 9999px; }
 
 .gmb-links-list-box {
   background: #ffffff;

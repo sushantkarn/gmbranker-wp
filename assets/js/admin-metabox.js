@@ -34,6 +34,21 @@
       $tbody.empty();
       $applyBtn.prop("disabled", true);
 
+      // Rotating AI Research Step Messages
+      var researchSteps = [
+        "🔍 Step 1/5: Extracting primary entities, headings, and page topic...",
+        "🧠 Step 2/5: Performing deep search intent & LSI entity clustering...",
+        "📐 Step 3/5: Calculating SERP pixel width and crafting high-CTR titles...",
+        "✍️ Step 4/5: Writing PAS conversion copy for Meta Description...",
+        "🕸️ Step 5/5: Mapping SILO internal links & E-E-A-T trust citations..."
+      ];
+      var stepIdx = 0;
+      $("#gmb-ai-loading-step-text").text(researchSteps[0]);
+      var stepTimer = setInterval(function () {
+        stepIdx = (stepIdx + 1) % researchSteps.length;
+        $("#gmb-ai-loading-step-text").text(researchSteps[stepIdx]);
+      }, 2200);
+
       // Extract title & content safely
       var postTitle = $("#title").val() || "";
       if (!postTitle && typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.select("core/editor")) {
@@ -69,6 +84,7 @@
           meta_description: curDesc
         },
         success: function (res) {
+          clearInterval(stepTimer);
           $loading.css("display", "none");
           if (!res.success || !res.data) {
             alert("AI analysis failed: " + (res.data || "Unknown error"));
@@ -157,6 +173,7 @@
           $tbody.html(rowsHtml);
         },
         error: function (xhr, status, err) {
+          clearInterval(stepTimer);
           $loading.css("display", "none");
           alert("AJAX Error: " + err);
           $modal.css("display", "none").removeClass("active");

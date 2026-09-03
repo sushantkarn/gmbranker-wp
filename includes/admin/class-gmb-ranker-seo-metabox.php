@@ -507,8 +507,40 @@ class GMB_Ranker_SEO_Metabox {
                 </div>
                 <div class="gmb-modal-body">
                     <div id="gmb-ai-post-modal-loading" class="gmb-ai-loading-box">
-                        <div class="gmb-spinner"></div>
-                        <p class="gmb-ai-loading-text">Analyzing page content, title, headings, and site URLs with AI...</p>
+                        <div class="gmb-ai-pulse-orb-container">
+                            <div class="gmb-ai-pulse-orb"></div>
+                            <div class="gmb-spinner"></div>
+                        </div>
+                        <p class="gmb-ai-loading-title">✨ AI Deep SEO Research in Progress...</p>
+                        <p class="gmb-ai-loading-text" id="gmb-ai-loading-step-text">🔍 Analyzing page entities, heading structures, and search intent...</p>
+                        
+                        <!-- Roaming Skeleton Shimmer Table Placeholder -->
+                        <div class="gmb-skeleton-table-wrap gmb-mt-16">
+                            <div class="gmb-skeleton-row">
+                                <div class="gmb-skeleton-box gmb-sk-ch"></div>
+                                <div class="gmb-skeleton-box gmb-sk-title"></div>
+                                <div class="gmb-skeleton-box gmb-sk-content"></div>
+                                <div class="gmb-skeleton-box gmb-sk-badge"></div>
+                            </div>
+                            <div class="gmb-skeleton-row">
+                                <div class="gmb-skeleton-box gmb-sk-ch"></div>
+                                <div class="gmb-skeleton-box gmb-sk-title"></div>
+                                <div class="gmb-skeleton-box gmb-sk-content"></div>
+                                <div class="gmb-skeleton-box gmb-sk-badge"></div>
+                            </div>
+                            <div class="gmb-skeleton-row">
+                                <div class="gmb-skeleton-box gmb-sk-ch"></div>
+                                <div class="gmb-skeleton-box gmb-sk-title"></div>
+                                <div class="gmb-skeleton-box gmb-sk-content"></div>
+                                <div class="gmb-skeleton-box gmb-sk-badge"></div>
+                            </div>
+                            <div class="gmb-skeleton-row">
+                                <div class="gmb-skeleton-box gmb-sk-ch"></div>
+                                <div class="gmb-skeleton-box gmb-sk-title"></div>
+                                <div class="gmb-skeleton-box gmb-sk-content"></div>
+                                <div class="gmb-skeleton-box gmb-sk-badge"></div>
+                            </div>
+                        </div>
                     </div>
                     <div id="gmb-ai-post-modal-content" class="gmb-hidden">
                         <p class="gmb-text-muted gmb-mb-12">Below are the AI-recommended SEO optimizations for this page. Uncheck or edit any items before applying.</p>
