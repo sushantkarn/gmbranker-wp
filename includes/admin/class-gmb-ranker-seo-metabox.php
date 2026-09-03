@@ -492,6 +492,9 @@ class GMB_Ranker_SEO_Metabox {
         if (!is_admin()) {
             return;
         }
+        global $post;
+        $post_id = ($post && isset($post->ID)) ? $post->ID : 0;
+        $focus_keyword = $post_id ? get_post_meta($post_id, '_gmb_ranker_focus_keyword', true) : '';
         ?>
         <!-- Single Page AI SEO Optimizer Modal (NeuronWriter-Style 3-Step Flow) -->
         <div id="gmb-ai-post-seo-modal" class="gmb-modal-overlay">
