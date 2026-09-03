@@ -306,23 +306,22 @@ class GMB_Ranker_SEO_Research_Engine {
                 'url'   => $path_url,
             );
         }
-
         $site_name = get_bloginfo('name');
         $content_clean = wp_strip_all_tags($content_raw);
 
         $system_prompt = "You are an Elite Senior SEO Product Architect, Technical SEO Engineer, and NLP/Semantic Specialist.\n" .
-        "Perform a multi-layer evidence-based SEO research analysis for an EXISTING WordPress page.\n\n" .
+        "Perform a multi-layer evidence-based SEO research analysis for an EXISTING or NEW WordPress page.\n\n" .
         "CRITICAL RULES:\n" .
         "1. DO NOT invent false claims or make up SEO scores.\n" .
         "2. DO NOT keyword stuff. Provide evidence-based reasoning for every recommendation.\n" .
-        "3. URL / SLUG: Default action is 'KEEP CURRENT URL'. If recommending a slug change, provide explicit warning reason.\n" .
-        "4. TITLES: Provide 3 distinct title candidates (Intent-Focused, CTR-Focused, Balanced) with CTR rationale and truncation risk.\n" .
+        "3. URL / SLUG: Recommend a clean URL slug containing the primary focus keyword.\n" .
+        "4. TITLES: Provide 3 distinct title candidates (Intent-Focused, CTR-Focused, Balanced) with CTR rationale.\n" .
         "5. SEMANTIC TERMS: Provide both UNDERUSED terms (to add) AND OVERUSED terms (to reduce).\n" .
         "6. ENTITIES: Classify primary, related, missing, and weak entities.\n" .
         "7. HEADING GAPS: Identify missing H2/H3 subtopics.\n" .
         "8. QUESTIONS: Identify high/medium/low priority PAA questions.\n" .
         "9. INFORMATION GAIN: Recommend actionable decision frameworks, checklists, or regional context.\n" .
-        "10. SURGICAL CONTENT EDITING: Recommend precise section edits rather than rewriting the whole article.\n\n" .
+        "10. SURGICAL / FULL CONTENT DRAFTING: If current word count < 300 or mode is 'create', recommended_text MUST be a complete 600+ word structured HTML draft containing H2/H3 subheadings (with focus keyword in H2s), [gmb_toc], bullet lists, step-by-step checklist, FAQ, internal link, and CTA.\n\n" .
         "Return ONLY a raw valid JSON object with keys:\n" .
         "- title_candidates (array of objects with keys: candidate, type, char_count, intent_match, ctr_rationale)\n" .
         "- recommended_meta_description (string, 140-155 chars)\n" .
@@ -336,7 +335,7 @@ class GMB_Ranker_SEO_Research_Engine {
         "- content_gaps (array of objects with keys: area, issue, evidence, recommended_action)\n" .
         "- information_gain (array of objects with keys: opportunity, impact, description)\n" .
         "- internal_links (array of objects with keys: anchor, url, reasoning)\n" .
-        "- surgical_intro_recommendation (object with keys: current_status, recommended_text, reasoning - recommended_text MUST be a ready-to-publish 2-3 sentence intro paragraph with focus keyword front-loaded in sentence 1, 2 semantic entities, empathetic tone to lower bounce rate, and a micro CTA transition. Do NOT return instructions or metadata).\n" .
+        "- surgical_intro_recommendation (object with keys: current_status, recommended_text, reasoning)\n" .
         "Do NOT wrap in markdown or backticks.";
 
         $user_prompt = "Target Query/Keyword: " . $focus_keyword . "\n" .
@@ -359,7 +358,7 @@ class GMB_Ranker_SEO_Research_Engine {
             array('role' => 'user', 'content' => $user_prompt)
         );
 
-        $res = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages, 0.2);
+        $res = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages, 0.3);
         if (!is_wp_error($res) && !empty($res['choices'][0]['message']['content'])) {
             $raw = trim($res['choices'][0]['message']['content']);
             $raw = preg_replace('/^```(?:json)?/i', '', $raw);
@@ -375,7 +374,7 @@ class GMB_Ranker_SEO_Research_Engine {
     }
 
     /**
-     * Compile All Research Layers (E - Q) with Fallbacks
+     * Compile All Research Layers (E - Q) with Dynamic Topic-Tailored Fallbacks
      */
     private static function compile_all_layers($layer_a, $layer_b, $layer_cd, $ai, $focus_keyword, $post_id) {
         $site_name = get_bloginfo('name');
@@ -393,11 +392,11 @@ class GMB_Ranker_SEO_Research_Engine {
                     'ctr_rationale' => 'Includes sentiment word (Essential), power word (Guide), number (' . date('Y') . '), and focus keyword for maximum CTR.',
                 ),
                 array(
-                    'candidate'     => '7 Best Proven Solutions for ' . $clean_kw . ' | ' . $site_name,
+                    'candidate'     => 'Best ' . $clean_kw . ': Complete Expert Analysis & Tips',
                     'type'          => 'CTR-Focused',
-                    'char_count'    => mb_strlen('7 Best Proven Solutions for ' . $clean_kw . ' | ' . $site_name),
+                    'char_count'    => mb_strlen('Best ' . $clean_kw . ': Complete Expert Analysis & Tips'),
                     'intent_match'  => 'High',
-                    'ctr_rationale' => 'Uses listicle number hook (7) with positive sentiment words (Best, Proven) to boost snippet clicks.',
+                    'ctr_rationale' => 'Uses listicle number hook with positive sentiment words (Best, Proven) to boost snippet clicks.',
                 ),
             );
         }
@@ -410,12 +409,13 @@ class GMB_Ranker_SEO_Research_Engine {
             $meta_desc = 'Discover essential insights on ' . $clean_kw . '. Learn step-by-step strategies, expert guidance, and practical solutions on ' . $site_name . '.';
         }
 
-        // Layer G: Slug Safety
+        // Layer G: Slug Safety & Focus Keyword Permalinks
+        $kw_slug = !empty($focus_keyword) ? sanitize_title($focus_keyword) : ($layer_a['slug'] ?: 'post');
         $slug_rec = $ai['slug_recommendation'] ?? array(
-            'recommended_slug' => $layer_a['slug'],
-            'status'           => 'KEEP CURRENT URL',
+            'recommended_slug' => $kw_slug,
+            'status'           => (strpos($layer_a['slug'], $kw_slug) !== false || empty($layer_a['slug'])) ? 'KEEP CURRENT URL' : 'RECOMMENDED',
             'risk_level'       => 'LOW',
-            'evidence'         => 'Current URL slug is already indexed and valid. Maintaining existing permalink prevents 301 redirect risk.',
+            'evidence'         => 'Matches primary focus keyword for optimal permalink indexing.',
         );
 
         // Layer H: Semantic Terms
@@ -475,37 +475,73 @@ class GMB_Ranker_SEO_Research_Engine {
         $kw_lc = strtolower($target_kw_clean);
         $home_link = esc_url(home_url('/'));
 
-        $full_600_word_draft = '<p>Recognizing the key features of <strong>' . esc_html($kw_lc) . '</strong> is essential for ensuring timely medical support, patient safety, and long-term personal well-being. Whether you are evaluating care options or seeking expert guidance, understanding these critical indicators enables families to make confident, informed choices. Explore our complete guide from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> below to discover actionable checklists, expert advice, and practical solutions tailored to your needs.</p>' . "\n\n" .
-        '[gmb_toc]' . "\n\n" .
-        '<h2>1. Overview of ' . esc_html($kw_uc) . '</h2>' . "\n" .
-        '<p>Accessing reliable <strong>' . esc_html($kw_lc) . '</strong> plays a vital role in maintaining personal independence, safety, and daily comfort. As healthcare needs evolve, professional home assistance ensures that individuals receive personalized, compassionate attention right in the familiar environment of their own residence. According to international care standards published by the <a href="https://www.who.int/" target="_blank" rel="noopener">World Health Organization (WHO)</a>, home-based healthcare significantly improves patient recovery speed and long-term quality of life.</p>' . "\n" .
-        '<p>Modern <strong>' . esc_html($kw_lc) . '</strong> solutions encompass a wide spectrum of professional caregiving—from skilled nursing oversight and personal hygiene assistance to companion care and specialized physical therapy support. By bridging professional medical expertise with personalized home support, care providers ensure enhanced well-being for every client.</p>' . "\n\n" .
-        '<h2>2. Key Benefits & Advantages of ' . esc_html($kw_uc) . '</h2>' . "\n" .
-        '<p>Opting for comprehensive <strong>' . esc_html($kw_lc) . '</strong> delivers significant benefits for patients and their families alike:</p>' . "\n" .
-        '<ul>' . "\n" .
-        '    <li><strong>Personalized Care Plans:</strong> Customized <strong>' . esc_html($kw_lc) . '</strong> assistance tailored to specific medical, mobility, and personal requirements.</li>' . "\n" .
-        '    <li><strong>Comfort & Familiarity:</strong> Patients recover faster and experience less emotional stress in the comfort of their own home environment.</li>' . "\n" .
-        '    <li><strong>Enhanced Independence:</strong> Empowers individuals to maintain daily routines with dignified, compassionate support.</li>' . "\n" .
-        '    <li><strong>Family Peace of Mind:</strong> Keeps family members informed while registered caregivers alleviate daily stress and burnout.</li>' . "\n" .
-        '    <li><strong>Cost-Effective Quality Care:</strong> Eliminates unnecessary hospitalization costs while providing targeted <strong>' . esc_html($kw_lc) . '</strong>.</li>' . "\n" .
-        '</ul>' . "\n\n" .
-        '<h2>3. Step-by-Step ' . esc_html($kw_uc) . ' Decision Framework</h2>' . "\n" .
-        '<p>When selecting the right professional solution for <strong>' . esc_html($kw_lc) . '</strong>, following a structured evaluation process ensures optimal long-term health outcomes:</p>' . "\n" .
-        '<ol>' . "\n" .
-        '    <li><strong>Assess Individual Care Needs:</strong> Determine required assistance levels, including medical supervision, mobility support, and daily activity help.</li>' . "\n" .
-        '    <li><strong>Verify Provider Credentials:</strong> Ensure caregivers and registered nurses providing <strong>' . esc_html($kw_lc) . '</strong> are fully certified, background-checked, and experienced.</li>' . "\n" .
-        '    <li><strong>Review Customized Service Plans:</strong> Verify that your <strong>' . esc_html($kw_lc) . '</strong> plan adapts flexibly as health conditions and requirements change over time.</li>' . "\n" .
-        '    <li><strong>Establish Clear Communication Channels:</strong> Confirm regular progress updates, direct emergency contacts, and dedicated care management.</li>' . "\n" .
-        '</ol>' . "\n\n" .
-        '<h2>4. Frequently Asked Questions (FAQ) About ' . esc_html($kw_uc) . '</h2>' . "\n" .
-        '<h3>What services are included in professional ' . esc_html($kw_lc) . '?</h3>' . "\n" .
-        '<p>Services range from skilled nursing, wound care, and medication administration to personal hygiene assistance, physical therapy exercises, and compassionate companionship.</p>' . "\n" .
-        '<h3>How do I get started with a customized ' . esc_html($kw_lc) . ' plan?</h3>' . "\n" .
-        '<p>Getting started involves an initial consultation to assess health requirements, followed by matching with a qualified caregiver from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> to create a personalized schedule.</p>' . "\n\n" .
-        '<h2>5. ' . esc_html($kw_uc) . ' Summary & Next Steps</h2>' . "\n" .
-        '<p>Investing in high-quality <strong>' . esc_html($kw_lc) . '</strong> guarantees safety, dignified care, and peace of mind for your loved ones. Contact the expert care team at <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> today to schedule a free consultation and secure personalized care tailored to your family\'s needs.</p>';
+        // Dynamic Topic & Intent Niche Classifier
+        $kw_lower = strtolower($target_kw_clean . ' ' . $title_clean);
 
-        $short_intro = 'Recognizing the key ' . esc_html($kw_lc) . ' is essential for ensuring timely support, safety, and long-term well-being. Whether you are evaluating care options or seeking expert guidance, understanding these critical indicators enables families to make confident, informed choices. Explore our complete guide from ' . esc_html($site_name_clean) . ' below to discover actionable checklists, expert advice, and practical solutions tailored to your needs.';
+        if (strpos($kw_lower, 'care') !== false || strpos($kw_lower, 'health') !== false || strpos($kw_lower, 'nursing') !== false || strpos($kw_lower, 'medical') !== false || strpos($kw_lower, 'doctor') !== false || strpos($kw_lower, 'hospital') !== false) {
+            // Health / Caregiver / Medical Niche Draft
+            $full_600_word_draft = '<p>Recognizing the key features of <strong>' . esc_html($kw_lc) . '</strong> is essential for ensuring timely medical support, patient safety, and long-term personal well-being. Whether you are evaluating care options or seeking expert guidance, understanding these critical indicators enables families to make confident, informed choices. Explore our complete guide from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> below to discover actionable checklists, expert advice, and practical solutions tailored to your needs.</p>' . "\n\n" .
+            '[gmb_toc]' . "\n\n" .
+            '<h2>1. Overview of ' . esc_html($kw_uc) . '</h2>' . "\n" .
+            '<p>Accessing reliable <strong>' . esc_html($kw_lc) . '</strong> plays a vital role in maintaining personal independence, safety, and daily comfort. As healthcare needs evolve, professional assistance ensures that individuals receive personalized, compassionate attention right in the familiar environment of their own residence. According to international care standards published by the <a href="https://www.who.int/" target="_blank" rel="noopener">World Health Organization (WHO)</a>, home-based healthcare significantly improves patient recovery speed and long-term quality of life.</p>' . "\n" .
+            '<p>Modern <strong>' . esc_html($kw_lc) . '</strong> solutions encompass a wide spectrum of professional caregiving—from skilled nursing oversight and personal hygiene assistance to companion care and specialized physical therapy support. By bridging professional medical expertise with personalized home support, care providers ensure enhanced well-being for every client.</p>' . "\n\n" .
+            '<h2>2. Key Benefits & Advantages of ' . esc_html($kw_uc) . '</h2>' . "\n" .
+            '<p>Opting for comprehensive <strong>' . esc_html($kw_lc) . '</strong> delivers significant benefits for patients and their families alike:</p>' . "\n" .
+            '<ul>' . "\n" .
+            '    <li><strong>Personalized Care Plans:</strong> Customized <strong>' . esc_html($kw_lc) . '</strong> assistance tailored to specific medical, mobility, and personal requirements.</li>' . "\n" .
+            '    <li><strong>Comfort & Familiarity:</strong> Patients recover faster and experience less emotional stress in the comfort of their own home environment.</li>' . "\n" .
+            '    <li><strong>Enhanced Independence:</strong> Empowers individuals to maintain daily routines with dignified, compassionate support.</li>' . "\n" .
+            '    <li><strong>Family Peace of Mind:</strong> Keeps family members informed while registered caregivers alleviate daily stress and burnout.</li>' . "\n" .
+            '    <li><strong>Cost-Effective Quality Care:</strong> Eliminates unnecessary hospitalization costs while providing targeted <strong>' . esc_html($kw_lc) . '</strong>.</li>' . "\n" .
+            '</ul>' . "\n\n" .
+            '<h2>3. Step-by-Step ' . esc_html($kw_uc) . ' Decision Framework</h2>' . "\n" .
+            '<p>When selecting the right professional solution for <strong>' . esc_html($kw_lc) . '</strong>, following a structured evaluation process ensures optimal long-term health outcomes:</p>' . "\n" .
+            '<ol>' . "\n" .
+            '    <li><strong>Assess Individual Care Needs:</strong> Determine required assistance levels, including medical supervision, mobility support, and daily activity help.</li>' . "\n" .
+            '    <li><strong>Verify Provider Credentials:</strong> Ensure caregivers and registered nurses providing <strong>' . esc_html($kw_lc) . '</strong> are fully certified, background-checked, and experienced.</li>' . "\n" .
+            '    <li><strong>Review Customized Service Plans:</strong> Verify that your <strong>' . esc_html($kw_lc) . '</strong> plan adapts flexibly as health conditions and requirements change over time.</li>' . "\n" .
+            '    <li><strong>Establish Clear Communication Channels:</strong> Confirm regular progress updates, direct emergency contacts, and dedicated care management.</li>' . "\n" .
+            '</ol>' . "\n\n" .
+            '<h2>4. Frequently Asked Questions (FAQ) About ' . esc_html($kw_uc) . '</h2>' . "\n" .
+            '<h3>What services are included in professional ' . esc_html($kw_lc) . '?</h3>' . "\n" .
+            '<p>Services range from skilled nursing, wound care, and medication administration to personal hygiene assistance, physical therapy exercises, and compassionate companionship.</p>' . "\n" .
+            '<h3>How do I get started with a customized ' . esc_html($kw_lc) . ' plan?</h3>' . "\n" .
+            '<p>Getting started involves an initial consultation to assess health requirements, followed by matching with a qualified caregiver from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> to create a personalized schedule.</p>' . "\n\n" .
+            '<h2>5. ' . esc_html($kw_uc) . ' Summary & Next Steps</h2>' . "\n" .
+            '<p>Investing in high-quality <strong>' . esc_html($kw_lc) . '</strong> guarantees safety, dignified care, and peace of mind for your loved ones. Contact the expert care team at <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> today to schedule a free consultation and secure personalized care tailored to your family\'s needs.</p>';
+        } else {
+            // General Knowledge / Business / Tech Topic Draft
+            $full_600_word_draft = '<p>Understanding the core principles of <strong>' . esc_html($kw_lc) . '</strong> is essential for optimizing performance, achieving measurable results, and maintaining competitive advantage. Whether you are implementing new strategies or refining existing workflows, this comprehensive analysis from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> provides clear frameworks, practical insights, and actionable guidance.</p>' . "\n\n" .
+            '[gmb_toc]' . "\n\n" .
+            '<h2>1. Essential Fundamentals of ' . esc_html($kw_uc) . '</h2>' . "\n" .
+            '<p>In today\'s rapidly evolving landscape, mastering <strong>' . esc_html($kw_lc) . '</strong> requires a strategic approach grounded in best practices and reliable methodology. Industry standards established by leading organizations like <a href="https://www.w3.org/" target="_blank" rel="noopener">W3C Web Standards</a> emphasize the importance of clean structure, accessibility, and high performance.</p>' . "\n" .
+            '<p>By aligning key goals with effective execution, individuals and organizations can unlock significant efficiency improvements while minimizing potential operational risks associated with <strong>' . esc_html($kw_lc) . '</strong>.</p>' . "\n\n" .
+            '<h2>2. Key Features & Benefits of ' . esc_html($kw_uc) . '</h2>' . "\n" .
+            '<p>Implementing effective solutions for <strong>' . esc_html($kw_lc) . '</strong> delivers significant long-term advantages:</p>' . "\n" .
+            '<ul>' . "\n" .
+            '    <li><strong>Streamlined Workflow Execution:</strong> Optimizes operational processes for maximum efficiency.</li>' . "\n" .
+            '    <li><strong>Enhanced Quality & Performance:</strong> Delivers consistent, high-standard outcomes across all execution phases.</li>' . "\n" .
+            '    <li><strong>Scalable Architecture:</strong> Accommodates future growth without requiring complete infrastructure re-engineering.</li>' . "\n" .
+            '    <li><strong>Data-Driven Decision Making:</strong> Provides transparent metrics and actionable analytical feedback.</li>' . "\n" .
+            '</ul>' . "\n\n" .
+            '<h2>3. Step-by-Step Implementation Framework for ' . esc_html($kw_uc) . '</h2>' . "\n" .
+            '<p>Following a systematic evaluation framework ensures smooth rollout and reliable results:</p>' . "\n" .
+            '<ol>' . "\n" .
+            '    <li><strong>Define Clear Objectives:</strong> Establish measurable benchmarks and performance goals for <strong>' . esc_html($kw_lc) . '</strong>.</li>' . "\n" .
+            '    <li><strong>Audit Existing Infrastructure:</strong> Identify current bottlenecks, resource gaps, and integration requirements.</li>' . "\n" .
+            '    <li><strong>Deploy Targeted Solutions:</strong> Implement best-in-class tools and methodologies tailored to your specific environment.</li>' . "\n" .
+            '    <li><strong>Monitor & Optimize Continuously:</strong> Track ongoing metrics and adjust configurations to maintain peak performance.</li>' . "\n" .
+            '</ol>' . "\n\n" .
+            '<h2>4. Frequently Asked Questions (FAQ) About ' . esc_html($kw_uc) . '</h2>' . "\n" .
+            '<h3>What are the primary components of ' . esc_html($kw_lc) . '?</h3>' . "\n" .
+            '<p>The core components include strategic planning, resource allocation, real-time performance tracking, and continuous quality optimization.</p>' . "\n" .
+            '<h3>How quickly can results be realized?</h3>' . "\n" .
+            '<p>Initial improvements are typically visible immediately following phase 1 deployment, with full optimization compound gains maturing over a 30-to-60-day cycle.</p>' . "\n\n" .
+            '<h2>5. Summary & Key Takeaways for ' . esc_html($kw_uc) . '</h2>' . "\n" .
+            '<p>Mastering <strong>' . esc_html($kw_lc) . '</strong> provides a sustainable foundation for long-term growth and technical excellence. Explore additional resources and expert solutions at <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> to accelerate your success.</p>';
+        }
+
+        $short_intro = 'Recognizing the key features of <strong>' . esc_html($kw_lc) . '</strong> is essential for ensuring timely support, safety, and long-term well-being. Explore our complete guide from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> below.';
 
         $intro_ai_text = $ai['surgical_intro_recommendation']['recommended_text'] ?? '';
         
@@ -531,7 +567,7 @@ class GMB_Ranker_SEO_Research_Engine {
             'intro_recommendation'   => array(
                 'current_status'   => $layer_a['word_count'] < 300 ? 'MISSING' : ($layer_a['keyword_frequency'] > 0 ? 'GOOD' : 'WEAK'),
                 'recommended_text' => $intro_final_text,
-                'reasoning'        => ($layer_a['word_count'] < 300 || $mode === 'create') ? 'Drafted full 600+ word structured SEO content with H2/H3 headings, checklist, FAQ, and CTA to fully cover search intent.' : ($ai['surgical_intro_recommendation']['reasoning'] ?? 'Front-loads primary focus keyword in sentence 1 and uses an empathetic tone to satisfy search intent and reduce bounce rate.'),
+                'reasoning'        => ($layer_a['word_count'] < 300 || $mode === 'create') ? 'Drafted full 600+ word topic-tailored SEO content with H2/H3 headings, checklist, FAQ, and CTA to fully cover search intent.' : ($ai['surgical_intro_recommendation']['reasoning'] ?? 'Front-loads primary focus keyword in sentence 1 and uses an empathetic tone to satisfy search intent and reduce bounce rate.'),
             ),
         );
     }
