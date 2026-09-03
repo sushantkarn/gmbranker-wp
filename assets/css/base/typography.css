@@ -2,78 +2,118 @@
    GMB Ranker SEO — Typography Classes & Standards
    ========================================================================== */
 
-.gmb-admin-wrap h1, .rm-wrap h1, .gmb-heading-1 {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--gmb-text-main, #0f172a);
-    margin: 0 0 var(--gmb-space-sm, 8px) 0;
-    line-height: 1.25;
+.gmb-admin-wrap h1,
+.rm-wrap h1,
+.gmb-heading-1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gmb-text-main, #0f172a);
+  margin: 0 0 var(--gmb-space-sm, 8px) 0;
+  line-height: 1.25;
 }
 
-.gmb-admin-wrap h2, .rm-wrap h2, .gmb-heading-2 {
-    font-size: 17px;
-    font-weight: 600;
-    color: var(--gmb-text-main, #0f172a);
-    margin: 0 0 var(--gmb-space-sm, 8px) 0;
-    line-height: 1.3;
+.gmb-admin-wrap h2,
+.rm-wrap h2,
+.gmb-heading-2 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--gmb-text-main, #0f172a);
+  margin: 0 0 var(--gmb-space-sm, 8px) 0;
+  line-height: 1.3;
 }
 
-.gmb-admin-wrap h3, .rm-wrap h3, .gmb-heading-3 {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--gmb-text-main, #0f172a);
-    margin: 0 0 var(--gmb-space-xs, 4px) 0;
-    line-height: 1.4;
+.gmb-admin-wrap h3,
+.rm-wrap h3,
+.gmb-heading-3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gmb-text-main, #0f172a);
+  margin: 0 0 var(--gmb-space-xs, 4px) 0;
+  line-height: 1.4;
 }
 
-.gmb-admin-wrap h4, .rm-wrap h4, .gmb-heading-4 {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--gmb-text-secondary, #334155);
-    margin: 0 0 var(--gmb-space-xs, 4px) 0;
+.gmb-admin-wrap h4,
+.rm-wrap h4,
+.gmb-heading-4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gmb-text-secondary, #334155);
+  margin: 0 0 var(--gmb-space-xs, 4px) 0;
 }
 
-.gmb-text-muted, .rm-wrap p.description {
-    color: var(--gmb-text-muted, #64748b);
-    font-size: 12.5px;
-    line-height: 1.5;
-    margin: 0;
+.gmb-text-muted,
+.rm-wrap p.description {
+  color: var(--gmb-text-muted, #64748b);
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .gmb-text-sm {
-    font-size: 12px;
+  font-size: 12px;
 }
 
 .gmb-text-xs {
-    font-size: 11px;
+  font-size: 11px;
 }
 
 .gmb-text-bold {
-    font-weight: 600;
+  font-weight: 600;
 }
 
 .gmb-code-font {
-    font-family: var(--gmb-font-mono, monospace);
-    font-size: 12px;
+  font-family: var(--gmb-font-mono, monospace);
+  font-size: 12px;
 }
 
 /* Status & Color Helpers */
-.gmb-text-success { color: var(--gmb-success-text, #16a34a); font-weight: 600; }
-.gmb-text-danger { color: var(--gmb-danger, #ef4444); font-weight: 600; }
-.gmb-text-warning { color: var(--gmb-warning, #d97706); font-weight: 600; }
-.gmb-text-primary { color: var(--gmb-primary, #466afa); font-weight: 600; }
+.gmb-text-success {
+  color: var(--gmb-success-text, #16a34a);
+  font-weight: 600;
+}
+.gmb-text-danger {
+  color: var(--gmb-danger, #ef4444);
+  font-weight: 600;
+}
+.gmb-text-warning {
+  color: var(--gmb-warning, #d97706);
+  font-weight: 600;
+}
+.gmb-text-primary {
+  color: var(--gmb-primary, #466afa);
+  font-weight: 600;
+}
 
 /* Alignment Helpers */
-.gmb-text-center { text-align: center; }
-.gmb-text-right { text-align: right; }
-.gmb-text-left { text-align: left; }
+.gmb-text-center {
+  text-align: center;
+}
+.gmb-text-right {
+  text-align: right;
+}
+.gmb-text-left {
+  text-align: left;
+}
 
 /* Border & Margin Utilities */
-.gmb-border-bottom { border-bottom: 1px solid var(--gmb-border-divider, #f1f5f9); }
-.gmb-mb-8 { margin-bottom: 8px; }
-.gmb-mb-12 { margin-bottom: 12px; }
-.gmb-mb-14 { margin-bottom: 14px; }
-.gmb-mb-16 { margin-bottom: 16px; }
-.gmb-mb-20 { margin-bottom: 20px; }
-.gmb-mb-24 { margin-bottom: 24px; }
-
+.gmb-border-bottom {
+  border-bottom: 1px solid var(--gmb-border-divider, #f1f5f9);
+}
+.gmb-mb-8 {
+  margin-bottom: 8px;
+}
+.gmb-mb-12 {
+  margin-bottom: 12px;
+}
+.gmb-mb-14 {
+  margin-bottom: 14px;
+}
+.gmb-mb-16 {
+  margin-bottom: 16px;
+}
+.gmb-mb-20 {
+  margin-bottom: 20px;
+}
+.gmb-mb-24 {
+  margin-bottom: 24px;
+}

@@ -57,14 +57,18 @@ gmbranker-wp/
 All API operations utilize a secure REST namespace to prevent global database access.
 
 ### 1. API Token Authentication
+
 All GMB Ranker HTTP requests must pass a valid secret token in the request headers:
+
 ```http
 X-GMB-Ranker-Key: [your_gmb_ranker_api_key]
 Content-Type: application/json
 ```
 
 ### 2. File & Directory Safeguards
+
 To prevent arbitrary file executes, every PHP source file begins with an execution guard check:
+
 ```php
 if (!defined('ABSPATH')) {
     exit;
@@ -77,15 +81,15 @@ if (!defined('ABSPATH')) {
 
 ### Endpoints Reference
 
-| Endpoint | Method | Params | Description |
-| :--- | :--- | :--- | :--- |
-| `/handshake` | `GET` | None | Verify credentials and handshake. |
-| `/seo-data` | `GET` | `page`, `per_page` | Fetch page titles, meta descriptions, and indexing statuses. |
-| `/update-seo` | `POST` | Body payload | Updates meta keys or page content HTML (compatible with Elementor layouts). |
-| `/page-content` | `GET` | `id` | Fetches raw content HTML for a singular post or page. |
-| `/redirects` | `GET` / `POST` | Body payload | Fetches 404 monitors log entries or registers 301/302 redirect rules. |
-| `/sitemap` | `POST` | None | Triggers writing dynamically generated XML sitemaps to disk. |
-| `/content-ai` | `POST` | Body payload | Analyzes and optimizes content suggestions using vision/AI. |
+| Endpoint        | Method         | Params             | Description                                                                 |
+| :-------------- | :------------- | :----------------- | :-------------------------------------------------------------------------- |
+| `/handshake`    | `GET`          | None               | Verify credentials and handshake.                                           |
+| `/seo-data`     | `GET`          | `page`, `per_page` | Fetch page titles, meta descriptions, and indexing statuses.                |
+| `/update-seo`   | `POST`         | Body payload       | Updates meta keys or page content HTML (compatible with Elementor layouts). |
+| `/page-content` | `GET`          | `id`               | Fetches raw content HTML for a singular post or page.                       |
+| `/redirects`    | `GET` / `POST` | Body payload       | Fetches 404 monitors log entries or registers 301/302 redirect rules.       |
+| `/sitemap`      | `POST`         | None               | Triggers writing dynamically generated XML sitemaps to disk.                |
+| `/content-ai`   | `POST`         | Body payload       | Analyzes and optimizes content suggestions using vision/AI.                 |
 
 ---
 
@@ -99,4 +103,5 @@ if (!defined('ABSPATH')) {
 ---
 
 ## 📄 License
+
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

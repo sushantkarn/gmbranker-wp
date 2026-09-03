@@ -13,6 +13,12 @@ class GMB_Ranker_SEO_REST_API {
             'permission_callback' => array($this, 'authenticate_request'),
         ));
 
+        register_rest_route('gmb-ranker/v1', '/snapshot', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'handle_handshake'),
+            'permission_callback' => array($this, 'authenticate_request'),
+        ));
+
         register_rest_route('gmb-ranker/v1', '/seo-data', array(
             'methods' => 'GET',
             'callback' => array($this, 'handle_get_seo_data'),
