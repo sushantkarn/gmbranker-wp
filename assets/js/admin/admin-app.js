@@ -4261,6 +4261,7 @@ function initGmbAdminApp() {
   // Integrations: Generate IndexNow API Key
   const genIndexNowBtn = document.getElementById("gmb-generate-indexnow-key");
   const indexNowInput = document.getElementById("gmb_indexnow_key_input");
+  const indexNowHidden = document.getElementById("gmb_ranker_indexnow_key_hidden");
   if (genIndexNowBtn && indexNowInput) {
     genIndexNowBtn.addEventListener("click", function () {
       let hex = "";
@@ -4269,6 +4270,7 @@ function initGmbAdminApp() {
         hex += chars.charAt(Math.floor(Math.random() * chars.length));
       }
       indexNowInput.value = hex;
+      if (indexNowHidden) indexNowHidden.value = hex;
     });
   }
 
@@ -4291,6 +4293,49 @@ function initGmbAdminApp() {
           document.execCommand("copy");
           alert("Webhook URL copied to clipboard!");
         });
+    });
+  }
+
+  // Integrations: Test Outbound Webhook Trigger
+  const testWebhookBtn = document.getElementById("gmb-test-webhook-btn");
+  const outboundWebhookInput = document.getElementById("gmb_webhook_outbound_url");
+  if (testWebhookBtn && outboundWebhookInput) {
+    testWebhookBtn.addEventListener("click", function () {
+      const url = outboundWebhookInput.value.trim();
+      if (!url) {
+        alert("Please enter a valid Outbound Webhook Trigger URL first.");
+        return;
+      }
+
+      testWebhookBtn.disabled = true;
+      testWebhookBtn.textContent = "Testing...";
+
+      const formData = new FormData();
+      formData.append("action", "gmb_test_outbound_webhook");
+      if (typeof gmb_ranker_admin !== "undefined") {
+        formData.append("nonce", gmb_ranker_admin.admin_nonce || gmb_ranker_admin.nonce);
+      }
+      formData.append("target_url", url);
+
+      fetch(ajaxurl, {
+        method: "POST",
+        body: new URLSearchParams(formData)
+      })
+      .then(res => res.json())
+      .then(data => {
+        testWebhookBtn.disabled = false;
+        testWebhookBtn.textContent = "Test Trigger ↗";
+        if (data.success) {
+          alert("Webhook Test Successful! Endpoint returned HTTP " + (data.data.code || 200));
+        } else {
+          alert("Webhook Test Failed: " + (data.data || "Could not reach webhook endpoint"));
+        }
+      })
+      .catch(err => {
+        testWebhookBtn.disabled = false;
+        testWebhookBtn.textContent = "Test Trigger ↗";
+        alert("Error testing webhook: " + err.message);
+      });
     });
   }
 

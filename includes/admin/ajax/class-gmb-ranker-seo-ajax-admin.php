@@ -40,6 +40,7 @@ class GMB_Ranker_SEO_Ajax_Admin {
         add_action('wp_ajax_gmb_auto_fix_display_names', array($this, 'ajax_auto_fix_display_names'));
         add_action('wp_ajax_gmb_ai_suggest_404_redirects', array($this, 'ajax_ai_suggest_404_redirects'));
         add_action('wp_ajax_gmb_apply_ai_redirects', array($this, 'ajax_apply_ai_redirects'));
+        add_action('wp_ajax_gmb_test_outbound_webhook', array($this, 'ajax_test_outbound_webhook'));
     }
 
     public function ajax_auto_fix_display_names() {
@@ -1292,6 +1293,54 @@ class GMB_Ranker_SEO_Ajax_Admin {
             'message' => sprintf('%d AI redirection rules successfully created & 404 logs cleaned!', $applied_count),
             'count'   => $applied_count
         ));
+    }
+
+    public function ajax_test_outbound_webhook() {
+        $this->enforce_ajax_csrf_protection();
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $target_url = isset($_POST['target_url']) ? esc_url_raw(wp_unslash($_POST['target_url'])) : '';
+        if (empty($target_url)) {
+            wp_send_json_error('Please provide a valid target webhook URL.');
+        }
+
+        $secret = get_option('gmb_integration_webhook_secret', '');
+        $payload = array(
+            'event'     => 'test_ping',
+            'site_name' => get_bloginfo('name'),
+            'site_url'  => site_url(),
+            'timestamp' => time(),
+            'message'   => 'Test payload sent from GMB Ranker SEO WordPress Plugin'
+        );
+
+        $json_payload = wp_json_encode($payload);
+        $signature = !empty($secret) ? hash_hmac('sha256', $json_payload, $secret) : '';
+
+        $response = wp_remote_post($target_url, array(
+            'headers' => array(
+                'Content-Type'        => 'application/json; charset=utf-8',
+                'X-GMB-Ranker-Event'  => 'test_ping',
+                'X-GMB-Ranker-Sig'    => $signature,
+            ),
+            'body'    => $json_payload,
+            'timeout' => 15,
+        ));
+
+        if (is_wp_error($response)) {
+            wp_send_json_error($response->get_error_message());
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+        if ($code >= 200 && $code < 300) {
+            wp_send_json_success(array(
+                'code'    => $code,
+                'message' => 'Outbound webhook trigger tested successfully! Endpoint returned HTTP ' . $code
+            ));
+        } else {
+            wp_send_json_error('Endpoint returned HTTP error code: ' . $code);
+        }
     }
 }
 

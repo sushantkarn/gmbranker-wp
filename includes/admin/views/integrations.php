@@ -19,7 +19,10 @@ if (!defined('ABSPATH')) exit;
                 $ollama_url = get_option('gmb_ai_ollama_url', 'http://localhost:11434');
                 $ollama_model = get_option('gmb_ai_ollama_model', 'llama3');
 
-                $indexnow_key = get_option('gmb_integration_indexnow_key', '');
+                $indexnow_key = get_option('gmb_ranker_indexnow_key', get_option('gmb_integration_indexnow_key', ''));
+                if (empty($indexnow_key) && class_exists('GMB_Ranker_SEO_Instant_Indexing')) {
+                    $indexnow_key = GMB_Ranker_SEO_Instant_Indexing::get_indexnow_key();
+                }
                 $indexnow_auto = get_option('gmb_integration_indexnow_auto', '1');
                 $webhook_url = get_option('gmb_integration_webhook_url', '');
                 $webhook_secret = get_option('gmb_integration_webhook_secret', '');
@@ -243,6 +246,7 @@ if (!defined('ABSPATH')) exit;
                                     <label class="gmb-form-label">IndexNow API Key</label>
                                     <div class="gmb-flex-gap-sm">
                                         <input type="text" id="gmb_indexnow_key_input" name="gmb_integration_indexnow_key" value="<?php echo esc_attr($indexnow_key); ?>" placeholder="32-character hexadecimal key" class="gmb-integration-input gmb-flex-1" />
+                                        <input type="hidden" id="gmb_ranker_indexnow_key_hidden" name="gmb_ranker_indexnow_key" value="<?php echo esc_attr($indexnow_key); ?>" />
                                         <button type="button" id="gmb-generate-indexnow-key" class="gmb-btn gmb-btn-secondary gmb-btn-key-toggle">Generate</button>
                                     </div>
                                 </div>
@@ -285,7 +289,10 @@ if (!defined('ABSPATH')) exit;
 
                             <div>
                                 <label class="gmb-form-label">Outbound Webhook Trigger URL (Optional)</label>
-                                <input type="url" name="gmb_integration_webhook_url" value="<?php echo esc_attr($webhook_url); ?>" placeholder="https://hooks.zapier.com/hooks/catch/..." class="gmb-integration-input" />
+                                <div class="gmb-flex-gap-sm">
+                                    <input type="url" id="gmb_webhook_outbound_url" name="gmb_integration_webhook_url" value="<?php echo esc_attr($webhook_url); ?>" placeholder="https://hooks.zapier.com/hooks/catch/..." class="gmb-integration-input gmb-flex-1" />
+                                    <button type="button" id="gmb-test-webhook-btn" class="gmb-btn gmb-btn-secondary gmb-btn-key-toggle">Test Trigger &nearr;</button>
+                                </div>
                                 <p class="gmb-form-help">GMB Ranker will post payload JSON to this URL whenever SEO audit scores change or critical 404 thresholds are exceeded.</p>
                             </div>
                         </div>

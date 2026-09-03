@@ -254,6 +254,7 @@ class GMB_Ranker_SEO_Settings_Registry {
             'gmb_integration_gmb_sync'        => 'sanitize_text_field',
             'gmb_integration_ga4_anonymize'   => 'sanitize_text_field',
             'gmb_integration_indexnow_key'    => 'sanitize_text_field',
+            'gmb_ranker_indexnow_key'         => 'sanitize_text_field',
             'gmb_integration_indexnow_auto'   => 'sanitize_text_field',
             'gmb_integration_webhook_url'     => 'esc_url_raw',
             'gmb_integration_webhook_secret'  => 'sanitize_text_field',
