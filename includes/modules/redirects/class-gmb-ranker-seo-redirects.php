@@ -219,7 +219,7 @@ class GMB_Ranker_SEO_Redirects {
             $match_type = isset($rule['match_type']) ? $rule['match_type'] : 'exact';
             
             if ($match_type === 'exact') {
-                $is_match = ($request_path === $source);
+                $is_match = ($request_path === $source || rtrim($request_path, '/') === rtrim($source, '/'));
             } elseif ($match_type === 'contains') {
                 $is_match = (strpos($request_path, $source_path) !== false);
             } elseif ($match_type === 'start') {
@@ -251,7 +251,8 @@ class GMB_Ranker_SEO_Redirects {
                 if (strpos($destination, 'http://') === 0 || strpos($destination, 'https://') === 0) {
                     wp_redirect($destination, $code);
                 } else {
-                    wp_redirect(site_url($destination), $code);
+                    $target_url = '/' . ltrim($destination, '/');
+                    wp_redirect(home_url($target_url), $code);
                 }
                 exit;
             }

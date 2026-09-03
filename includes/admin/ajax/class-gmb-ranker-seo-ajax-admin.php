@@ -431,38 +431,49 @@ class GMB_Ranker_SEO_Ajax_Admin {
         if (!is_array($rules)) {
             $rules = array();
         }
-        
+
+        $norm_source = strtolower(rtrim(trim($source), '/'));
         $updated = false;
-        if (!empty($id)) {
-            foreach ($rules as &$rule) {
-                if (isset($rule['id']) && $rule['id'] === $id) {
-                    $rule['source'] = $source;
-                    $rule['destination'] = $destination;
-                    $rule['code'] = $code;
-                    $rule['match_type'] = $match_type;
-                    $rule['status'] = $status;
-                    $rule['note'] = $note;
-                    $updated = true;
-                    break;
+
+        foreach ($rules as &$rule) {
+            $r_id = isset($rule['id']) ? $rule['id'] : '';
+            $r_src = isset($rule['source']) ? strtolower(rtrim(trim($rule['source']), '/')) : '';
+
+            $match_by_id = (!empty($id) && $r_id === $id);
+            $match_by_src = (!empty($r_src) && $r_src === $norm_source);
+
+            if ($match_by_id || $match_by_src) {
+                if (empty($rule['id'])) {
+                    $rule['id'] = !empty($id) ? $id : uniqid('r_');
                 }
+                $rule['source']      = $source;
+                $rule['destination'] = $destination;
+                $rule['code']        = $code;
+                $rule['match_type']  = $match_type;
+                $rule['status']      = $status;
+                $rule['note']        = $note;
+                $updated             = true;
+                break;
             }
         }
 
         if (!$updated) {
             $rules[] = array(
-                'id' => uniqid('r_'),
-                'source' => $source,
-                'destination' => $destination,
-                'code' => $code,
-                'match_type' => $match_type,
-                'status' => $status,
-                'note' => $note,
-                'hits' => 0,
-                'created' => time(),
+                'id'            => !empty($id) ? $id : uniqid('r_'),
+                'source'        => $source,
+                'destination'   => $destination,
+                'code'          => $code,
+                'match_type'    => $match_type,
+                'status'        => $status,
+                'note'          => $note,
+                'hits'          => 0,
+                'created'       => time(),
                 'last_accessed' => ''
             );
         }
 
+        // Run deduplication and cleanup
+        $rules = $this->sanitize_redirects_rules($rules);
         update_option('gmb_ranker_redirects_rules', $rules);
         wp_send_json_success($rules);
     }

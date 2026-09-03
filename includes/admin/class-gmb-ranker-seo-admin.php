@@ -408,6 +408,12 @@ class GMB_Ranker_SEO_Admin {
         $redirects_rules      = get_option('gmb_ranker_redirects_rules', array());
         if (!is_array($redirects_rules)) {
             $redirects_rules = array();
+        } else {
+            $sanitized = self::sanitize_redirects_rules($redirects_rules);
+            if ($sanitized !== $redirects_rules) {
+                $redirects_rules = $sanitized;
+                update_option('gmb_ranker_redirects_rules', $redirects_rules);
+            }
         }
         $logs_404             = get_option('gmb_ranker_404_logs', array());
 
@@ -604,14 +610,39 @@ class GMB_Ranker_SEO_Admin {
             return array();
         }
         $clean = array();
+        $seen_sources = array();
         foreach ($input as $rule) {
-            if (is_array($rule) && !empty($rule['source'])) {
-                $clean[] = array(
-                    'source' => sanitize_text_field($rule['source']),
-                    'target' => sanitize_text_field($rule['target']),
-                    'type'   => isset($rule['type']) ? sanitize_text_field($rule['type']) : '301',
-                    'active' => isset($rule['active']) ? (int) $rule['active'] : 1,
-                );
+            if (is_array($rule)) {
+                $src = isset($rule['source']) ? sanitize_text_field(wp_unslash($rule['source'])) : '';
+                $dest = isset($rule['destination']) ? sanitize_text_field(wp_unslash($rule['destination'])) : (isset($rule['target']) ? sanitize_text_field(wp_unslash($rule['target'])) : '');
+                
+                if (!empty($src)) {
+                    $src_key = strtolower(rtrim(trim($src), '/'));
+                    if (isset($seen_sources[$src_key])) {
+                        // If previous entry had empty destination and this one has destination, update it
+                        $prev_idx = $seen_sources[$src_key];
+                        if (empty($clean[$prev_idx]['destination']) && !empty($dest)) {
+                            $clean[$prev_idx]['destination'] = $dest;
+                        }
+                        continue;
+                    }
+
+                    $idx = count($clean);
+                    $seen_sources[$src_key] = $idx;
+
+                    $clean[] = array(
+                        'id'            => isset($rule['id']) && !empty($rule['id']) ? sanitize_text_field(wp_unslash($rule['id'])) : uniqid('r_'),
+                        'source'        => $src,
+                        'destination'   => $dest,
+                        'code'          => isset($rule['code']) ? intval($rule['code']) : (isset($rule['type']) ? intval($rule['type']) : 301),
+                        'match_type'    => isset($rule['match_type']) ? sanitize_text_field(wp_unslash($rule['match_type'])) : 'exact',
+                        'status'        => isset($rule['status']) ? sanitize_text_field(wp_unslash($rule['status'])) : (isset($rule['active']) && !$rule['active'] ? 'inactive' : 'active'),
+                        'hits'          => isset($rule['hits']) ? intval($rule['hits']) : 0,
+                        'note'          => isset($rule['note']) ? sanitize_text_field(wp_unslash($rule['note'])) : '',
+                        'created'       => isset($rule['created']) ? intval($rule['created']) : time(),
+                        'last_accessed' => isset($rule['last_accessed']) ? sanitize_text_field(wp_unslash($rule['last_accessed'])) : ''
+                    );
+                }
             }
         }
         return $clean;
