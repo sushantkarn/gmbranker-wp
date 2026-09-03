@@ -142,6 +142,18 @@
             });
           }
 
+          // External E-E-A-T Authority Links Rows
+          if (data.external_links && data.external_links.length > 0) {
+            data.external_links.forEach(function (el) {
+              rowsHtml += '<tr>' +
+                '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check gmb-ai-ext-link-check" data-factor="ext_link" data-anchor="' + el.anchor + '" data-url="' + el.url + '" checked /></td>' +
+                '<td><strong>External Authority</strong></td>' +
+                '<td>Cite "<strong>' + el.anchor + '</strong>" &rarr; <code>' + el.url + '</code> <span class="gmb-text-muted-xs">(' + (el.reasoning || "E-E-A-T Trust Link") + ')</span></td>' +
+                '<td><span class="gmb-status-pill gmb-status-pill--primary">Authority Trust</span></td>' +
+                '</tr>';
+            });
+          }
+
           $tbody.html(rowsHtml);
         },
         error: function (xhr, status, err) {
@@ -220,13 +232,14 @@
         }
       }
 
-      // Apply checked internal links
+      // Apply checked internal & external links
       var linksToInsert = [];
-      $(".gmb-ai-link-check:checked").each(function () {
+      $(".gmb-ai-link-check:checked, .gmb-ai-ext-link-check:checked").each(function () {
         var anchor = $(this).attr("data-anchor");
         var url = $(this).attr("data-url");
+        var isExt = $(this).hasClass("gmb-ai-ext-link-check");
         if (anchor && url) {
-          linksToInsert.push({ anchor: anchor, url: url });
+          linksToInsert.push({ anchor: anchor, url: url, isExt: isExt });
         }
       });
 
@@ -241,10 +254,11 @@
           linksToInsert.forEach(function (l) {
             if (bodyHtml.indexOf(l.url) === -1) {
               var reg = new RegExp("\\b(" + escapeRegex(l.anchor) + ")\\b", "i");
+              var attr = l.isExt ? ' target="_blank" rel="noopener noreferrer"' : '';
               if (reg.test(bodyHtml)) {
-                bodyHtml = bodyHtml.replace(reg, '<a href="' + l.url + '">$1</a>');
+                bodyHtml = bodyHtml.replace(reg, '<a href="' + l.url + '"' + attr + '>$1</a>');
               } else {
-                bodyHtml += '<p>Learn more about <a href="' + l.url + '">' + l.anchor + '</a>.</p>';
+                bodyHtml += '<p>Learn more about <a href="' + l.url + '"' + attr + '>' + l.anchor + '</a>.</p>';
               }
             }
           });
