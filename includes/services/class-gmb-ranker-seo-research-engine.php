@@ -475,70 +475,18 @@ class GMB_Ranker_SEO_Research_Engine {
         $kw_lc = strtolower($target_kw_clean);
         $home_link = esc_url(home_url('/'));
 
-        // Dynamic Topic & Intent Niche Classifier
-        $kw_lower = strtolower($target_kw_clean . ' ' . $title_clean);
+        if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
+            $content_ai_file = __DIR__ . '/class-gmb-ranker-seo-content-ai.php';
+            if (file_exists($content_ai_file)) {
+                require_once $content_ai_file;
+            }
+        }
 
-        if (strpos($kw_lower, 'care') !== false || strpos($kw_lower, 'health') !== false || strpos($kw_lower, 'nursing') !== false || strpos($kw_lower, 'medical') !== false || strpos($kw_lower, 'doctor') !== false || strpos($kw_lower, 'hospital') !== false) {
-            // Health / Caregiver / Medical Niche Draft
-            $full_600_word_draft = '<p>Recognizing the key features of <strong>' . esc_html($kw_lc) . '</strong> is essential for ensuring timely medical support, patient safety, and long-term personal well-being. Whether you are evaluating care options or seeking expert guidance, understanding these critical indicators enables families to make confident, informed choices. Explore our complete guide from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> below to discover actionable checklists, expert advice, and practical solutions tailored to your needs.</p>' . "\n\n" .
-            '[gmb_toc]' . "\n\n" .
-            '<h2>1. Overview of ' . esc_html($kw_uc) . '</h2>' . "\n" .
-            '<p>Accessing reliable <strong>' . esc_html($kw_lc) . '</strong> plays a vital role in maintaining personal independence, safety, and daily comfort. As healthcare needs evolve, professional assistance ensures that individuals receive personalized, compassionate attention right in the familiar environment of their own residence. According to international care standards published by the <a href="https://www.who.int/" target="_blank" rel="noopener">World Health Organization (WHO)</a>, home-based healthcare significantly improves patient recovery speed and long-term quality of life.</p>' . "\n" .
-            '<p>Modern <strong>' . esc_html($kw_lc) . '</strong> solutions encompass a wide spectrum of professional caregiving—from skilled nursing oversight and personal hygiene assistance to companion care and specialized physical therapy support. By bridging professional medical expertise with personalized home support, care providers ensure enhanced well-being for every client.</p>' . "\n\n" .
-            '<h2>2. Key Benefits & Advantages of ' . esc_html($kw_uc) . '</h2>' . "\n" .
-            '<p>Opting for comprehensive <strong>' . esc_html($kw_lc) . '</strong> delivers significant benefits for patients and their families alike:</p>' . "\n" .
-            '<ul>' . "\n" .
-            '    <li><strong>Personalized Care Plans:</strong> Customized <strong>' . esc_html($kw_lc) . '</strong> assistance tailored to specific medical, mobility, and personal requirements.</li>' . "\n" .
-            '    <li><strong>Comfort & Familiarity:</strong> Patients recover faster and experience less emotional stress in the comfort of their own home environment.</li>' . "\n" .
-            '    <li><strong>Enhanced Independence:</strong> Empowers individuals to maintain daily routines with dignified, compassionate support.</li>' . "\n" .
-            '    <li><strong>Family Peace of Mind:</strong> Keeps family members informed while registered caregivers alleviate daily stress and burnout.</li>' . "\n" .
-            '    <li><strong>Cost-Effective Quality Care:</strong> Eliminates unnecessary hospitalization costs while providing targeted <strong>' . esc_html($kw_lc) . '</strong>.</li>' . "\n" .
-            '</ul>' . "\n\n" .
-            '<h2>3. Step-by-Step ' . esc_html($kw_uc) . ' Decision Framework</h2>' . "\n" .
-            '<p>When selecting the right professional solution for <strong>' . esc_html($kw_lc) . '</strong>, following a structured evaluation process ensures optimal long-term health outcomes:</p>' . "\n" .
-            '<ol>' . "\n" .
-            '    <li><strong>Assess Individual Care Needs:</strong> Determine required assistance levels, including medical supervision, mobility support, and daily activity help.</li>' . "\n" .
-            '    <li><strong>Verify Provider Credentials:</strong> Ensure caregivers and registered nurses providing <strong>' . esc_html($kw_lc) . '</strong> are fully certified, background-checked, and experienced.</li>' . "\n" .
-            '    <li><strong>Review Customized Service Plans:</strong> Verify that your <strong>' . esc_html($kw_lc) . '</strong> plan adapts flexibly as health conditions and requirements change over time.</li>' . "\n" .
-            '    <li><strong>Establish Clear Communication Channels:</strong> Confirm regular progress updates, direct emergency contacts, and dedicated care management.</li>' . "\n" .
-            '</ol>' . "\n\n" .
-            '<h2>4. Frequently Asked Questions (FAQ) About ' . esc_html($kw_uc) . '</h2>' . "\n" .
-            '<h3>What services are included in professional ' . esc_html($kw_lc) . '?</h3>' . "\n" .
-            '<p>Services range from skilled nursing, wound care, and medication administration to personal hygiene assistance, physical therapy exercises, and compassionate companionship.</p>' . "\n" .
-            '<h3>How do I get started with a customized ' . esc_html($kw_lc) . ' plan?</h3>' . "\n" .
-            '<p>Getting started involves an initial consultation to assess health requirements, followed by matching with a qualified caregiver from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> to create a personalized schedule.</p>' . "\n\n" .
-            '<h2>5. ' . esc_html($kw_uc) . ' Summary & Next Steps</h2>' . "\n" .
-            '<p>Investing in high-quality <strong>' . esc_html($kw_lc) . '</strong> guarantees safety, dignified care, and peace of mind for your loved ones. Contact the expert care team at <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> today to schedule a free consultation and secure personalized care tailored to your family\'s needs.</p>';
+        if (class_exists('GMB_Ranker_SEO_Content_AI')) {
+            $ai_draft_res = GMB_Ranker_SEO_Content_AI::generate_archetype_draft($title_clean, $target_kw_clean, $post_id);
+            $full_600_word_draft = $ai_draft_res['draft'];
         } else {
-            // General Knowledge / Business / Tech Topic Draft
-            $full_600_word_draft = '<p>Understanding the core principles of <strong>' . esc_html($kw_lc) . '</strong> is essential for optimizing performance, achieving measurable results, and maintaining competitive advantage. Whether you are implementing new strategies or refining existing workflows, this comprehensive analysis from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> provides clear frameworks, practical insights, and actionable guidance.</p>' . "\n\n" .
-            '[gmb_toc]' . "\n\n" .
-            '<h2>1. Essential Fundamentals of ' . esc_html($kw_uc) . '</h2>' . "\n" .
-            '<p>In today\'s rapidly evolving landscape, mastering <strong>' . esc_html($kw_lc) . '</strong> requires a strategic approach grounded in best practices and reliable methodology. Industry standards established by leading organizations like <a href="https://www.w3.org/" target="_blank" rel="noopener">W3C Web Standards</a> emphasize the importance of clean structure, accessibility, and high performance.</p>' . "\n" .
-            '<p>By aligning key goals with effective execution, individuals and organizations can unlock significant efficiency improvements while minimizing potential operational risks associated with <strong>' . esc_html($kw_lc) . '</strong>.</p>' . "\n\n" .
-            '<h2>2. Key Features & Benefits of ' . esc_html($kw_uc) . '</h2>' . "\n" .
-            '<p>Implementing effective solutions for <strong>' . esc_html($kw_lc) . '</strong> delivers significant long-term advantages:</p>' . "\n" .
-            '<ul>' . "\n" .
-            '    <li><strong>Streamlined Workflow Execution:</strong> Optimizes operational processes for maximum efficiency.</li>' . "\n" .
-            '    <li><strong>Enhanced Quality & Performance:</strong> Delivers consistent, high-standard outcomes across all execution phases.</li>' . "\n" .
-            '    <li><strong>Scalable Architecture:</strong> Accommodates future growth without requiring complete infrastructure re-engineering.</li>' . "\n" .
-            '    <li><strong>Data-Driven Decision Making:</strong> Provides transparent metrics and actionable analytical feedback.</li>' . "\n" .
-            '</ul>' . "\n\n" .
-            '<h2>3. Step-by-Step Implementation Framework for ' . esc_html($kw_uc) . '</h2>' . "\n" .
-            '<p>Following a systematic evaluation framework ensures smooth rollout and reliable results:</p>' . "\n" .
-            '<ol>' . "\n" .
-            '    <li><strong>Define Clear Objectives:</strong> Establish measurable benchmarks and performance goals for <strong>' . esc_html($kw_lc) . '</strong>.</li>' . "\n" .
-            '    <li><strong>Audit Existing Infrastructure:</strong> Identify current bottlenecks, resource gaps, and integration requirements.</li>' . "\n" .
-            '    <li><strong>Deploy Targeted Solutions:</strong> Implement best-in-class tools and methodologies tailored to your specific environment.</li>' . "\n" .
-            '    <li><strong>Monitor & Optimize Continuously:</strong> Track ongoing metrics and adjust configurations to maintain peak performance.</li>' . "\n" .
-            '</ol>' . "\n\n" .
-            '<h2>4. Frequently Asked Questions (FAQ) About ' . esc_html($kw_uc) . '</h2>' . "\n" .
-            '<h3>What are the primary components of ' . esc_html($kw_lc) . '?</h3>' . "\n" .
-            '<p>The core components include strategic planning, resource allocation, real-time performance tracking, and continuous quality optimization.</p>' . "\n" .
-            '<h3>How quickly can results be realized?</h3>' . "\n" .
-            '<p>Initial improvements are typically visible immediately following phase 1 deployment, with full optimization compound gains maturing over a 30-to-60-day cycle.</p>' . "\n\n" .
-            '<h2>5. Summary & Key Takeaways for ' . esc_html($kw_uc) . '</h2>' . "\n" .
-            '<p>Mastering <strong>' . esc_html($kw_lc) . '</strong> provides a sustainable foundation for long-term growth and technical excellence. Explore additional resources and expert solutions at <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> to accelerate your success.</p>';
+            $full_600_word_draft = '<p>Recognizing the key features of <strong>' . esc_html($kw_lc) . '</strong> is essential for ensuring timely medical support, patient safety, and long-term personal well-being. Explore our complete guide from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> below.</p>';
         }
 
         $short_intro = 'Recognizing the key features of <strong>' . esc_html($kw_lc) . '</strong> is essential for ensuring timely support, safety, and long-term well-being. Explore our complete guide from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> below.';
