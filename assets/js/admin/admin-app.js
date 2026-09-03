@@ -3775,8 +3775,8 @@ function initGmbAdminApp() {
             </td>
             <td>
               <select class="gmb-select gmb-select-sm gmb-ai-code-select">
-                <option value="301" ${item.code == 301 ? 'selected' : ''}>301 Move</option>
-                <option value="302" ${item.code == 302 ? 'selected' : ''}>302 Temp</option>
+                <option value="301" ${item.code == 301 ? 'selected' : ''}>301 Permanent</option>
+                <option value="302" ${item.code == 302 ? 'selected' : ''}>302 Temporary</option>
                 <option value="410" ${item.code == 410 ? 'selected' : ''}>410 Gone</option>
               </select>
             </td>

@@ -894,9 +894,12 @@
 .gmb-ai-code-select {
   height: 30px !important;
   font-size: 12px !important;
-  padding: 0 6px !important;
+  padding: 0 8px !important;
   border: 1px solid #cbd5e1 !important;
   border-radius: 4px !important;
+  width: 125px !important;
+  min-width: 125px !important;
+  box-sizing: border-box !important;
 }
 
 
