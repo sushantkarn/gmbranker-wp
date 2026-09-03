@@ -502,7 +502,7 @@ class GMB_Ranker_SEO_Metabox {
         <div id="gmb-ai-post-seo-modal" class="gmb-modal-overlay">
             <div class="gmb-modal-container gmb-modal-lg">
                 <div class="gmb-modal-header">
-                    <h3 class="gmb-modal-title">✨ AI SEO Master Strategist — Auto-Fix Page</h3>
+                    <h3 class="gmb-modal-title">✨ AI SEO Master Strategist</h3>
                     <button type="button" class="gmb-modal-close" id="gmb-ai-post-modal-close">&times;</button>
                 </div>
                 <div class="gmb-modal-body">
