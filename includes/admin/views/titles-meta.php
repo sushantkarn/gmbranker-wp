@@ -1,123 +1,78 @@
 <?php
 if (!defined('ABSPATH')) exit;
 ?>
-            <?php if ($current_page === 'gmb-ranker-metadata') : ?>
-                <?php 
-                $meta_mod_val = get_option('gmb_ranker_module_metadata', '1');
-                if ($meta_mod_val === '0' || $meta_mod_val === 'off') : 
+            <?php if ($current_page === 'gmb-ranker-metadata' || (isset($_GET['page']) && sanitize_key(wp_unslash($_GET['page'])) === 'gmb-ranker-metadata')) : ?>
+                <?php
+                $req_sub = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : (isset($_GET['subtab']) ? sanitize_key(wp_unslash($_GET['subtab'])) : (isset($_POST['gmb_active_subtab']) ? sanitize_key(wp_unslash($_POST['gmb_active_subtab'])) : ''));
+                $view_model = GMB_Ranker_SEO_Metadata_Registry::get_view_model($req_sub);
+
+                $is_module_enabled = $view_model['module_enabled'];
+                $active_sub        = $view_model['active_subtab'];
+                $s                 = $view_model['settings'];
+                $tab_catalog       = $view_model['tab_catalog'];
+                $separators        = $view_model['separators'];
+                $twitter_cards     = $view_model['twitter_cards'];
+                $max_images        = $view_model['max_images'];
+
+                if (!$is_module_enabled) :
                 ?>
-                    <div class="rm-tab-content active">
+                    <div class="rm-tab-content active" role="region" aria-label="<?php esc_attr_e('Disabled Metadata Module Warning', 'gmb-ranker-seo-automation'); ?>">
                         <div class="gmb-empty-state">
-                            <h2 class="gmb-heading-2">Metadata Manager Module is Disabled</h2>
-                            <p class="gmb-text-muted">Enable the Metadata Manager module to configure SEO Titles, Descriptions, and Robots metadata settings.</p>
+                            <h2 class="gmb-heading-2"><?php esc_html_e('Metadata Manager Module is Disabled', 'gmb-ranker-seo-automation'); ?></h2>
+                            <p class="gmb-text-muted"><?php esc_html_e('Enable the Metadata Manager module to configure SEO Titles, Descriptions, and Robots metadata settings.', 'gmb-ranker-seo-automation'); ?></p>
                             <div class="gmb-flex-center-gap-md">
-                                <button type="button" class="button button-primary gmb-btn-enable-module gmb-btn--primary" data-module="gmb_ranker_module_metadata" >Enable Module</button>
-                                <a href="<?php echo esc_url(admin_url('admin.php?page=gmb-ranker-automation')); ?>" class="button gmb-btn--secondary">Go to Dashboard</a>
+                                <button type="button" class="button button-primary gmb-btn-enable-module gmb-btn--primary" data-module="gmb_ranker_module_metadata"><?php esc_html_e('Enable Module', 'gmb-ranker-seo-automation'); ?></button>
+                                <a href="<?php echo esc_url(admin_url('admin.php?page=gmb-ranker-automation')); ?>" class="button gmb-btn--secondary"><?php esc_html_e('Go to Dashboard', 'gmb-ranker-seo-automation'); ?></a>
                             </div>
                         </div>
                     </div>
                 <?php else : ?>
-                    <div class="rm-tab-content active" id="rm-tab-metadata">
+                    <div class="rm-tab-content active" id="rm-tab-metadata" role="region" aria-label="<?php esc_attr_e('Titles & Meta Management', 'gmb-ranker-seo-automation'); ?>">
                         <form method="post" action="options.php" novalidate>
                             <?php settings_fields('gmb_ranker_titles_meta_group'); ?>
                     
                     <div class="gmb-sidebar-layout-container">
                         
                         <!-- Sidebar Navigation Column -->
-                        <?php
-                        $active_sub = 'metadata';
-                        $req_sub = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : (isset($_GET['subtab']) ? sanitize_key(wp_unslash($_GET['subtab'])) : (isset($_POST['gmb_active_subtab']) ? sanitize_key(wp_unslash($_POST['gmb_active_subtab'])) : ''));
-                        if (!empty($req_sub) && in_array($req_sub, array('metadata', 'local', 'social', 'homepage', 'authors', 'misc', 'posts', 'pages', 'attachments', 'services', 'service_locations', 'team_members', 'categories', 'settings'), true)) {
-                            $active_sub = ($req_sub === 'settings') ? 'metadata' : $req_sub;
-                        } elseif (!empty($current_tab) && in_array($current_tab, array('metadata', 'local', 'social', 'homepage', 'authors', 'misc', 'posts', 'pages', 'attachments', 'services', 'service_locations', 'team_members', 'categories', 'settings'), true)) {
-                            $active_sub = ($current_tab === 'settings') ? 'metadata' : $current_tab;
-                        }
-                        ?>
                         <input type="hidden" name="gmb_active_subtab" id="gmb_active_subtab_input" value="<?php echo esc_attr($active_sub); ?>" />
                         <div class="gmb-sidebar-nav">
-                            <ul>
-                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === 'metadata') ? 'active' : ''; ?>" data-subtab="gmb-subtab-metadata">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                                    Global Meta
+                            <ul role="tablist">
+                                <?php 
+                                $current_group = '';
+                                foreach ($tab_catalog as $tab_id => $tab_data) :
+                                    if ($tab_data['group'] !== $current_group) :
+                                        $current_group = $tab_data['group'];
+                                        if ($current_group === 'post_types') : ?>
+                                            <li class="gmb-sidebar-nav-heading"><?php esc_html_e('Post Types', 'gmb-ranker-seo-automation'); ?></li>
+                                        <?php elseif ($current_group === 'taxonomies') : ?>
+                                            <li class="gmb-sidebar-nav-heading"><?php esc_html_e('Taxonomies', 'gmb-ranker-seo-automation'); ?></li>
+                                        <?php endif;
+                                    endif;
+                                ?>
+                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === $tab_id) ? 'active' : ''; ?>" data-subtab="gmb-subtab-<?php echo esc_attr($tab_id); ?>" role="tab" aria-selected="<?php echo ($active_sub === $tab_id) ? 'true' : 'false'; ?>">
+                                    <?php echo $tab_data['icon_svg']; ?>
+                                    <?php echo esc_html($tab_data['label']); ?>
                                 </li>
-                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === 'local') ? 'active' : ''; ?>" data-subtab="gmb-subtab-local">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                    Local SEO
-                                </li>
-                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === 'social') ? 'active' : ''; ?>" data-subtab="gmb-subtab-social">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-                                    Social Meta
-                                </li>
-                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === 'homepage') ? 'active' : ''; ?>" data-subtab="gmb-subtab-homepage">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                                    Homepage
-                                </li>
-                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === 'authors') ? 'active' : ''; ?>" data-subtab="gmb-subtab-authors">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                                    Authors
-                                </li>
-                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === 'misc') ? 'active' : ''; ?>" data-subtab="gmb-subtab-misc">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-                                    Misc Pages
-                                </li>
-                                <li class="gmb-sidebar-nav-heading">Post Types</li>
-                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === 'posts') ? 'active' : ''; ?>" data-subtab="gmb-subtab-posts">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                                    Posts
-                                </li>
-                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === 'pages') ? 'active' : ''; ?>" data-subtab="gmb-subtab-pages">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                                    Pages
-                                </li>
-                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === 'attachments') ? 'active' : ''; ?>" data-subtab="gmb-subtab-attachments">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                                    Attachments
-                                </li>
-                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === 'services') ? 'active' : ''; ?>" data-subtab="gmb-subtab-services">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                                    Services
-                                </li>
-                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === 'service_locations') ? 'active' : ''; ?>" data-subtab="gmb-subtab-service_locations">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                    Service Locations
-                                </li>
-                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === 'team_members') ? 'active' : ''; ?>" data-subtab="gmb-subtab-team_members">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                                    Team Members
-                                </li>
-                                <li class="gmb-sidebar-nav-heading">Taxonomies</li>
-                                <li class="gmb-sidebar-nav-item <?php echo ($active_sub === 'categories') ? 'active' : ''; ?>" data-subtab="gmb-subtab-categories">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                                    Categories
-                                </li>
+                                <?php endforeach; ?>
                             </ul>
-                        </div>
-                        
                         <!-- Content Column -->
                         <div class="gmb-sidebar-content-panel">
                             
                             <!-- Subtab: Metadata -->
-                            <?php
-                            $post_title_temp = isset($post_title_temp) ? $post_title_temp : get_option('gmb_posts_title_template', '%title% %sep% %sitename%');
-                            $post_desc_temp = isset($post_desc_temp) ? $post_desc_temp : get_option('gmb_posts_description_template', '%excerpt%');
-                            $page_title_temp = isset($page_title_temp) ? $page_title_temp : get_option('gmb_pages_title_template', '%title% %sep% %sitename%');
-                            $page_desc_temp = isset($page_desc_temp) ? $page_desc_temp : get_option('gmb_pages_description_template', '%excerpt%');
-                            $use_multiple = isset($use_multiple) ? $use_multiple : get_option('gmb_local_use_multiple_locations', '0');
-                            ?>
-                            <div class="gmb-subtab-panel <?php echo ($active_sub === 'metadata') ? 'active' : ''; ?>" id="gmb-subtab-metadata">
+                            <div class="gmb-subtab-panel <?php echo ($active_sub === 'metadata') ? 'active' : ''; ?>" id="gmb-subtab-metadata" role="tabpanel">
                                 <div class="gmb-settings-panel-header">
-                                    <h2 class="gmb-heading-2">Titles & Meta Settings</h2>
-                                    <p class="gmb-text-muted">Configure global templates to automatically generate indexing metadata for your pages and posts. <a href="https://gmbranker.org/" target="_blank" class="gmb-help-link">Learn more</a>.</p>
+                                    <h2 class="gmb-heading-2"><?php esc_html_e('Titles & Meta Settings', 'gmb-ranker-seo-automation'); ?></h2>
+                                    <p class="gmb-text-muted"><?php esc_html_e('Configure global templates to automatically generate indexing metadata for your pages and posts.', 'gmb-ranker-seo-automation'); ?> <a href="https://gmbranker.org/" target="_blank" class="gmb-help-link"><?php esc_html_e('Learn more', 'gmb-ranker-seo-automation'); ?></a>.</p>
                                 </div>
                                 
                                 <div class="gmb-card-settings-list">
                                     <!-- Option: Post Title Template -->
                                     <div class="gmb-settings-row">
                                         <div class="gmb-settings-label-col">
-                                            Post Title Template
+                                            <?php esc_html_e('Post Title Template', 'gmb-ranker-seo-automation'); ?>
                                         </div>
                                         <div class="gmb-settings-input-col">
-                                            <input type="text" id="gmb_metadata_post_title_template" name="gmb_metadata_post_title_template" value="<?php echo esc_attr($post_title_temp); ?>" placeholder="%title% %sep% %sitename%" class="gmb-input gmb-input--max-480" />
+                                            <input type="text" id="gmb_metadata_post_title_template" name="gmb_metadata_post_title_template" value="<?php echo esc_attr($s['post_title_temp']); ?>" placeholder="%title% %sep% %sitename%" class="gmb-input gmb-input--max-480" />
                                             <div>
                                                 <span class="gmb-tag-insert-pill" data-target="gmb_metadata_post_title_template" data-tag="%title%">+ %title%</span>
                                                 <span class="gmb-tag-insert-pill" data-target="gmb_metadata_post_title_template" data-tag="%sep%">+ %sep%</span>
@@ -127,7 +82,7 @@ if (!defined('ABSPATH')) exit;
                                                 <span class="gmb-tag-insert-pill" data-target="gmb_metadata_post_title_template" data-tag="%currentyear%">+ %currentyear%</span>
                                             </div>
                                             <p class="gmb-form-help">
-                                                Title template for blog posts. Click variable pills above to insert dynamically.
+                                                <?php esc_html_e('Title template for blog posts. Click variable pills above to insert dynamically.', 'gmb-ranker-seo-automation'); ?>
                                             </p>
                                         </div>
                                     </div>
@@ -135,10 +90,10 @@ if (!defined('ABSPATH')) exit;
                                     <!-- Option: Post Description Template -->
                                     <div class="gmb-settings-row">
                                         <div class="gmb-settings-label-col">
-                                            Post Description Template
+                                            <?php esc_html_e('Post Description Template', 'gmb-ranker-seo-automation'); ?>
                                         </div>
                                         <div class="gmb-settings-input-col">
-                                            <input type="text" id="gmb_metadata_post_desc_template" name="gmb_metadata_post_desc_template" value="<?php echo esc_attr($post_desc_temp); ?>" placeholder="%excerpt%" class="gmb-input gmb-input--max-480" />
+                                            <input type="text" id="gmb_metadata_post_desc_template" name="gmb_metadata_post_desc_template" value="<?php echo esc_attr($s['post_desc_temp']); ?>" placeholder="%excerpt%" class="gmb-input gmb-input--max-480" />
                                             <div>
                                                 <span class="gmb-tag-insert-pill" data-target="gmb_metadata_post_desc_template" data-tag="%excerpt%">+ %excerpt%</span>
                                                 <span class="gmb-tag-insert-pill" data-target="gmb_metadata_post_desc_template" data-tag="%title%">+ %title%</span>
@@ -146,7 +101,7 @@ if (!defined('ABSPATH')) exit;
                                                 <span class="gmb-tag-insert-pill" data-target="gmb_metadata_post_desc_template" data-tag="%focus_keyword%">+ %focus_keyword%</span>
                                             </div>
                                             <p class="gmb-form-help">
-                                                Meta description template for blog posts. Use variables like <code>%excerpt%</code> or <code>%title%</code>.
+                                                <?php esc_html_e('Meta description template for blog posts.', 'gmb-ranker-seo-automation'); ?>
                                             </p>
                                         </div>
                                     </div>
@@ -154,10 +109,10 @@ if (!defined('ABSPATH')) exit;
                                     <!-- Option: Page Title Template -->
                                     <div class="gmb-settings-row">
                                         <div class="gmb-settings-label-col">
-                                            Page Title Template
+                                            <?php esc_html_e('Page Title Template', 'gmb-ranker-seo-automation'); ?>
                                         </div>
                                         <div class="gmb-settings-input-col">
-                                            <input type="text" id="gmb_metadata_page_title_template" name="gmb_metadata_page_title_template" value="<?php echo esc_attr($page_title_temp); ?>" placeholder="%title% %sep% %sitename%" class="gmb-input gmb-input--max-480" />
+                                            <input type="text" id="gmb_metadata_page_title_template" name="gmb_metadata_page_title_template" value="<?php echo esc_attr($s['page_title_temp']); ?>" placeholder="%title% %sep% %sitename%" class="gmb-input gmb-input--max-480" />
                                             <div>
                                                 <span class="gmb-tag-insert-pill" data-target="gmb_metadata_page_title_template" data-tag="%title%">+ %title%</span>
                                                 <span class="gmb-tag-insert-pill" data-target="gmb_metadata_page_title_template" data-tag="%sep%">+ %sep%</span>
@@ -165,7 +120,7 @@ if (!defined('ABSPATH')) exit;
                                                 <span class="gmb-tag-insert-pill" data-target="gmb_metadata_page_title_template" data-tag="%currentyear%">+ %currentyear%</span>
                                             </div>
                                             <p class="gmb-form-help">
-                                                Title template for static pages. Use variables like <code>%title%</code>, <code>%sitename%</code>.
+                                                <?php esc_html_e('Title template for static pages.', 'gmb-ranker-seo-automation'); ?>
                                             </p>
                                         </div>
                                     </div>
@@ -173,17 +128,17 @@ if (!defined('ABSPATH')) exit;
                                     <!-- Option: Page Description Template -->
                                     <div class="gmb-settings-row">
                                         <div class="gmb-settings-label-col">
-                                            Page Description Template
+                                            <?php esc_html_e('Page Description Template', 'gmb-ranker-seo-automation'); ?>
                                         </div>
                                         <div class="gmb-settings-input-col">
-                                            <input type="text" id="gmb_metadata_page_desc_template" name="gmb_metadata_page_desc_template" value="<?php echo esc_attr($page_desc_temp); ?>" placeholder="%excerpt%" class="gmb-input gmb-input--max-480" />
+                                            <input type="text" id="gmb_metadata_page_desc_template" name="gmb_metadata_page_desc_template" value="<?php echo esc_attr($s['page_desc_temp']); ?>" placeholder="%excerpt%" class="gmb-input gmb-input--max-480" />
                                             <div>
                                                 <span class="gmb-tag-insert-pill" data-target="gmb_metadata_page_desc_template" data-tag="%excerpt%">+ %excerpt%</span>
                                                 <span class="gmb-tag-insert-pill" data-target="gmb_metadata_page_desc_template" data-tag="%title%">+ %title%</span>
                                                 <span class="gmb-tag-insert-pill" data-target="gmb_metadata_page_desc_template" data-tag="%sitename%">+ %sitename%</span>
                                             </div>
                                             <p class="gmb-form-help">
-                                                Meta description template for static pages. Use variables like <code>%excerpt%</code>, <code>%title%</code>.
+                                                <?php esc_html_e('Meta description template for static pages.', 'gmb-ranker-seo-automation'); ?>
                                             </p>
                                         </div>
                                     </div>
@@ -191,65 +146,58 @@ if (!defined('ABSPATH')) exit;
                                     <!-- Option: Robots Meta (Global) -->
                                     <div class="gmb-settings-row">
                                         <div class="gmb-settings-label-col">
-                                            Robots Meta
+                                            <?php esc_html_e('Robots Meta', 'gmb-ranker-seo-automation'); ?>
                                         </div>
                                         <div class="gmb-settings-input-col">
-                                            <?php
-                                             $global_robots = get_option('gmb_metadata_global_robots', 'index');
-                                             $global_robots_array = is_array($global_robots) ? $global_robots : array_map('trim', explode(',', strtolower((string)$global_robots)));
-                                             $max_img = get_option('gmb_metadata_global_max_image', 'large');
-                                             $max_snp = get_option('gmb_metadata_global_max_snippet', '-1');
-                                             $max_vid = get_option('gmb_metadata_global_max_video', '-1');
-                                             ?>
                                             <div class="gmb-grid-2col-max480">
                                                 <label class="gmb-checkbox-label">
-                                                    <input type="checkbox" name="gmb_metadata_global_robots[]" value="index" <?php checked(in_array('index', $global_robots_array)); ?> />
+                                                    <input type="checkbox" name="gmb_metadata_global_robots[]" value="index" <?php checked(in_array('index', $s['global_robots'], true)); ?> />
                                                     <strong>index</strong>
                                                 </label>
                                                 <label class="gmb-checkbox-label">
-                                                    <input type="checkbox" name="gmb_metadata_global_robots[]" value="noindex" <?php checked(in_array('noindex', $global_robots_array)); ?> />
+                                                    <input type="checkbox" name="gmb_metadata_global_robots[]" value="noindex" <?php checked(in_array('noindex', $s['global_robots'], true)); ?> />
                                                     <strong>noindex</strong>
                                                 </label>
                                                 <label class="gmb-checkbox-label">
-                                                    <input type="checkbox" name="gmb_metadata_global_robots[]" value="nofollow" <?php checked(in_array('nofollow', $global_robots_array)); ?> />
+                                                    <input type="checkbox" name="gmb_metadata_global_robots[]" value="nofollow" <?php checked(in_array('nofollow', $s['global_robots'], true)); ?> />
                                                     <strong>nofollow</strong>
                                                 </label>
                                                 <label class="gmb-checkbox-label">
-                                                    <input type="checkbox" name="gmb_metadata_global_robots[]" value="noarchive" <?php checked(in_array('noarchive', $global_robots_array)); ?> />
+                                                    <input type="checkbox" name="gmb_metadata_global_robots[]" value="noarchive" <?php checked(in_array('noarchive', $s['global_robots'], true)); ?> />
                                                     <strong>noarchive</strong>
                                                 </label>
                                                 <label class="gmb-checkbox-label">
-                                                    <input type="checkbox" name="gmb_metadata_global_robots[]" value="noimageindex" <?php checked(in_array('noimageindex', $global_robots_array)); ?> />
+                                                    <input type="checkbox" name="gmb_metadata_global_robots[]" value="noimageindex" <?php checked(in_array('noimageindex', $s['global_robots'], true)); ?> />
                                                     <strong>noimageindex</strong>
                                                 </label>
                                                 <label class="gmb-checkbox-label">
-                                                    <input type="checkbox" name="gmb_metadata_global_robots[]" value="nosnippet" <?php checked(in_array('nosnippet', $global_robots_array)); ?> />
+                                                    <input type="checkbox" name="gmb_metadata_global_robots[]" value="nosnippet" <?php checked(in_array('nosnippet', $s['global_robots'], true)); ?> />
                                                     <strong>nosnippet</strong>
                                                 </label>
                                             </div>
 
                                             <div class="gmb-meta-directives-box">
-                                                <div class="gmb-meta-directives-title">Google Discover & Snippet Preview Directives</div>
+                                                <div class="gmb-meta-directives-title"><?php esc_html_e('Google Discover & Snippet Preview Directives', 'gmb-ranker-seo-automation'); ?></div>
                                                 <div class="gmb-meta-directive-row">
-                                                    <label class="gmb-form-label">Max Image Preview:</label>
+                                                    <label class="gmb-form-label"><?php esc_html_e('Max Image Preview:', 'gmb-ranker-seo-automation'); ?></label>
                                                     <select name="gmb_metadata_global_max_image" class="gmb-meta-directive-input">
-                                                        <option value="large" <?php selected($max_img, 'large'); ?>>large (Recommended for Google Discover)</option>
-                                                        <option value="standard" <?php selected($max_img, 'standard'); ?>>standard</option>
-                                                        <option value="none" <?php selected($max_img, 'none'); ?>>none</option>
+                                                        <?php foreach ($max_images as $val => $lbl) : ?>
+                                                            <option value="<?php echo esc_attr($val); ?>" <?php selected($s['global_max_image'], $val); ?>><?php echo esc_html($lbl); ?></option>
+                                                        <?php endforeach; ?>
                                                     </select>
                                                 </div>
                                                 <div class="gmb-meta-directive-row">
-                                                    <label class="gmb-form-label">Max Snippet:</label>
-                                                    <input type="text" name="gmb_metadata_global_max_snippet" value="<?php echo esc_attr($max_snp); ?>" placeholder="-1" class="gmb-meta-directive-input" />
+                                                    <label class="gmb-form-label"><?php esc_html_e('Max Snippet:', 'gmb-ranker-seo-automation'); ?></label>
+                                                    <input type="text" name="gmb_metadata_global_max_snippet" value="<?php echo esc_attr($s['global_max_snippet']); ?>" placeholder="-1" class="gmb-meta-directive-input" />
                                                 </div>
                                                 <div class="gmb-meta-directive-row">
-                                                    <label class="gmb-form-label">Max Video Preview:</label>
-                                                    <input type="text" name="gmb_metadata_global_max_video" value="<?php echo esc_attr($max_vid); ?>" placeholder="-1" class="gmb-meta-directive-input" />
+                                                    <label class="gmb-form-label"><?php esc_html_e('Max Video Preview:', 'gmb-ranker-seo-automation'); ?></label>
+                                                    <input type="text" name="gmb_metadata_global_max_video" value="<?php echo esc_attr($s['global_max_video']); ?>" placeholder="-1" class="gmb-meta-directive-input" />
                                                 </div>
                                             </div>
 
                                             <p class="gmb-form-help">
-                                                Global robot directives for search index crawlers. Can be overridden on individual pages.
+                                                <?php esc_html_e('Global robot directives for search index crawlers.', 'gmb-ranker-seo-automation'); ?>
                                             </p>
                                         </div>
                                     </div>
@@ -257,24 +205,21 @@ if (!defined('ABSPATH')) exit;
                                     <!-- Option: Separator Character -->
                                     <div class="gmb-settings-row">
                                         <div class="gmb-settings-label-col">
-                                            Separator Character
+                                            <?php esc_html_e('Separator Character', 'gmb-ranker-seo-automation'); ?>
                                         </div>
                                         <div class="gmb-settings-input-col">
-                                            <?php $selected_sep = get_option('gmb_metadata_separator', '-'); ?>
                                             <div class="gmb-separator-selector gmb-flex-gap-sm">
-                                                <?php
-                                                $seps = array('-', '—', '|', '»', '•', '*');
-                                                foreach ($seps as $sep) :
-                                                    $active = ($selected_sep === $sep);
+                                                <?php foreach ($separators as $sep) : 
+                                                    $active = ($s['separator'] === $sep);
                                                 ?>
                                                     <label class="gmb-sep-btn <?php echo $active ? 'active' : ''; ?>">
-                                                        <input type="radio" name="gmb_metadata_separator" value="<?php echo esc_attr($sep); ?>" <?php checked($selected_sep, $sep); ?> class="gmb-hidden" onchange="this.closest('.gmb-separator-selector').querySelectorAll('.gmb-sep-btn').forEach(b => b.classList.remove('active')); this.parentNode.classList.add('active');" />
+                                                        <input type="radio" name="gmb_metadata_separator" value="<?php echo esc_attr($sep); ?>" <?php checked($s['separator'], $sep); ?> class="gmb-hidden" />
                                                         <?php echo esc_html($sep); ?>
                                                     </label>
                                                 <?php endforeach; ?>
                                             </div>
                                             <p class="gmb-form-help">
-                                                Character used as a title separator. Will replace <code>%sep%</code> in your metadata templates.
+                                                <?php esc_html_e('Character used as a title separator. Will replace %sep% in your metadata templates.', 'gmb-ranker-seo-automation'); ?>
                                             </p>
                                         </div>
                                     </div>
@@ -282,16 +227,15 @@ if (!defined('ABSPATH')) exit;
                                     <!-- Option: Capitalize Titles -->
                                     <div class="gmb-settings-row">
                                         <div class="gmb-settings-label-col">
-                                            Capitalize Titles
+                                            <?php esc_html_e('Capitalize Titles', 'gmb-ranker-seo-automation'); ?>
                                         </div>
                                         <div class="gmb-settings-input-col">
-                                            <?php $capitalize = get_option('gmb_metadata_capitalize_titles', '0'); ?>
                                             <label class="gmb-switch">
-                                                <input type="checkbox" name="gmb_metadata_capitalize_titles" value="1" <?php checked($capitalize, '1'); ?> />
+                                                <input type="checkbox" name="gmb_metadata_capitalize_titles" value="1" <?php checked(true, $s['capitalize_titles']); ?> />
                                                 <span class="gmb-slider"></span>
                                             </label>
                                             <p class="gmb-form-help">
-                                                Automatically capitalize the first character of each word in page and post titles.
+                                                <?php esc_html_e('Automatically capitalize the first character of each word in page and post titles.', 'gmb-ranker-seo-automation'); ?>
                                             </p>
                                         </div>
                                     </div>
@@ -299,19 +243,18 @@ if (!defined('ABSPATH')) exit;
                                     <!-- Option: OpenGraph Thumbnail -->
                                     <div class="gmb-settings-row">
                                         <div class="gmb-settings-label-col">
-                                            OpenGraph Thumbnail
+                                            <?php esc_html_e('OpenGraph Thumbnail', 'gmb-ranker-seo-automation'); ?>
                                         </div>
                                         <div class="gmb-settings-input-col">
-                                            <?php $og_thumb = get_option('gmb_metadata_og_thumbnail', ''); ?>
                                             <div class="gmb-flex-center-gap-sm gmb-input--max-480">
-                                                <input type="text" id="gmb_metadata_og_thumbnail" name="gmb_metadata_og_thumbnail" value="<?php echo esc_attr($og_thumb); ?>" class="gmb-input gmb-flex-1" placeholder="No image selected..." />
-                                                <button type="button" class="button gmb-media-upload-btn" data-target="gmb_metadata_og_thumbnail">Select Image</button>
+                                                <input type="text" id="gmb_metadata_og_thumbnail" name="gmb_metadata_og_thumbnail" value="<?php echo esc_attr($s['og_thumbnail']); ?>" class="gmb-input gmb-flex-1" placeholder="<?php esc_attr_e('No image selected...', 'gmb-ranker-seo-automation'); ?>" />
+                                                <button type="button" class="button gmb-media-upload-btn" data-target="gmb_metadata_og_thumbnail"><?php esc_html_e('Select Image', 'gmb-ranker-seo-automation'); ?></button>
                                             </div>
-                                            <div id="gmb_metadata_og_thumbnail_preview" class="gmb-thumb-preview <?php echo empty($og_thumb) ? 'gmb-hidden' : ''; ?>">
-                                                <img src="<?php echo esc_url($og_thumb); ?>" alt="Thumbnail Preview" />
+                                            <div id="gmb_metadata_og_thumbnail_preview" class="gmb-thumb-preview <?php echo empty($s['og_thumbnail']) ? 'gmb-hidden' : ''; ?>">
+                                                <img src="<?php echo esc_url($s['og_thumbnail']); ?>" alt="<?php esc_attr_e('Thumbnail Preview', 'gmb-ranker-seo-automation'); ?>" />
                                             </div>
                                             <p class="gmb-form-help">
-                                                When a featured image or custom social image is not set for individual content, this image will be used as a fallback thumbnail when shared on Facebook. Recommended size: 1200 x 630 pixels.
+                                                <?php esc_html_e('Fallback thumbnail when shared on social platforms. Recommended size: 1200 x 630 pixels.', 'gmb-ranker-seo-automation'); ?>
                                             </p>
                                         </div>
                                     </div>
@@ -319,18 +262,16 @@ if (!defined('ABSPATH')) exit;
                                     <!-- Option: Twitter Card Type -->
                                     <div class="gmb-settings-row">
                                         <div class="gmb-settings-label-col">
-                                            Twitter Card Type
+                                            <?php esc_html_e('Twitter Card Type', 'gmb-ranker-seo-automation'); ?>
                                         </div>
                                         <div class="gmb-settings-input-col">
-                                            <?php $tw_card = get_option('gmb_metadata_twitter_card_type', 'summary_large_image'); ?>
                                             <select name="gmb_metadata_twitter_card_type" class="gmb-select gmb-input--max-480">
-                                                <option value="summary_large_image" <?php selected($tw_card, 'summary_large_image'); ?>>Summary Card with Large Image (Recommended)</option>
-                                                <option value="summary" <?php selected($tw_card, 'summary'); ?>>Summary Card (Small Square Thumbnail)</option>
-                                                <option value="app" <?php selected($tw_card, 'app'); ?>>App Card</option>
-                                                <option value="player" <?php selected($tw_card, 'player'); ?>>Player Card (Video / Audio)</option>
+                                                <?php foreach ($twitter_cards as $val => $lbl) : ?>
+                                                    <option value="<?php echo esc_attr($val); ?>" <?php selected($s['twitter_card_type'], $val); ?>><?php echo esc_html($lbl); ?></option>
+                                                <?php endforeach; ?>
                                             </select>
                                             <p class="gmb-form-help">
-                                                Default card type for Twitter/X fallback sharing.
+                                                <?php esc_html_e('Default card type for Twitter/X fallback sharing.', 'gmb-ranker-seo-automation'); ?>
                                             </p>
                                         </div>
                                     </div>
@@ -338,33 +279,33 @@ if (!defined('ABSPATH')) exit;
                                     <!-- Section: Webmaster Verification Tools -->
                                     <div class="gmb-settings-row">
                                         <div class="gmb-settings-label-col">
-                                            Webmaster Verification
+                                            <?php esc_html_e('Webmaster Verification', 'gmb-ranker-seo-automation'); ?>
                                         </div>
                                         <div class="gmb-settings-input-col gmb-input--max-480">
                                             <div class="gmb-mb-12">
-                                                <label class="gmb-form-label">Google Search Console ID</label>
-                                                <input type="text" name="gmb_webmaster_google_verify" value="<?php echo esc_attr(get_option('gmb_webmaster_google_verify', '')); ?>" placeholder="e.g. 2_x1Y4b..." class="gmb-input" />
+                                                <label class="gmb-form-label"><?php esc_html_e('Google Search Console ID', 'gmb-ranker-seo-automation'); ?></label>
+                                                <input type="text" name="gmb_webmaster_google_verify" value="<?php echo esc_attr($s['google_verify']); ?>" placeholder="e.g. 2_x1Y4b..." class="gmb-input" />
                                             </div>
                                             <div class="gmb-mb-12">
-                                                <label class="gmb-form-label">Bing Webmaster Tools ID</label>
-                                                <input type="text" name="gmb_webmaster_bing_verify" value="<?php echo esc_attr(get_option('gmb_webmaster_bing_verify', '')); ?>" placeholder="e.g. 883A49..." class="gmb-input" />
+                                                <label class="gmb-form-label"><?php esc_html_e('Bing Webmaster Tools ID', 'gmb-ranker-seo-automation'); ?></label>
+                                                <input type="text" name="gmb_webmaster_bing_verify" value="<?php echo esc_attr($s['bing_verify']); ?>" placeholder="e.g. 883A49..." class="gmb-input" />
                                             </div>
                                             <div class="gmb-mb-12">
-                                                <label class="gmb-form-label">Pinterest Verification ID</label>
-                                                <input type="text" name="gmb_webmaster_pinterest_verify" value="<?php echo esc_attr(get_option('gmb_webmaster_pinterest_verify', '')); ?>" placeholder="e.g. 9b8c7..." class="gmb-input" />
+                                                <label class="gmb-form-label"><?php esc_html_e('Pinterest Verification ID', 'gmb-ranker-seo-automation'); ?></label>
+                                                <input type="text" name="gmb_webmaster_pinterest_verify" value="<?php echo esc_attr($s['pinterest_verify']); ?>" placeholder="e.g. 9b8c7..." class="gmb-input" />
                                             </div>
                                             <div class="gmb-webmaster-grid">
                                                 <div class="gmb-flex-1">
-                                                    <label class="gmb-form-label gmb-text-xs">Baidu Verification</label>
-                                                    <input type="text" name="gmb_webmaster_baidu_verify" value="<?php echo esc_attr(get_option('gmb_webmaster_baidu_verify', '')); ?>" placeholder="Baidu code" class="gmb-input gmb-input--small" />
+                                                    <label class="gmb-form-label gmb-text-xs"><?php esc_html_e('Baidu Verification', 'gmb-ranker-seo-automation'); ?></label>
+                                                    <input type="text" name="gmb_webmaster_baidu_verify" value="<?php echo esc_attr($s['baidu_verify']); ?>" placeholder="Baidu code" class="gmb-input gmb-input--small" />
                                                 </div>
                                                 <div class="gmb-flex-1">
-                                                    <label class="gmb-form-label gmb-text-xs">Yandex Verification</label>
-                                                    <input type="text" name="gmb_webmaster_yandex_verify" value="<?php echo esc_attr(get_option('gmb_webmaster_yandex_verify', '')); ?>" placeholder="Yandex code" class="gmb-input gmb-input--small" />
+                                                    <label class="gmb-form-label gmb-text-xs"><?php esc_html_e('Yandex Verification', 'gmb-ranker-seo-automation'); ?></label>
+                                                    <input type="text" name="gmb_webmaster_yandex_verify" value="<?php echo esc_attr($s['yandex_verify']); ?>" placeholder="Yandex code" class="gmb-input gmb-input--small" />
                                                 </div>
                                             </div>
                                             <p class="gmb-form-help">
-                                                Enter your verification IDs/tokens to automatically verify your site ownership in search engine webmaster tools.
+                                                <?php esc_html_e('Enter your verification IDs/tokens to verify your site ownership in search engine webmaster tools.', 'gmb-ranker-seo-automation'); ?>
                                             </p>
                                         </div>
                                     </div>
@@ -372,23 +313,23 @@ if (!defined('ABSPATH')) exit;
                                     <!-- Section: RSS Feed Scraper Protection -->
                                     <div class="gmb-settings-row gmb-settings-row--noborder">
                                         <div class="gmb-settings-label-col">
-                                            RSS Feed Protection
+                                            <?php esc_html_e('RSS Feed Protection', 'gmb-ranker-seo-automation'); ?>
                                         </div>
                                         <div class="gmb-settings-input-col gmb-input--max-480">
                                             <div class="gmb-mb-12">
-                                                <label class="gmb-form-label">RSS Content After Each Post</label>
-                                                <textarea name="gmb_rss_after_content" rows="3" placeholder="The post %title% appeared first on %sitename% (%siteurl%)." class="gmb-textarea"><?php echo esc_textarea(get_option('gmb_rss_after_content', '')); ?></textarea>
+                                                <label class="gmb-form-label"><?php esc_html_e('RSS Content After Each Post', 'gmb-ranker-seo-automation'); ?></label>
+                                                <textarea name="gmb_rss_after_content" rows="3" placeholder="The post %title% appeared first on %sitename% (%siteurl%)." class="gmb-textarea"><?php echo esc_textarea($s['rss_after_content']); ?></textarea>
                                             </div>
                                             <p class="gmb-form-help">
-                                                Automatically adds dynamic copyright and backlinks to RSS feed entries to protect against content scraper bots.
+                                                <?php esc_html_e('Automatically adds dynamic copyright and backlinks to RSS feed entries.', 'gmb-ranker-seo-automation'); ?>
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="gmb-settings-footer">
-                                    <button type="button" class="button gmb-btn--ghost" id="gmb-reset-metadata-options">Reset Options</button>
-                                    <input type="submit" class="button button-primary gmb-btn--primary" value="Save Changes" />
+                                    <button type="button" class="button gmb-btn--ghost" id="gmb-reset-metadata-options"><?php esc_html_e('Reset Options', 'gmb-ranker-seo-automation'); ?></button>
+                                    <input type="submit" class="button button-primary gmb-btn--primary" value="<?php esc_attr_e('Save Changes', 'gmb-ranker-seo-automation'); ?>" />
                                 </div>
                             </div>
 
