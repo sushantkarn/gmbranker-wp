@@ -23,7 +23,27 @@ if (!class_exists('GMB_Ranker_SEO_Ajax_Tools_Handler')) {
             if (!current_user_can('manage_options')) {
                 wp_send_json_error(array('message' => 'Unauthorized access.'), 403);
             }
-            if (!check_ajax_referer('gmb_admin_ajax_nonce', 'nonce', false)) {
+            $nonce = isset($_REQUEST['nonce']) ? sanitize_text_field(wp_unslash($_REQUEST['nonce'])) : (isset($_REQUEST['_wpnonce']) ? sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])) : (isset($_REQUEST['security']) ? sanitize_text_field(wp_unslash($_REQUEST['security'])) : ''));
+
+            $valid_nonces = array(
+                'gmb_admin_ajax_nonce',
+                'gmb_ranker_ajax_nonce',
+                'gmb_seo_save_nonce',
+                'gmb_toggle_module_nonce',
+                'gmb_wizard_nonce'
+            );
+
+            $verified = false;
+            if (!empty($nonce)) {
+                foreach ($valid_nonces as $action_nonce) {
+                    if (wp_verify_nonce($nonce, $action_nonce)) {
+                        $verified = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!$verified) {
                 wp_send_json_error(array('message' => 'Invalid security token.'), 403);
             }
         }
