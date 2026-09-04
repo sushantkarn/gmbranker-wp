@@ -205,6 +205,26 @@ $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : '
                             </div>
                         </div>
 
+                        <!-- What We'll Analyze Card (Shifted to center area) -->
+                        <div class="gmb-side-card gmb-mt-16">
+                            <h4 class="gmb-side-card-title">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2563eb" stroke-width="2" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2 5.6-5.6 2 2-5.6z"/>
+                                </svg>
+                                <?php esc_html_e('What We\'ll Analyze', 'gmb-ranker-seo-automation'); ?>
+                            </h4>
+                            <ul class="gmb-bullets-checklist gmb-bullets-grid-2col">
+                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Current page SEO health', 'gmb-ranker-seo-automation'); ?></li>
+                                <li><span class="chk-blue">✓</span> <?php esc_html_e('SERP competitors & rank patterns', 'gmb-ranker-seo-automation'); ?></li>
+                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Semantic terms & entity coverage', 'gmb-ranker-seo-automation'); ?></li>
+                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Content gaps & missing topics', 'gmb-ranker-seo-automation'); ?></li>
+                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Search intent alignment', 'gmb-ranker-seo-automation'); ?></li>
+                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Readability & content structure', 'gmb-ranker-seo-automation'); ?></li>
+                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Internal link opportunities', 'gmb-ranker-seo-automation'); ?></li>
+                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Evidence-based recommendations', 'gmb-ranker-seo-automation'); ?></li>
+                            </ul>
+                        </div>
+
                     </div>
 
                     <!-- COLUMN 3: Overview -->
@@ -242,26 +262,6 @@ $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : '
                                     <strong class="kv-val" id="gmb-overview-mode"><?php esc_html_e('Optimize Existing Content', 'gmb-ranker-seo-automation'); ?></strong>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- What We'll Analyze Card -->
-                        <div class="gmb-side-card gmb-mt-16">
-                            <h4 class="gmb-side-card-title">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2563eb" stroke-width="2" aria-hidden="true">
-                                    <circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2 5.6-5.6 2 2-5.6z"/>
-                                </svg>
-                                <?php esc_html_e('What We\'ll Analyze', 'gmb-ranker-seo-automation'); ?>
-                            </h4>
-                            <ul class="gmb-bullets-checklist">
-                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Current page SEO health', 'gmb-ranker-seo-automation'); ?></li>
-                                <li><span class="chk-blue">✓</span> <?php esc_html_e('SERP competitors & rank patterns', 'gmb-ranker-seo-automation'); ?></li>
-                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Semantic terms & entity coverage', 'gmb-ranker-seo-automation'); ?></li>
-                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Content gaps & missing topics', 'gmb-ranker-seo-automation'); ?></li>
-                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Search intent alignment', 'gmb-ranker-seo-automation'); ?></li>
-                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Readability & content structure', 'gmb-ranker-seo-automation'); ?></li>
-                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Internal link opportunities', 'gmb-ranker-seo-automation'); ?></li>
-                                <li><span class="chk-blue">✓</span> <?php esc_html_e('Evidence-based recommendations', 'gmb-ranker-seo-automation'); ?></li>
-                            </ul>
                         </div>
                     </div>
                 </div>
