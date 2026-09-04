@@ -42,15 +42,30 @@ if (!class_exists('GMB_Ranker_SEO_Ajax_Wizard')) {
          *
          * @param string $nonce_action
          */
-        protected function verify_ajax_security($nonce_action = 'gmb_admin_ajax_nonce') {
+        protected function verify_ajax_security($nonce_action = 'gmb_wizard_nonce') {
             if (!current_user_can('manage_options')) {
                 wp_send_json_error(array('message' => 'Unauthorized access.'), 403);
             }
-            if (!check_ajax_referer($nonce_action, 'nonce', false)) {
-                // Fallback check if gmb_admin_ajax_nonce was sent instead of gmb_wizard_nonce
-                if ($nonce_action !== 'gmb_admin_ajax_nonce' && check_ajax_referer('gmb_admin_ajax_nonce', 'nonce', false)) {
-                    return;
+            $nonce = isset($_REQUEST['nonce']) ? sanitize_text_field(wp_unslash($_REQUEST['nonce'])) : (isset($_REQUEST['_wpnonce']) ? sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])) : (isset($_REQUEST['security']) ? sanitize_text_field(wp_unslash($_REQUEST['security'])) : ''));
+
+            $valid_nonces = array(
+                'gmb_wizard_nonce',
+                'gmb_admin_ajax_nonce',
+                'gmb_seo_save_nonce',
+                'gmb_ranker_ajax_nonce'
+            );
+
+            $verified = false;
+            if (!empty($nonce)) {
+                foreach ($valid_nonces as $action_nonce) {
+                    if (wp_verify_nonce($nonce, $action_nonce)) {
+                        $verified = true;
+                        break;
+                    }
                 }
+            }
+
+            if (!$verified) {
                 wp_send_json_error(array('message' => 'Invalid security token.'), 403);
             }
         }
