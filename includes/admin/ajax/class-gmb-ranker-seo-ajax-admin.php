@@ -867,32 +867,43 @@ class GMB_Ranker_SEO_Ajax_Admin {
         }
 
         // 5. Table of Contents (TOC) Module Integration
-        $toc_module_enabled = (get_option('gmb_ranker_module_toc', '1') === '1');
+        $toc_module_enabled = get_option('gmb_ranker_module_toc', '1') !== '0' && get_option('gmb_ranker_module_toc', '1') !== 'off';
+        $toc_auto_insert    = get_option('gmb_toc_auto_insert', '1') !== '0' && get_option('gmb_toc_auto_insert', '1') !== 'off';
         $has_explicit_toc   = (stripos($post->post_content, 'gmb-toc-box') !== false || stripos($post->post_content, '[toc') !== false || stripos($post->post_content, 'table-of-contents') !== false);
-        if (!$has_explicit_toc) {
-            if ($toc_module_enabled) {
-                $recommendations[] = array(
-                    'id'          => 'table_of_contents',
-                    'category'    => __('Table of Contents', 'gmb-ranker-seo-automation'),
-                    'current'     => __('No TOC detected', 'gmb-ranker-seo-automation'),
-                    'recommended' => __('Enable GMB Ranker TOC Auto-Insert', 'gmb-ranker-seo-automation'),
-                    'status'      => 'MODULE DEPENDENT',
-                    'risk_level'  => 'LOW',
-                    'action'      => 'ENABLE TOC AUTO-INSERT',
-                    'evidence'    => __('Add a Table of Contents to improve readability and user navigation.', 'gmb-ranker-seo-automation'),
-                );
-            } else {
-                $recommendations[] = array(
-                    'id'          => 'table_of_contents',
-                    'category'    => __('Table of Contents', 'gmb-ranker-seo-automation'),
-                    'current'     => __('TOC Module Disabled', 'gmb-ranker-seo-automation'),
-                    'recommended' => __('Available through Table of Contents module', 'gmb-ranker-seo-automation'),
-                    'status'      => 'MODULE DISABLED',
-                    'risk_level'  => 'HIGH RISK',
-                    'action'      => 'REQUIRES TOC MODULE',
-                    'evidence'    => __('Table of Contents module is currently disabled in plugin settings.', 'gmb-ranker-seo-automation'),
-                );
-            }
+
+        if ($has_explicit_toc || ($toc_module_enabled && $toc_auto_insert)) {
+            $recommendations[] = array(
+                'id'          => 'table_of_contents',
+                'category'    => __('Table of Contents', 'gmb-ranker-seo-automation'),
+                'current'     => $has_explicit_toc ? __('Explicit TOC Block/Shortcode', 'gmb-ranker-seo-automation') : __('Auto-inserted by GMB Ranker TOC Module', 'gmb-ranker-seo-automation'),
+                'recommended' => __('Table of Contents Active', 'gmb-ranker-seo-automation'),
+                'status'      => 'OPTIMAL',
+                'risk_level'  => 'LOW',
+                'action'      => 'ACTIVE',
+                'evidence'    => __('Table of Contents is automatically generated and prepended on frontend render.', 'gmb-ranker-seo-automation'),
+            );
+        } elseif ($toc_module_enabled && !$toc_auto_insert) {
+            $recommendations[] = array(
+                'id'          => 'table_of_contents',
+                'category'    => __('Table of Contents', 'gmb-ranker-seo-automation'),
+                'current'     => __('Auto-prepend Disabled', 'gmb-ranker-seo-automation'),
+                'recommended' => __('Enable Auto-prepend TOC Box', 'gmb-ranker-seo-automation'),
+                'status'      => 'MODULE DEPENDENT',
+                'risk_level'  => 'LOW',
+                'action'      => 'ENABLE TOC AUTO-INSERT',
+                'evidence'    => __('Enable Auto-prepend TOC Box in Table of Contents settings.', 'gmb-ranker-seo-automation'),
+            );
+        } else {
+            $recommendations[] = array(
+                'id'          => 'table_of_contents',
+                'category'    => __('Table of Contents', 'gmb-ranker-seo-automation'),
+                'current'     => __('TOC Module Disabled', 'gmb-ranker-seo-automation'),
+                'recommended' => __('Available through Table of Contents module', 'gmb-ranker-seo-automation'),
+                'status'      => 'MODULE DISABLED',
+                'risk_level'  => 'HIGH RISK',
+                'action'      => 'REQUIRES TOC MODULE',
+                'evidence'    => __('Table of Contents module is currently disabled in plugin settings.', 'gmb-ranker-seo-automation'),
+            );
         }
 
         // 6. Image SEO Handling (EXCLUDED from AI Auto-Fix per policy)

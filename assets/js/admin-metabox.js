@@ -2111,9 +2111,14 @@
         content.indexOf("wp-block-table-of-contents") !== -1 ||
         content.indexOf("wp:gmb-ranker/table-of-contents") !== -1;
       var tocModuleEnabled =
-        typeof gmbMetaboxData === "undefined" || gmbMetaboxData.moduleToc;
+        typeof gmbMetaboxData === "undefined" || !!gmbMetaboxData.moduleToc;
+      var minHeadings = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.tocMinHeadings) ? parseInt(gmbMetaboxData.tocMinHeadings, 10) : 2;
+      var headingsMatches = content.match(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi) || [];
+      var headingsCount = headingsMatches.length;
 
-      if (hasExplicitToc || tocModuleEnabled) {
+      var isTocActive = hasExplicitToc || (tocModuleEnabled && (headingsCount >= minHeadings || wordCount >= 250));
+
+      if (isTocActive) {
         contentPasses++;
         var tocMsg = hasExplicitToc
           ? "You are using a Table of Contents to break down your text."
@@ -2122,6 +2127,13 @@
           ? "Table of Contents improves page scannability."
           : "GMB Ranker TOC module automatically generates a Table of Contents on frontend render.";
         contentItems.push({ status: "pass", text: tocMsg, tip: tocTip });
+      } else if (tocModuleEnabled && headingsCount < minHeadings) {
+        contentFails++;
+        contentItems.push({
+          status: "fail",
+          text: "Add subheadings (H2, H3) for Table of Contents to automatically generate.",
+          tip: "GMB Ranker TOC module requires subheadings to generate the Table of Contents index.",
+        });
       } else {
         contentFails++;
         contentItems.push({

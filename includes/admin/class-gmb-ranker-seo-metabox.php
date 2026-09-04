@@ -80,6 +80,7 @@ class GMB_Ranker_SEO_Metabox {
                 'nonce'              => wp_create_nonce('gmb_admin_ajax_nonce'),
                 'postId'             => get_the_ID(),
                 'tocMinHeadings'     => (int) get_option('gmb_toc_min_headings', 2),
+                'moduleToc'          => get_option('gmb_ranker_module_toc', '1') !== '0' && get_option('gmb_ranker_module_toc', '1') !== 'off' && get_option('gmb_toc_auto_insert', '1') !== '0' && get_option('gmb_toc_auto_insert', '1') !== 'off',
                 'moduleSchema'       => get_option('gmb_ranker_module_schema', '1') !== '0' && get_option('gmb_ranker_module_schema', '1') !== 'off',
                 'moduleImageSeo'     => get_option('gmb_ranker_module_image_seo', '1') !== '0' && get_option('gmb_ranker_module_image_seo', '1') !== 'off',
                 'moduleLinks'        => get_option('gmb_ranker_module_links', '1') !== '0' && get_option('gmb_ranker_module_links', '1') !== 'off',
