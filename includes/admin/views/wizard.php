@@ -87,7 +87,7 @@ if (function_exists('wp_enqueue_script')) {
     <div class="wiz-card">
         
         <!-- STEP 1: GETTING STARTED (SELECT SETUP MODE) -->
-        <div class="wiz-step-pane active" id="wiz-pane-1" role="region" aria-label="<?php esc_attr_e('Step 1: Setup Mode', 'gmb-ranker-seo-automation'); ?>">
+        <div class="wiz-step-pane active" id="wiz-pane-1" role="region" aria-label="<?php esc_attr_e('Step 1: Getting Started', 'gmb-ranker-seo-automation'); ?>">
             <h2 class="wiz-title"><?php echo esc_html($steps[1]['title']); ?></h2>
             <p class="wiz-subtitle"><?php echo esc_html($steps[1]['subtitle']); ?></p>
 
@@ -191,7 +191,7 @@ if (function_exists('wp_enqueue_script')) {
         </div>
 
         <!-- STEP 2: YOUR SITE PROFILE -->
-        <div class="wiz-step-pane" id="wiz-pane-2" role="region" aria-label="<?php esc_attr_e('Step 2: Site Profile', 'gmb-ranker-seo-automation'); ?>">
+        <div class="wiz-step-pane" id="wiz-pane-2" role="region" aria-label="<?php esc_attr_e('Step 2: Your Site Profile', 'gmb-ranker-seo-automation'); ?>">
             <h2 class="wiz-title"><?php echo esc_html($steps[2]['title']); ?></h2>
             <p class="wiz-subtitle"><?php echo esc_html($steps[2]['subtitle']); ?></p>
 
@@ -265,7 +265,7 @@ if (function_exists('wp_enqueue_script')) {
         </div>
 
         <!-- STEP 3: API & AUTOMATION CONFIG -->
-        <div class="wiz-step-pane" id="wiz-pane-3" role="region" aria-label="<?php esc_attr_e('Step 3: API Integration', 'gmb-ranker-seo-automation'); ?>">
+        <div class="wiz-step-pane" id="wiz-pane-3" role="region" aria-label="<?php esc_attr_e('Step 3: API & Automation Integrations', 'gmb-ranker-seo-automation'); ?>">
             <h2 class="wiz-title"><?php echo esc_html($steps[3]['title']); ?></h2>
             <p class="wiz-subtitle"><?php echo esc_html($steps[3]['subtitle']); ?></p>
 
@@ -315,7 +315,7 @@ if (function_exists('wp_enqueue_script')) {
         </div>
 
         <!-- STEP 4: SITEMAPS CONFIGURATION -->
-        <div class="wiz-step-pane" id="wiz-pane-4" role="region" aria-label="<?php esc_attr_e('Step 4: XML Sitemaps', 'gmb-ranker-seo-automation'); ?>">
+        <div class="wiz-step-pane" id="wiz-pane-4" role="region" aria-label="<?php esc_attr_e('Step 4: XML Sitemaps Configuration', 'gmb-ranker-seo-automation'); ?>">
             <h2 class="wiz-title"><?php echo esc_html($steps[4]['title']); ?></h2>
             <p class="wiz-subtitle"><?php echo esc_html($steps[4]['subtitle']); ?></p>
 
@@ -376,7 +376,7 @@ if (function_exists('wp_enqueue_script')) {
         </div>
 
         <!-- STEP 5: OPTIMIZATION & TWEAKS -->
-        <div class="wiz-step-pane" id="wiz-pane-5" role="region" aria-label="<?php esc_attr_e('Step 5: Optimization', 'gmb-ranker-seo-automation'); ?>">
+        <div class="wiz-step-pane" id="wiz-pane-5" role="region" aria-label="<?php esc_attr_e('Step 5: SEO Automations & Tweaks', 'gmb-ranker-seo-automation'); ?>">
             <h2 class="wiz-title"><?php echo esc_html($steps[5]['title']); ?></h2>
             <p class="wiz-subtitle"><?php echo esc_html($steps[5]['subtitle']); ?></p>
 
@@ -457,7 +457,7 @@ if (function_exists('wp_enqueue_script')) {
         </div>
 
         <!-- STEP 6: READY -->
-        <div class="wiz-step-pane" id="wiz-pane-6" role="region" aria-label="<?php esc_attr_e('Step 6: Completion', 'gmb-ranker-seo-automation'); ?>">
+        <div class="wiz-step-pane" id="wiz-pane-6" role="region" aria-label="<?php esc_attr_e('Step 6: Your Site is Ready!', 'gmb-ranker-seo-automation'); ?>">
             <div class="wiz-ready-icon-wrap">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
             </div>
