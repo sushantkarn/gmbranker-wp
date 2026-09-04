@@ -78,6 +78,7 @@ class GMB_Ranker_SEO_Metabox {
             wp_localize_script('gmb-ranker-admin-metabox', 'gmbMetaboxData', array(
                 'ajaxUrl'            => admin_url('admin-ajax.php'),
                 'nonce'              => wp_create_nonce('gmb_admin_ajax_nonce'),
+                'postId'             => get_the_ID(),
                 'tocMinHeadings'     => (int) get_option('gmb_toc_min_headings', 2),
                 'moduleSchema'       => get_option('gmb_ranker_module_schema', '1') !== '0' && get_option('gmb_ranker_module_schema', '1') !== 'off',
                 'moduleImageSeo'     => get_option('gmb_ranker_module_image_seo', '1') !== '0' && get_option('gmb_ranker_module_image_seo', '1') !== 'off',

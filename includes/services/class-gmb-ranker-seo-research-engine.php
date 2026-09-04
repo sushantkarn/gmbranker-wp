@@ -546,21 +546,34 @@ class GMB_Ranker_SEO_Research_Engine {
         if ($layer_a['keyword_status'] === 'OVER-OPTIMIZED') $score -= 10;
 
         $current_score = max(25, min(95, $score));
-        if ($post_id > 0 && class_exists('GMB_Ranker_SEO_Analysis')) {
-            $real_analysis = GMB_Ranker_SEO_Analysis::analyze_post($post_id);
-            if (isset($real_analysis['score']) && is_numeric($real_analysis['score'])) {
-                $current_score = intval($real_analysis['score']);
+        if ($post_id > 0) {
+            $saved_score = get_post_meta($post_id, '_gmb_ranker_seo_score', true);
+            if (is_numeric($saved_score) && intval($saved_score) > 0) {
+                $current_score = intval($saved_score);
+            } elseif (class_exists('GMB_Ranker_SEO_Analysis_Service')) {
+                $svc = new GMB_Ranker_SEO_Analysis_Service();
+                $real_analysis = $svc->audit_post($post_id);
+                if (isset($real_analysis['score']) && is_numeric($real_analysis['score']) && intval($real_analysis['score']) > 0) {
+                    $current_score = intval($real_analysis['score']);
+                }
+            } elseif (class_exists('GMB_Ranker_SEO_Analysis')) {
+                $real_analysis = GMB_Ranker_SEO_Analysis::analyze_post($post_id);
+                if (isset($real_analysis['score']) && is_numeric($real_analysis['score'])) {
+                    $current_score = intval($real_analysis['score']);
+                }
             }
         }
 
-        $potential_min = min(92, max($current_score + 15, 84));
-        $potential_max = min(99, max($potential_min + 7, 91));
+        $potential_min = min(95, max($current_score + 10, 85));
+        $potential_max = min(100, max($current_score + 18, 90));
 
         return array(
+            'current'             => $current_score,
             'current_score'       => $current_score,
+            'potential'           => $potential_max,
             'potential_min'       => $potential_min,
             'potential_max'       => $potential_max,
-            'potential_label'     => $potential_min . ' – ' . $potential_max . ' / 100',
+            'potential_label'     => sprintf('%d / 100 (Potential: %d / 100)', $current_score, $potential_max),
             'confidence'          => 'High',
             'breakdown'           => array(
                 'intent_match'     => '88%',

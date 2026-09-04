@@ -413,6 +413,47 @@ if (!class_exists('GMB_Ranker_SEO_Analysis_Service')) {
                 return;
             }
 
+            // Keyword Cannibalization & Uniqueness Check
+            $post_id = isset($context['post_id']) ? intval($context['post_id']) : 0;
+            $cannibalization = self::check_keyword_cannibalization($kw, $post_id);
+
+            if ($cannibalization['is_cannibalized']) {
+                $conflict_labels = array();
+                foreach ($cannibalization['conflicts'] as $conf) {
+                    $conflict_labels[] = sprintf('%s (%s)', $conf['title'], ucfirst($conf['post_type']));
+                }
+                $findings[] = $this->create_finding(
+                    'kw_cannibalization_conflict',
+                    'keywords',
+                    'high',
+                    75,
+                    0.8,
+                    __('Keyword Cannibalization Conflict Detected', 'gmb-ranker-seo-automation'),
+                    sprintf(
+                        __('Focus keyword "%1$s" is already targeted by %2$d published item(s): %3$s. Multiple URLs targeting the exact same focus keyword cause keyword cannibalization.', 'gmb-ranker-seo-automation'),
+                        esc_html($context['focus_kw']),
+                        $cannibalization['conflict_count'],
+                        implode(', ', $conflict_labels)
+                    ),
+                    __('Assign a unique focus keyword or consolidate conflicting content to avoid ranking competition.', 'gmb-ranker-seo-automation'),
+                    'metadata',
+                    false
+                );
+            } else {
+                $findings[] = $this->create_finding(
+                    'kw_uniqueness_ok',
+                    'keywords',
+                    'info',
+                    5,
+                    1.0,
+                    __('Unique Focus Keyword', 'gmb-ranker-seo-automation'),
+                    sprintf(__('Focus keyword "%s" is unique and not targeted by any other published post, page, or service.', 'gmb-ranker-seo-automation'), esc_html($context['focus_kw'])),
+                    '',
+                    'metadata',
+                    false
+                );
+            }
+
             // Keyword in Title
             if (mb_strpos(mb_strtolower($context['meta_title']), $kw) !== false) {
                 $findings[] = $this->create_finding(
@@ -913,6 +954,63 @@ if (!class_exists('GMB_Ranker_SEO_Analysis_Service')) {
             $norm2 = strtolower(rtrim(preg_replace('/^https?:\/\//i', '', trim($url2)), '/'));
 
             return ($norm1 !== '' && $norm1 === $norm2);
+        }
+
+        /**
+         * Check for keyword cannibalization across all published posts, pages, and custom post types
+         *
+         * @param string $focus_kw
+         * @param int $exclude_post_id
+         * @return array
+         */
+        public static function check_keyword_cannibalization($focus_kw, $exclude_post_id = 0) {
+            global $wpdb;
+
+            $kw = mb_strtolower(trim($focus_kw));
+            if (empty($kw)) {
+                return array(
+                    'is_cannibalized' => false,
+                    'conflict_count'  => 0,
+                    'conflicts'       => array(),
+                );
+            }
+
+            $exclude_id = intval($exclude_post_id);
+
+            $results = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT p.ID, p.post_title, p.post_type, p.post_status
+                     FROM {$wpdb->posts} p
+                     INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+                     WHERE p.ID != %d
+                       AND p.post_status = 'publish'
+                       AND pm.meta_key IN ('_gmb_ranker_focus_keyword', '_yoast_wpseo_focuskw', 'rank_math_focus_keyword')
+                       AND LOWER(TRIM(pm.meta_value)) = %s
+                     GROUP BY p.ID
+                     LIMIT 10",
+                    $exclude_id,
+                    $kw
+                )
+            );
+
+            $conflicts = array();
+            if (!empty($results)) {
+                foreach ($results as $row) {
+                    $conflicts[] = array(
+                        'id'        => (int) $row->ID,
+                        'title'     => $row->post_title,
+                        'post_type' => $row->post_type,
+                        'edit_url'  => get_edit_post_link($row->ID, 'raw'),
+                        'permalink' => get_permalink($row->ID),
+                    );
+                }
+            }
+
+            return array(
+                'is_cannibalized' => !empty($conflicts),
+                'conflict_count'  => count($conflicts),
+                'conflicts'       => $conflicts,
+            );
         }
 
         /**
