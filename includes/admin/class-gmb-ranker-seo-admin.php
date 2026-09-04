@@ -356,11 +356,13 @@ class GMB_Ranker_SEO_Admin {
 
         wp_enqueue_script('gmb-ranker-admin-js', $base_url . 'js/admin-dashboard.js', array('jquery'), $js_ver, true);
         wp_enqueue_script('gmb-ranker-admin-app-js', $base_url . 'js/admin/admin-app.js', array('jquery', 'gmb-ranker-admin-js'), $js_ver, true);
+        wp_enqueue_script('gmb-ranker-wizard-js', $base_url . 'js/admin-wizard.js', array('jquery', 'gmb-ranker-admin-js'), $js_ver, true);
         
         $localized_data = array(
             'ajax_url'            => admin_url('admin-ajax.php'),
             'nonce'               => wp_create_nonce('gmb_seo_save_nonce'),
             'admin_nonce'         => wp_create_nonce('gmb_admin_ajax_nonce'),
+            'wizard_nonce'        => wp_create_nonce('gmb_wizard_nonce'),
             'schema_nonce'        => wp_create_nonce('gmb_ranker_ajax_nonce'),
             'toggle_module_nonce' => wp_create_nonce('gmb_toggle_module_nonce'),
             'instant_index_nonce' => wp_create_nonce('gmb_admin_ajax_nonce'),
@@ -369,6 +371,7 @@ class GMB_Ranker_SEO_Admin {
         );
         wp_localize_script('gmb-ranker-admin-js', 'gmb_ranker_admin', $localized_data);
         wp_localize_script('gmb-ranker-admin-app-js', 'gmb_ranker_admin', $localized_data);
+        wp_localize_script('gmb-ranker-wizard-js', 'gmb_ranker_admin', $localized_data);
     }
 
     /**
