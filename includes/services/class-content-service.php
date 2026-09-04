@@ -2,9 +2,15 @@
 /**
  * Content Service for GMB Ranker SEO Automation
  *
- * Production SEO content mutation service providing DOM-aware HTML link injection,
- * safe anchor matching, URL security, internal-link validation, Elementor JSON traversal,
- * Gutenberg block support, atomicity, duplicate prevention, and backward-compatible public APIs.
+ * Production SEO content mutation & brief/prompt orchestration service providing:
+ * - DOM-aware HTML link injection
+ * - Safe anchor matching & URL security
+ * - Internal-link validation & duplicate link prevention
+ * - Elementor JSON traversal & Gutenberg block support
+ * - Dynamic, site-context-driven structured content brief normalization
+ * - Prompt-injection-safe dynamic LLM writing prompt construction
+ * - AI-generated content validation before persistence
+ * - Backward-compatible public APIs
  *
  * @package GMB_Ranker_SEO_Automation
  */
@@ -56,6 +62,411 @@ class GMB_Ranker_SEO_Content_Service {
         'toggle'         => array('tab_content'),
         'accordion'      => array('tab_content'),
     );
+
+    /* ==========================================================================
+       SECTION 1: STRUCTURED CONTENT BRIEF & DYNAMIC PROMPT BUILDER
+       ========================================================================== */
+
+    /**
+     * Build and normalize a structured SEO content brief from raw input data
+     *
+     * @param array $data Input brief parameters
+     * @return array Normalized structured content brief
+     */
+    public function build_content_brief(array $data = array()) {
+        $site_name = get_bloginfo('name') ?: get_option('blogname', 'WordPress Site');
+        $site_desc = get_bloginfo('description') ?: '';
+        $home_url  = esc_url(home_url('/'));
+        $locale    = get_locale();
+
+        // 1. Site Context
+        $site_context = array(
+            'site_name'        => !empty($data['site_name']) ? sanitize_text_field($data['site_name']) : sanitize_text_field($site_name),
+            'home_url'         => !empty($data['home_url']) ? esc_url_raw($data['home_url']) : $home_url,
+            'site_description' => !empty($data['site_description']) ? sanitize_text_field($data['site_description']) : sanitize_text_field($site_desc),
+            'language'         => !empty($data['language']) ? sanitize_text_field($data['language']) : $locale,
+            'brand_voice'      => !empty($data['brand_voice']) ? sanitize_text_field($data['brand_voice']) : '',
+        );
+
+        // 2. Core Topic & Keywords
+        $title            = !empty($data['title']) ? sanitize_text_field($data['title']) : '';
+        $primary_keyword  = !empty($data['primary_keyword']) ? sanitize_text_field($data['primary_keyword']) : (!empty($data['topic']) ? sanitize_text_field($data['topic']) : '');
+        
+        $secondary_kws = array();
+        if (!empty($data['secondary_keywords']) && is_array($data['secondary_keywords'])) {
+            foreach ($data['secondary_keywords'] as $kw) {
+                if (is_string($kw) && strlen(trim($kw)) > 0) {
+                    $secondary_kws[] = sanitize_text_field(trim($kw));
+                }
+            }
+        } elseif (!empty($data['secondary_keywords']) && is_string($data['secondary_keywords'])) {
+            $parts = explode(',', $data['secondary_keywords']);
+            foreach ($parts as $p) {
+                if (strlen(trim($p)) > 0) {
+                    $secondary_kws[] = sanitize_text_field(trim($p));
+                }
+            }
+        }
+
+        // 3. Search Intent & Strategic Angle
+        $intent   = !empty($data['intent']) ? sanitize_text_field($data['intent']) : '';
+        $audience = !empty($data['audience']) ? sanitize_text_field($data['audience']) : '';
+        $angle    = !empty($data['angle']) ? sanitize_text_field($data['angle']) : '';
+        $objective= !empty($data['objective']) ? sanitize_text_field($data['objective']) : '';
+        $opp_reason= !empty($data['opportunity_reason']) ? sanitize_text_field($data['opportunity_reason']) : (!empty($data['why_it_wins']) ? sanitize_text_field($data['why_it_wins']) : '');
+
+        // 4. GSC / Performance Evidence
+        $gsc_evidence = array();
+        if (!empty($data['gsc_evidence']) && is_array($data['gsc_evidence'])) {
+            $raw_gsc = $data['gsc_evidence'];
+            $gsc_evidence = array(
+                'query'       => !empty($raw_gsc['query']) ? sanitize_text_field($raw_gsc['query']) : $primary_keyword,
+                'impressions' => isset($raw_gsc['impressions']) ? intval($raw_gsc['impressions']) : null,
+                'clicks'      => isset($raw_gsc['clicks']) ? intval($raw_gsc['clicks']) : null,
+                'ctr'         => isset($raw_gsc['ctr']) ? floatval($raw_gsc['ctr']) : null,
+                'position'    => isset($raw_gsc['position']) ? floatval($raw_gsc['position']) : null,
+                'reason'      => !empty($raw_gsc['reason']) ? sanitize_text_field($raw_gsc['reason']) : $opp_reason,
+            );
+        }
+
+        // 5. Outline Structure
+        $outline = array();
+        if (!empty($data['outline']) && is_array($data['outline'])) {
+            foreach ($data['outline'] as $item) {
+                if (is_string($item)) {
+                    $clean_item = sanitize_text_field(trim($item));
+                    if (!empty($clean_item)) {
+                        $outline[] = array('level' => 2, 'heading' => $clean_item, 'purpose' => '');
+                    }
+                } elseif (is_array($item)) {
+                    $heading = !empty($item['heading']) ? sanitize_text_field($item['heading']) : (!empty($item['text']) ? sanitize_text_field($item['text']) : '');
+                    if (!empty($heading)) {
+                        $level = !empty($item['level']) ? max(2, min(6, intval($item['level']))) : 2;
+                        $purpose = !empty($item['purpose']) ? sanitize_text_field($item['purpose']) : '';
+                        $outline[] = array('level' => $level, 'heading' => $heading, 'purpose' => $purpose);
+                    }
+                }
+            }
+        }
+
+        // Delegate to Content AI service for intent/outline enrichment if available and outline is empty
+        if (empty($outline) && class_exists('GMB_Ranker_SEO_Content_AI') && (!empty($title) || !empty($primary_keyword))) {
+            $ai_brief = GMB_Ranker_SEO_Content_AI::build_content_brief($title, $primary_keyword);
+            if (empty($intent) && !empty($ai_brief['search_intent'])) {
+                $intent = sanitize_text_field($ai_brief['search_intent']);
+            }
+            $ai_outline = GMB_Ranker_SEO_Content_AI::generate_dynamic_outline($ai_brief);
+            if (is_array($ai_outline) && !empty($ai_outline)) {
+                foreach ($ai_outline as $h) {
+                    $outline[] = array('level' => 2, 'heading' => sanitize_text_field($h), 'purpose' => '');
+                }
+            }
+        }
+
+        // 6. Content Requirements
+        $requirements = array();
+        if (!empty($data['requirements']) && is_array($data['requirements'])) {
+            foreach ($data['requirements'] as $req) {
+                if (is_string($req) && strlen(trim($req)) > 0) {
+                    $requirements[] = sanitize_text_field(trim($req));
+                }
+            }
+        }
+
+        // 7. Tone & CTA
+        $tone = !empty($data['tone']) ? sanitize_text_field($data['tone']) : 'Professional, informative, and engaging';
+        $cta  = !empty($data['cta']) ? sanitize_text_field($data['cta']) : '';
+
+        // 8. Internal Links
+        $internal_links = array();
+        if (!empty($data['internal_links']) && is_array($data['internal_links'])) {
+            foreach ($data['internal_links'] as $link) {
+                if (is_array($link) && !empty($link['url'])) {
+                    $clean_link_url = esc_url_raw($link['url']);
+                    $clean_link_anchor = !empty($link['anchor']) ? sanitize_text_field($link['anchor']) : sanitize_text_field($link['text'] ?? '');
+                    if (!empty($clean_link_url)) {
+                        $internal_links[] = array(
+                            'anchor' => $clean_link_anchor,
+                            'url'    => $clean_link_url,
+                        );
+                    }
+                }
+            }
+        }
+
+        // 9. Constraints & Meta
+        $constraints = array(
+            'post_type'      => !empty($data['post_type']) ? sanitize_key($data['post_type']) : 'post',
+            'post_id'        => !empty($data['post_id']) ? intval($data['post_id']) : 0,
+            'word_count_min' => !empty($data['word_count_min']) ? intval($data['word_count_min']) : 0,
+        );
+
+        return array(
+            'site_context'       => $site_context,
+            'title'              => $title,
+            'primary_keyword'    => $primary_keyword,
+            'secondary_keywords' => array_values(array_unique($secondary_kws)),
+            'intent'             => $intent,
+            'audience'           => $audience,
+            'angle'              => $angle,
+            'objective'          => $objective,
+            'opportunity_reason' => $opp_reason,
+            'gsc_evidence'       => $gsc_evidence,
+            'outline'            => $outline,
+            'requirements'       => $requirements,
+            'tone'               => $tone,
+            'cta'                => $cta,
+            'internal_links'     => $internal_links,
+            'constraints'        => $constraints,
+        );
+    }
+
+    /**
+     * Build an LLM writing prompt from a structured content brief
+     *
+     * @param array $brief Structured content brief
+     * @return array Structured result contract [ 'success' => bool, 'prompt' => string, 'brief' => array, ... ]
+     */
+    public function build_content_prompt(array $brief) {
+        $normalized_brief = $this->build_content_brief($brief);
+
+        if (empty($normalized_brief['title']) && empty($normalized_brief['primary_keyword'])) {
+            return array(
+                'success'    => false,
+                'status'     => 'invalid_brief',
+                'prompt'     => '',
+                'brief'      => $normalized_brief,
+                'warnings'   => array(__('Content brief requires at least a title or primary keyword.', 'gmb-ranker-seo-automation')),
+                'metadata'   => array(),
+                'reason'     => __('Content brief requires at least a title or primary keyword.', 'gmb-ranker-seo-automation'),
+                'error_code' => 'invalid_brief',
+            );
+        }
+
+        $warnings = array();
+        $sections = array();
+
+        // 1. Task Definition
+        $sections[] = "### CONTENT CREATION TASK\nWrite a high-quality, search-intent-aligned article based strictly on the following structured SEO brief.";
+
+        // 2. Site Context
+        $sc = $normalized_brief['site_context'];
+        $sections[] = "### SITE & BRAND CONTEXT\n" .
+            "- Site Name: " . $this->sanitize_prompt_value($sc['site_name']) . "\n" .
+            "- Site URL: " . $this->sanitize_prompt_value($sc['home_url']) .
+            (!empty($sc['site_description']) ? "\n- Description: " . $this->sanitize_prompt_value($sc['site_description']) : "") .
+            (!empty($sc['brand_voice']) ? "\n- Brand Voice: " . $this->sanitize_prompt_value($sc['brand_voice']) : "");
+
+        // 3. Core Brief Details
+        $brief_lines = array();
+        if (!empty($normalized_brief['title'])) {
+            $brief_lines[] = "- Target Title: " . $this->sanitize_prompt_value($normalized_brief['title']);
+        }
+        if (!empty($normalized_brief['primary_keyword'])) {
+            $brief_lines[] = "- Primary Keyword / Topic: " . $this->sanitize_prompt_value($normalized_brief['primary_keyword']);
+        }
+        if (!empty($normalized_brief['secondary_keywords'])) {
+            $brief_lines[] = "- Secondary Keywords: " . implode(', ', array_map(array($this, 'sanitize_prompt_value'), $normalized_brief['secondary_keywords']));
+        }
+        if (!empty($normalized_brief['intent'])) {
+            $brief_lines[] = "- Search Intent: " . $this->sanitize_prompt_value($normalized_brief['intent']);
+        }
+        if (!empty($normalized_brief['audience'])) {
+            $brief_lines[] = "- Target Audience: " . $this->sanitize_prompt_value($normalized_brief['audience']);
+        }
+        if (!empty($normalized_brief['angle'])) {
+            $brief_lines[] = "- Strategic Angle: " . $this->sanitize_prompt_value($normalized_brief['angle']);
+        }
+        if (!empty($normalized_brief['objective'])) {
+            $brief_lines[] = "- Content Objective: " . $this->sanitize_prompt_value($normalized_brief['objective']);
+        }
+
+        if (!empty($brief_lines)) {
+            $sections[] = "### ARTICLE BRIEF\n" . implode("\n", $brief_lines);
+        }
+
+        // 4. Opportunity / Reason
+        if (!empty($normalized_brief['opportunity_reason'])) {
+            $sections[] = "### WHY THIS CONTENT / OPPORTUNITY\n" . $this->sanitize_prompt_value($normalized_brief['opportunity_reason']);
+        }
+
+        // 5. GSC Evidence
+        if (!empty($normalized_brief['gsc_evidence']) && !empty($normalized_brief['gsc_evidence']['query'])) {
+            $ge = $normalized_brief['gsc_evidence'];
+            $gsc_str = "- Query: " . $this->sanitize_prompt_value($ge['query']);
+            if (isset($ge['impressions']) && $ge['impressions'] !== null) {
+                $gsc_str .= "\n- Impressions: " . number_format($ge['impressions']);
+            }
+            if (isset($ge['clicks']) && $ge['clicks'] !== null) {
+                $gsc_str .= " | Clicks: " . number_format($ge['clicks']);
+            }
+            if (isset($ge['ctr']) && $ge['ctr'] !== null) {
+                $gsc_str .= " | CTR: " . number_format($ge['ctr'], 2) . "%";
+            }
+            if (isset($ge['position']) && $ge['position'] !== null) {
+                $gsc_str .= " | Avg Position: " . number_format($ge['position'], 1);
+            }
+            if (!empty($ge['reason'])) {
+                $gsc_str .= "\n- Context: " . $this->sanitize_prompt_value($ge['reason']);
+            }
+            $sections[] = "### SEARCH PERFORMANCE EVIDENCE\n" . $gsc_str;
+        }
+
+        // 6. Outline
+        if (!empty($normalized_brief['outline'])) {
+            $outline_lines = array();
+            foreach ($normalized_brief['outline'] as $item) {
+                $tag = "H" . $item['level'];
+                $line = "- " . $tag . ": " . $this->sanitize_prompt_value($item['heading']);
+                if (!empty($item['purpose'])) {
+                    $line .= " (" . $this->sanitize_prompt_value($item['purpose']) . ")";
+                }
+                $outline_lines[] = $line;
+            }
+            $sections[] = "### SUGGESTED OUTLINE\n" . implode("\n", $outline_lines);
+        }
+
+        // 7. Requirements & Guidelines
+        $req_lines = array(
+            "- Maintain a clean, professional heading hierarchy (H2, H3).",
+            "- Use natural, search-intent-aligned language without keyword stuffing.",
+            "- Provide actionable, practical advice tailored to the target audience.",
+        );
+        if (!empty($normalized_brief['requirements'])) {
+            foreach ($normalized_brief['requirements'] as $req) {
+                $req_lines[] = "- " . $this->sanitize_prompt_value($req);
+            }
+        }
+        $sections[] = "### CONTENT REQUIREMENTS\n" . implode("\n", $req_lines);
+
+        // 8. Voice & Tone
+        if (!empty($normalized_brief['tone'])) {
+            $sections[] = "### VOICE & TONE\n" . $this->sanitize_prompt_value($normalized_brief['tone']);
+        }
+
+        // 9. Call to Action (CTA)
+        if (!empty($normalized_brief['cta'])) {
+            $sections[] = "### CALL TO ACTION (CTA)\n" . $this->sanitize_prompt_value($normalized_brief['cta']);
+        }
+
+        // 10. Internal Link Opportunities
+        if (!empty($normalized_brief['internal_links'])) {
+            $link_lines = array();
+            foreach ($normalized_brief['internal_links'] as $il) {
+                $link_lines[] = "- Link anchor \"" . $this->sanitize_prompt_value($il['anchor']) . "\" to " . esc_url_raw($il['url']);
+            }
+            $sections[] = "### INTERNAL LINKING OPPORTUNITIES\n" . implode("\n", $link_lines);
+        }
+
+        // 11. Output Format Constraints
+        $sections[] = "### OUTPUT FORMATTING CONSTRAINTS\n" .
+            "- Return valid HTML content using <h2>, <h3>, <p>, <ul>, <ol>, <strong> tags.\n" .
+            "- Do NOT wrap output in markdown code fences (such as ```html).\n" .
+            "- Do NOT write introductory filler or conversational response text (such as 'Here is your article').";
+
+        $full_prompt = implode("\n\n", $sections);
+
+        return array(
+            'success'    => true,
+            'status'     => 'completed',
+            'prompt'     => $full_prompt,
+            'brief'      => $normalized_brief,
+            'warnings'   => $warnings,
+            'metadata'   => array(
+                'token_estimate' => (int)ceil(strlen($full_prompt) / 4),
+                'has_gsc_data'   => !empty($normalized_brief['gsc_evidence']),
+                'has_outline'    => !empty($normalized_brief['outline']),
+            ),
+            'reason'     => __('Content prompt generated successfully from structured brief.', 'gmb-ranker-seo-automation'),
+            'error_code' => '',
+        );
+    }
+
+    /**
+     * Validate AI-generated content before mutation and database persistence
+     *
+     * @param string $content  Generated content string
+     * @param array  $expected Optional validation expectations
+     * @return array Structured result contract [ 'success' => bool, 'status' => string, 'content' => string, ... ]
+     */
+    public function validate_generated_content($content, array $expected = array()) {
+        $raw_content = (string)$content;
+        $clean_text  = trim(wp_strip_all_tags($raw_content));
+
+        if (empty($clean_text)) {
+            return array(
+                'success'    => false,
+                'status'     => 'empty_content',
+                'content'    => '',
+                'reason'     => __('Generated content is empty or contains no readable text.', 'gmb-ranker-seo-automation'),
+                'error_code' => 'empty_content',
+            );
+        }
+
+        $min_words = isset($expected['min_words']) ? intval($expected['min_words']) : 30;
+        $word_count = str_word_count($clean_text);
+        if ($word_count < $min_words) {
+            return array(
+                'success'    => false,
+                'status'     => 'content_too_short',
+                'content'    => $raw_content,
+                'reason'     => sprintf(__('Generated content is too short (%d words, expected at least %d).', 'gmb-ranker-seo-automation'), $word_count, $min_words),
+                'error_code' => 'content_too_short',
+            );
+        }
+
+        // Check for malicious scripts or unsafe executable content
+        if (preg_match('/<script|javascript:|on\w+\s*=/i', $raw_content)) {
+            return array(
+                'success'    => false,
+                'status'     => 'script_detected',
+                'content'    => '',
+                'reason'     => __('Generated content contained forbidden script elements or event handlers.', 'gmb-ranker-seo-automation'),
+                'error_code' => 'script_detected',
+            );
+        }
+
+        // Check for prompt leakage
+        if (preg_match('/### CONTENT CREATION TASK|### OUTPUT FORMATTING CONSTRAINTS|SYSTEM PROMPT:/i', $raw_content)) {
+            return array(
+                'success'    => false,
+                'status'     => 'prompt_leakage',
+                'content'    => $raw_content,
+                'reason'     => __('Generated content contained system prompt leakage.', 'gmb-ranker-seo-automation'),
+                'error_code' => 'prompt_leakage',
+            );
+        }
+
+        // Sanitize allowed HTML
+        $safe_html = wp_kses_post($raw_content);
+
+        return array(
+            'success'    => true,
+            'status'     => 'valid',
+            'content'    => $safe_html,
+            'reason'     => __('Generated content passed all safety and structural validation checks.', 'gmb-ranker-seo-automation'),
+            'error_code' => '',
+        );
+    }
+
+    /**
+     * Sanitize string value for LLM prompt inclusion (prevents prompt injection & markdown fence breaking)
+     *
+     * @param string $str
+     * @return string
+     */
+    protected function sanitize_prompt_value($str) {
+        if (!is_string($str)) {
+            return '';
+        }
+        $clean = wp_strip_all_tags($str);
+        $clean = str_replace(array("```", "###", "System:", "User:"), array("'''", "---", "System-Data:", "User-Data:"), $clean);
+        return trim($clean);
+    }
+
+    /* ==========================================================================
+       SECTION 2: CONTENT MUTATION & HTML LINK INJECTION
+       ========================================================================== */
 
     /**
      * Inject an internal link into an HTML content string using DOM-aware parsing
