@@ -77,7 +77,7 @@ if (function_exists('wp_enqueue_script')) {
             <?php foreach ($steps as $step_num => $step_data) : ?>
                 <div class="wiz-step-item <?php echo ($step_num === 1) ? 'active' : ''; ?>" data-step="<?php echo esc_attr($step_num); ?>" id="wiz-step-indicator-<?php echo esc_attr($step_num); ?>">
                     <div class="wiz-step-circle"><?php echo esc_html($step_num); ?></div>
-                    <div class="wiz-step-label"><?php echo esc_html($step_data['title']); ?></div>
+                    <div class="wiz-step-label"><?php echo esc_html(!empty($step_data['nav_label']) ? $step_data['nav_label'] : $step_data['title']); ?></div>
                 </div>
             <?php endforeach; ?>
         </div>
