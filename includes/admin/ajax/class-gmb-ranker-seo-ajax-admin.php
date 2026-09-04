@@ -445,7 +445,7 @@ class GMB_Ranker_SEO_Ajax_Admin {
     }
 
     /**
-     * AI Suggest 404 Redirects (Derived from published public content permalinks)
+     * AI Suggest 404 Redirects (Derived from published public content permalinks & fuzzy/AI matching)
      */
     public function ajax_ai_suggest_404_redirects() {
         $this->enforce_ajax_csrf_protection();
@@ -453,18 +453,29 @@ class GMB_Ranker_SEO_Ajax_Admin {
             wp_send_json_error(array('message' => 'Unauthorized access.'), 403);
         }
 
-        $repo = new GMB_Ranker_SEO_Redirect_Repository();
-        $logs = $repo->get_404_logs();
+        $single_uri = isset($_POST['uri']) ? sanitize_text_field(wp_unslash($_POST['uri'])) : '';
+        $repo       = new GMB_Ranker_SEO_Redirect_Repository();
+        $logs       = $repo->get_404_logs();
 
-        if (empty($logs)) {
+        $target_logs = array();
+        if (!empty($single_uri)) {
+            $target_logs[] = array('uri' => $single_uri, 'count' => 1);
+        } elseif (is_array($logs) && !empty($logs)) {
+            $target_logs = array_slice($logs, 0, 30);
+        }
+
+        if (empty($target_logs)) {
             wp_send_json_success(array('message' => 'No 404 log entries found.', 'suggestions' => array()));
         }
 
-        // Fetch candidate published posts & pages for deterministic target matching
+        // Fetch candidate published posts, pages & custom post types for target matching
+        $public_types = get_post_types(array('public' => true));
+        unset($public_types['attachment']);
+
         $published_posts = get_posts(array(
-            'post_type'      => array('post', 'page'),
+            'post_type'      => array_values($public_types),
             'post_status'    => 'publish',
-            'posts_per_page' => 100,
+            'posts_per_page' => 150,
             'fields'         => 'ids',
         ));
 
@@ -472,50 +483,81 @@ class GMB_Ranker_SEO_Ajax_Admin {
         foreach ($published_posts as $pid) {
             $permalink = get_permalink($pid);
             if ($permalink) {
+                $path = wp_parse_url($permalink, PHP_URL_PATH) ?: $permalink;
                 $candidates[] = array(
                     'title' => get_the_title($pid),
-                    'slug'  => get_post_field('post_name', $pid),
+                    'slug'  => strtolower(get_post_field('post_name', $pid)),
                     'url'   => $permalink,
+                    'path'  => $path,
                 );
             }
         }
 
-        $suggestions = array();
         $site_url = home_url('/');
+        $site_path = wp_parse_url($site_url, PHP_URL_PATH) ?: '/';
+        $suggestions = array();
 
-        foreach (array_slice($logs, 0, 30) as $log) {
+        foreach ($target_logs as $log) {
             if (empty($log['uri'])) {
                 continue;
             }
 
             $source_uri = $log['uri'];
-            $clean_slug = strtolower(trim(wp_parse_url($source_uri, PHP_URL_PATH) ?: $source_uri, '/'));
+            $clean_path = strtolower(trim(wp_parse_url($source_uri, PHP_URL_PATH) ?: $source_uri, '/'));
 
-            $best_match = $site_url;
-            $best_reason = __('Matched to primary homepage canonical URL.', 'gmb-ranker-seo-automation');
-            $confidence  = 0.70;
+            $best_match  = $site_path;
+            $best_reason = __('Fallback to site primary home path.', 'gmb-ranker-seo-automation');
+            $confidence  = 0.60;
+            $confidence_label = 'low';
 
-            // Search for matching slug in published candidates
-            if (!empty($clean_slug)) {
-                $path_parts = array_filter(explode('/', $clean_slug));
-                $target_keyword = end($path_parts);
+            if (!empty($clean_path)) {
+                $path_parts     = array_filter(explode('/', $clean_path));
+                $target_keyword = !empty($path_parts) ? end($path_parts) : $clean_path;
+                $best_sim_score = 0;
 
                 foreach ($candidates as $cand) {
-                    if (!empty($cand['slug']) && (strpos($cand['slug'], $target_keyword) !== false || strpos($target_keyword, $cand['slug']) !== false)) {
-                        $best_match  = $cand['url'];
-                        $best_reason = sprintf(__('AI matched path keyword "%s" to published page "%s"', 'gmb-ranker-seo-automation'), esc_html($target_keyword), esc_html($cand['title']));
-                        $confidence  = 0.92;
-                        break;
+                    // Exact or substring slug match
+                    if (!empty($cand['slug'])) {
+                        if ($cand['slug'] === $target_keyword || strtolower(trim($cand['path'], '/')) === $clean_path) {
+                            $best_match  = $cand['path'];
+                            $best_reason = sprintf(__('Exact permalink/slug match with published page "%s"', 'gmb-ranker-seo-automation'), esc_html($cand['title']));
+                            $confidence  = 0.96;
+                            $confidence_label = 'high';
+                            break;
+                        }
+
+                        if (strpos($cand['slug'], $target_keyword) !== false || strpos($target_keyword, $cand['slug']) !== false) {
+                            $best_match  = $cand['path'];
+                            $best_reason = sprintf(__('Path keyword match with published page "%s"', 'gmb-ranker-seo-automation'), esc_html($cand['title']));
+                            $confidence  = 0.88;
+                            $confidence_label = 'high';
+                            $best_sim_score = 88;
+                        }
+                    }
+
+                    // Fuzzy similarity match on title / slug
+                    if ($confidence < 0.90 && !empty($target_keyword)) {
+                        similar_text($target_keyword, $cand['slug'], $percent);
+                        if ($percent > 65 && $percent > $best_sim_score) {
+                            $best_sim_score   = $percent;
+                            $best_match       = $cand['path'];
+                            $best_reason      = sprintf(__('Fuzzy URL similarity (%.0f%%) match with "%s"', 'gmb-ranker-seo-automation'), $percent, esc_html($cand['title']));
+                            $confidence       = round($percent / 100, 2);
+                            $confidence_label = ($confidence >= 0.80) ? 'high' : 'medium';
+                        }
                     }
                 }
             }
 
             $suggestions[] = array(
-                'uri'        => $source_uri,
-                'target'     => $best_match,
-                'code'       => 301,
-                'confidence' => $confidence,
-                'reason'     => $best_reason,
+                'source'           => $source_uri,
+                'uri'              => $source_uri,
+                'destination'      => $best_match,
+                'target'           => $best_match,
+                'code'             => 301,
+                'confidence'       => $confidence_label,
+                'confidence_score' => $confidence,
+                'reason'           => $best_reason,
             );
         }
 
@@ -532,47 +574,81 @@ class GMB_Ranker_SEO_Ajax_Admin {
         }
 
         $rules_raw = isset($_POST['rules']) ? $_POST['rules'] : array();
+        if (is_string($rules_raw)) {
+            $decoded = json_decode(wp_unslash($rules_raw), true);
+            if (is_array($decoded)) {
+                $rules_raw = $decoded;
+            }
+        }
+
         if (!is_array($rules_raw) || empty($rules_raw)) {
             wp_send_json_error(array('message' => 'No redirect rules supplied to apply.'), 400);
         }
 
         $repo = new GMB_Ranker_SEO_Redirect_Repository();
         $applied_count = 0;
+        $applied_uris  = array();
 
         foreach ($rules_raw as $r) {
-            if (is_array($r) && !empty($r['source']) && !empty($r['target'])) {
-                $src_raw  = wp_unslash($r['source']);
-                $dest_raw = wp_unslash($r['target']);
-                $code     = isset($r['code']) ? intval($r['code']) : 301;
+            if (!is_array($r)) {
+                continue;
+            }
 
-                $src  = GMB_Ranker_SEO_Redirect_Registry::validate_source_url($src_raw);
-                $dest = GMB_Ranker_SEO_Redirect_Registry::validate_destination_url($dest_raw, $code);
+            $src_raw  = wp_unslash(isset($r['source']) ? $r['source'] : (isset($r['uri']) ? $r['uri'] : ''));
+            $dest_raw = wp_unslash(isset($r['destination']) ? $r['destination'] : (isset($r['target']) ? $r['target'] : ''));
+            $code     = isset($r['code']) ? intval($r['code']) : 301;
 
-                if (!$src || ($dest === false && !in_array($code, array(410, 451), true))) {
-                    continue;
-                }
+            if (empty($src_raw)) {
+                continue;
+            }
 
-                if (GMB_Ranker_SEO_Redirect_Registry::is_redirect_loop($src, $dest)) {
-                    continue;
-                }
+            $src  = GMB_Ranker_SEO_Redirect_Registry::validate_source_url($src_raw);
+            $dest = GMB_Ranker_SEO_Redirect_Registry::validate_destination_url($dest_raw, $code);
 
-                $rule = array(
-                    'id'         => 'rule_' . substr(md5(uniqid(wp_rand(), true)), 0, 8),
-                    'source'     => $src,
-                    'target'     => $dest,
-                    'code'       => $code,
-                    'type'       => 'exact',
-                    'enabled'    => 1,
-                    'hits'       => 0,
-                    'created_at' => current_time('mysql'),
-                    'note'       => __('Applied via AI Auto-Fix 404', 'gmb-ranker-seo-automation'),
-                );
-                $repo->save_rule($rule);
+            if (!$src || ($dest === false && !in_array($code, array(410, 451), true))) {
+                continue;
+            }
+
+            if (GMB_Ranker_SEO_Redirect_Registry::is_redirect_loop($src, $dest)) {
+                continue;
+            }
+
+            $rule = array(
+                'id'         => 'rule_' . substr(md5(uniqid(wp_rand(), true)), 0, 8),
+                'source'     => $src,
+                'target'     => $dest ?: '',
+                'code'       => $code,
+                'type'       => 'exact',
+                'enabled'    => 1,
+                'updated_at' => current_time('mysql'),
+            );
+
+            $saved = $repo->save_rule($rule);
+            if ($saved) {
                 $applied_count++;
+                $applied_uris[] = $src;
             }
         }
 
-        wp_send_json_success(array('message' => sprintf(__('Successfully applied %d AI redirect suggestions.', 'gmb-ranker-seo-automation'), $applied_count)));
+        // Clean up cleared 404 log entries
+        if ($applied_count > 0 && !empty($applied_uris)) {
+            $logs = $repo->get_404_logs();
+            if (is_array($logs)) {
+                $filtered = array_values(array_filter($logs, function($l) use ($applied_uris) {
+                    return !in_array($l['uri'], $applied_uris, true);
+                }));
+                $repo->save_404_logs($filtered);
+            }
+        }
+
+        if ($applied_count > 0) {
+            wp_send_json_success(array(
+                'message' => sprintf(_n('Successfully created %d AI redirection rule.', 'Successfully created %d AI redirection rules.', $applied_count, 'gmb-ranker-seo-automation'), $applied_count),
+                'count'   => $applied_count,
+            ));
+        } else {
+            wp_send_json_error(array('message' => 'No valid AI redirection rules could be saved. Check for duplicate or invalid destination URLs.'), 400);
+        }
     }
 
     /**

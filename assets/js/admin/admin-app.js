@@ -3763,17 +3763,19 @@ function initGmbAdminApp() {
 
       let html = "";
       data.data.suggestions.forEach((item, idx) => {
-        const confClass = item.confidence === 'high' ? 'gmb-pill-badge--green' : (item.confidence === 'medium' ? 'gmb-pill-badge--blue' : 'gmb-pill-badge--red');
+        const sourcePath = item.source || item.uri || "";
+        const destPath = item.destination || item.target || "";
+        const confClass = (item.confidence === 'high' || item.confidence >= 0.8) ? 'gmb-pill-badge--green' : ((item.confidence === 'medium' || item.confidence >= 0.6) ? 'gmb-pill-badge--blue' : 'gmb-pill-badge--red');
         html += `
           <tr class="gmb-ai-suggestion-row">
             <td class="gmb-text-center">
               <input type="checkbox" class="gmb-ai-rule-check" data-idx="${idx}" checked />
             </td>
             <td>
-              <code class="gmb-code-path">${item.source}</code>
+              <code class="gmb-code-path">${sourcePath}</code>
             </td>
             <td>
-              <input type="text" class="gmb-input gmb-input-sm gmb-ai-dest-input" value="${item.destination || ''}" placeholder="/destination-path or empty for 410" />
+              <input type="text" class="gmb-input gmb-input-sm gmb-ai-dest-input" value="${destPath}" placeholder="/destination-path or empty for 410" />
             </td>
             <td>
               <select class="gmb-select gmb-select-sm gmb-ai-code-select">
