@@ -101,13 +101,13 @@ if (!class_exists('GMB_Ranker_SEO_Ajax_Schema_Handler')) {
         public function handle_save_schema_template() {
             $this->verify_ajax_security();
 
-            $template_id_raw = isset($_POST['template_id']) ? sanitize_text_field(wp_unslash($_POST['template_id'])) : '';
-            $name_raw        = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
+            $template_id_raw = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])) : (isset($_POST['template_id']) ? sanitize_text_field(wp_unslash($_POST['template_id'])) : '');
+            $name_raw        = isset($_POST['title']) ? sanitize_text_field(wp_unslash($_POST['title'])) : (isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : (isset($_POST['label']) ? sanitize_text_field(wp_unslash($_POST['label'])) : ''));
             $type_raw        = isset($_POST['type']) ? sanitize_text_field(wp_unslash($_POST['type'])) : 'Article';
-            $scope_raw       = isset($_POST['scope']) ? sanitize_text_field(wp_unslash($_POST['scope'])) : 'singular';
+            $scope_raw       = isset($_POST['scope']) ? sanitize_text_field(wp_unslash($_POST['scope'])) : (isset($_POST['rule']) ? sanitize_text_field(wp_unslash($_POST['rule'])) : 'singular');
             $post_type_raw   = isset($_POST['post_type']) ? sanitize_text_field(wp_unslash($_POST['post_type'])) : 'post';
-            $enabled_raw     = isset($_POST['enabled']) ? wp_unslash($_POST['enabled']) : 1;
-            $schema_data_raw = isset($_POST['schema_data']) ? wp_unslash($_POST['schema_data']) : '';
+            $enabled_raw     = isset($_POST['status']) ? wp_unslash($_POST['status']) : (isset($_POST['enabled']) ? wp_unslash($_POST['enabled']) : 1);
+            $schema_data_raw = isset($_POST['schema_json']) ? wp_unslash($_POST['schema_json']) : (isset($_POST['schema_data']) ? wp_unslash($_POST['schema_data']) : '');
 
             $name = trim($name_raw);
             if (empty($name)) {
@@ -121,7 +121,7 @@ if (!class_exists('GMB_Ranker_SEO_Ajax_Schema_Handler')) {
             $registered_post_types = get_post_types(array('public' => true));
             $post_type = isset($registered_post_types[$post_type_raw]) ? $post_type_raw : 'post';
 
-            $enabled = filter_var($enabled_raw, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            $enabled = ($enabled_raw === 'active' || $enabled_raw === '1' || $enabled_raw === 1 || filter_var($enabled_raw, FILTER_VALIDATE_BOOLEAN)) ? 1 : 0;
 
             // Validate schema JSON data
             $parsed_data = $this->validate_schema_json($schema_data_raw);
@@ -131,15 +131,33 @@ if (!class_exists('GMB_Ranker_SEO_Ajax_Schema_Handler')) {
 
             $template_id = !empty($template_id_raw) ? $template_id_raw : ('schema_' . substr(md5(uniqid(wp_rand(), true)), 0, 8));
 
+            $conditions = array();
+            if (isset($_POST['conditions']) && is_array($_POST['conditions'])) {
+                foreach ($_POST['conditions'] as $c) {
+                    if (is_array($c)) {
+                        $conditions[] = array(
+                            'type'   => isset($c['type']) ? sanitize_text_field($c['type']) : 'rule',
+                            'target' => isset($c['target']) ? sanitize_text_field($c['target']) : 'post_type',
+                            'value'  => isset($c['value']) ? sanitize_text_field($c['value']) : 'post',
+                        );
+                    }
+                }
+            }
+            if (empty($conditions)) {
+                $conditions = array(
+                    'rule'      => $scope,
+                    'post_type' => $post_type,
+                );
+            }
+
             $template = array(
                 'id'          => $template_id,
                 'name'        => $name,
+                'title'       => $name,
                 'type'        => $type,
-                'conditions'  => array(
-                    'rule'      => $scope,
-                    'post_type' => $post_type,
-                ),
+                'conditions'  => $conditions,
                 'enabled'     => $enabled,
+                'status'      => $enabled ? 'active' : 'inactive',
                 'schema_json' => !empty($parsed_data) ? wp_json_encode($parsed_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : '{}',
                 'updated_at'  => current_time('mysql'),
             );
@@ -161,7 +179,7 @@ if (!class_exists('GMB_Ranker_SEO_Ajax_Schema_Handler')) {
         public function handle_delete_schema_template() {
             $this->verify_ajax_security();
 
-            $template_id = isset($_POST['template_id']) ? sanitize_text_field(wp_unslash($_POST['template_id'])) : '';
+            $template_id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])) : (isset($_POST['template_id']) ? sanitize_text_field(wp_unslash($_POST['template_id'])) : '');
             if (empty($template_id)) {
                 wp_send_json_error(array('message' => 'Template ID is required.'), 400);
             }
@@ -185,7 +203,7 @@ if (!class_exists('GMB_Ranker_SEO_Ajax_Schema_Handler')) {
         public function handle_toggle_schema_template() {
             $this->verify_ajax_security();
 
-            $template_id = isset($_POST['template_id']) ? sanitize_text_field(wp_unslash($_POST['template_id'])) : '';
+            $template_id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])) : (isset($_POST['template_id']) ? sanitize_text_field(wp_unslash($_POST['template_id'])) : '');
             if (empty($template_id)) {
                 wp_send_json_error(array('message' => 'Template ID is required.'), 400);
             }
@@ -195,10 +213,11 @@ if (!class_exists('GMB_Ranker_SEO_Ajax_Schema_Handler')) {
                 wp_send_json_error(array('message' => 'Schema template not found.'), 404);
             }
 
-            $enabled_raw = isset($_POST['enabled']) ? wp_unslash($_POST['enabled']) : 0;
-            $enabled = filter_var($enabled_raw, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            $enabled_raw = isset($_POST['status']) ? wp_unslash($_POST['status']) : (isset($_POST['enabled']) ? wp_unslash($_POST['enabled']) : 0);
+            $enabled = ($enabled_raw === 'active' || $enabled_raw === '1' || $enabled_raw === 1 || filter_var($enabled_raw, FILTER_VALIDATE_BOOLEAN)) ? 1 : 0;
 
             $template['enabled'] = $enabled;
+            $template['status']  = $enabled ? 'active' : 'inactive';
             $template['updated_at'] = current_time('mysql');
 
             $saved = $this->repository->save_template($template);
@@ -215,17 +234,17 @@ if (!class_exists('GMB_Ranker_SEO_Ajax_Schema_Handler')) {
         public function handle_get_schema_template() {
             $this->verify_ajax_security();
 
-            $template_id = isset($_POST['template_id']) ? sanitize_text_field(wp_unslash($_POST['template_id'])) : '';
+            $template_id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])) : (isset($_POST['template_id']) ? sanitize_text_field(wp_unslash($_POST['template_id'])) : '');
             if (empty($template_id)) {
                 wp_send_json_error(array('message' => 'Template ID is required.'), 400);
             }
 
             $template = $this->repository->get_template($template_id);
-            if (!$template) {
-                wp_send_json_error(array('message' => 'Schema template not found.'), 404);
+            if ($template) {
+                wp_send_json_success(array('template' => $template));
+            } else {
+                wp_send_json_error(array('message' => 'Template not found.'), 404);
             }
-
-            wp_send_json_success(array('template' => $template));
         }
     }
 }
