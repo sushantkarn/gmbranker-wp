@@ -78,6 +78,14 @@ class GMB_Ranker_SEO_Autoloader {
             'GMB_Ranker_SEO_WooCommerce'       => self::$base_path . '/modules/woocommerce/class-gmb-ranker-seo-woocommerce.php',
             'GMB_Ranker_SEO_Blocks'            => self::$base_path . '/modules/blocks/class-gmb-ranker-seo-blocks.php',
             'GMB_Ranker_SEO_Research_Engine'   => self::$base_path . '/services/class-gmb-ranker-seo-research-engine.php',
+            
+            // API Clients
+            'GMB_Ranker_SEO_AI_Client'         => self::$base_path . '/api/class-ai-provider-client.php',
+            'GMB_Ranker_SEO_GBP_Client'        => self::$base_path . '/api/class-gbp-client.php',
+            'GMB_Ranker_SEO_GSC_Client'        => self::$base_path . '/api/class-gsc-client.php',
+            'GMB_Ranker_SEO_IndexNow_Client'   => self::$base_path . '/api/class-indexnow-client.php',
+            'GMB_Ranker_SEO_Places_Client'     => self::$base_path . '/api/class-places-client.php',
+            'GMB_Ranker_SEO_Ranking_API_Client'=> self::$base_path . '/api/class-ranking-api-client.php',
         );
 
         spl_autoload_register(array(__CLASS__, 'autoload'));

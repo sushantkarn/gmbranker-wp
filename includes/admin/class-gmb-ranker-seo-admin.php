@@ -758,6 +758,22 @@ class GMB_Ranker_SEO_Admin {
     }
 
     /**
+     * Sanitize array setting (e.g. checkbox lists, post type arrays)
+     *
+     * @param mixed $input
+     * @return array
+     */
+    public static function sanitize_array_setting($input) {
+        if (is_array($input)) {
+            return array_values(array_filter(array_map('sanitize_text_field', $input)));
+        }
+        if (is_string($input) && trim($input) !== '') {
+            return array(sanitize_text_field(trim($input)));
+        }
+        return array();
+    }
+
+    /**
      * Sanitize secret key while preserving existing saved key on empty/masked submission
      *
      * @param string $value

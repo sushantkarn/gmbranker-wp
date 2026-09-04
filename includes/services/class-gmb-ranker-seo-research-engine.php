@@ -58,7 +58,7 @@ class GMB_Ranker_SEO_Research_Engine {
         $layers = self::compile_all_layers($layer_a, $layer_b, $layer_cd, $ai_synthesis, $focus_keyword, $post_id);
 
         // CALCULATE TRANSPARENT SCORE
-        $score = self::calculate_transparent_score($layer_a, $layer_b, $layers);
+        $score = self::calculate_transparent_score($layer_a, $layer_b, $layers, $post_id);
 
         // BUILD EVIDENCE-BASED RECOMMENDATIONS TABLE
         $recommendations = self::build_recommendations_list($layers, $layer_a, $focus_keyword, $post_id);
@@ -201,6 +201,7 @@ class GMB_Ranker_SEO_Research_Engine {
         
         $info_words  = array('how', 'what', 'why', 'guide', 'tips', 'learn', 'tutorial', 'causes', 'symptoms', 'signs', 'benefits', 'meaning');
         $comm_words  = array('best', 'top', 'review', 'vs', 'comparison', 'alternative', 'ranking', 'cheap', 'recommended');
+        $trans_words = array('buy', 'order', 'pricing', 'price', 'cost', 'quote', 'hire', 'contact', 'book', 'checkout', 'register', 'subscribe');
         $site_city    = strtolower(get_option('gmb_local_business_city', ''));
         $site_country = strtolower(get_option('gmb_local_business_country', ''));
 
@@ -523,7 +524,7 @@ class GMB_Ranker_SEO_Research_Engine {
     /**
      * Calculate Transparent SEO Score
      */
-    private static function calculate_transparent_score($layer_a, $layer_b, $layers) {
+    private static function calculate_transparent_score($layer_a, $layer_b, $layers, $post_id = 0) {
         $score = 50;
 
         if ($layer_a['word_count'] >= 1200) $score += 15;
