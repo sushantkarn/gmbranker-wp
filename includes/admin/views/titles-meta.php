@@ -55,6 +55,7 @@ if (!defined('ABSPATH')) exit;
                                 </li>
                                 <?php endforeach; ?>
                             </ul>
+                        </div>
                         <!-- Content Column -->
                         <div class="gmb-sidebar-content-panel">
                             
