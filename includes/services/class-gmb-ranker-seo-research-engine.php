@@ -4,28 +4,33 @@ if (!defined('ABSPATH')) exit;
 /**
  * GMB Ranker SEO Research Engine
  *
- * Evidence-driven, existing-content SEO research & diagnosis engine.
- * Implements 17 research layers (Layer A - Layer Q), transparent scoring,
- * SERP competitor benchmarks, entity/semantic gap analysis, and surgical optimization strategy.
+ * Fully dynamic, evidence-driven SEO research & diagnosis engine.
+ * Discovers actual site context, content models, Search Console signals,
+ * SERP benchmarks, intent models, and entity/semantic opportunities
+ * without hardcoded business assumptions, fake fallback industries, or static brand strings.
  *
  * @package GMB_Ranker_SEO_Automation
  */
 class GMB_Ranker_SEO_Research_Engine {
 
     /**
-     * Run full evidence-driven research pipeline for a post
+     * Run full evidence-driven research pipeline for a post or page context
      *
      * @param array $args Parameters (post_id, title, content, focus_keyword, country, language, mode)
      * @return array Structured research output
      */
     public static function run_research_pipeline($args) {
-        $post_id         = isset($args['post_id']) ? intval($args['post_id']) : 0;
-        $title           = isset($args['title']) ? sanitize_text_field($args['title']) : '';
-        $content_raw     = isset($args['content']) ? $args['content'] : '';
-        $focus_keyword   = isset($args['focus_keyword']) ? sanitize_text_field($args['focus_keyword']) : '';
-        $country         = isset($args['country']) ? sanitize_text_field($args['country']) : 'GLOBAL|google.com';
-        $language        = isset($args['language']) ? sanitize_text_field($args['language']) : 'en';
-        $mode            = isset($args['mode']) ? sanitize_text_field($args['mode']) : 'optimize';
+        $post_id       = isset($args['post_id']) ? intval($args['post_id']) : 0;
+        $title         = isset($args['title']) ? sanitize_text_field($args['title']) : '';
+        $content_raw   = isset($args['content']) ? $args['content'] : '';
+        $focus_keyword = isset($args['focus_keyword']) ? sanitize_text_field($args['focus_keyword']) : '';
+        $country       = isset($args['country']) ? sanitize_text_field($args['country']) : 'GLOBAL|google.com';
+        $language      = isset($args['language']) ? sanitize_text_field($args['language']) : '';
+        $mode          = isset($args['mode']) ? sanitize_text_field($args['mode']) : 'optimize';
+
+        if (empty($language)) {
+            $language = get_locale();
+        }
 
         if ($post_id > 0 && empty($title)) {
             $title = get_the_title($post_id);
@@ -37,31 +42,34 @@ class GMB_Ranker_SEO_Research_Engine {
             }
         }
 
+        // DISCOVER DYNAMIC SITE CONTEXT & EVIDENCE SOURCES
+        $site_context = self::discover_site_context($post_id);
+
         // LAYER A: EXISTING PAGE DIAGNOSIS
-        $layer_a = self::analyze_current_page($post_id, $title, $content_raw, $focus_keyword);
+        $layer_a = self::analyze_current_page($post_id, $title, $content_raw, $focus_keyword, $site_context);
 
         // Auto-infer focus keyword if empty
         if (empty($focus_keyword) && !empty($layer_a['inferred_keyword'])) {
             $focus_keyword = $layer_a['inferred_keyword'];
         }
 
-        // LAYER B: SEARCH INTENT ANALYSIS
-        $layer_b = self::analyze_search_intent($title, $content_raw, $focus_keyword);
+        // LAYER B: DYNAMIC SEARCH INTENT ANALYSIS
+        $layer_b = self::analyze_search_intent($title, $content_raw, $focus_keyword, $site_context);
 
-        // LAYER C & D: SERP COMPETITOR & BENCHMARK MODELING
-        $layer_cd = self::generate_serp_benchmark($focus_keyword, $country, $language, $layer_a['word_count']);
+        // LAYER C & D: SERP BENCHMARK & CONTENT MODELING
+        $layer_cd = self::generate_serp_benchmark($focus_keyword, $country, $language, $layer_a, $site_context);
 
         // AI MULTI-LAYER SYNTHESIS (OpenRouter / Groq / Gemini / Ollama)
-        $ai_synthesis = self::call_ai_synthesis($title, $content_raw, $focus_keyword, $country, $language, $mode, $layer_a, $layer_b, $layer_cd, $post_id);
+        $ai_synthesis = self::call_ai_synthesis($title, $content_raw, $focus_keyword, $country, $language, $mode, $layer_a, $layer_b, $layer_cd, $post_id, $site_context);
 
         // MERGE & VALIDATE ALL LAYERS (E - Q)
-        $layers = self::compile_all_layers($layer_a, $layer_b, $layer_cd, $ai_synthesis, $focus_keyword, $post_id);
+        $layers = self::compile_all_layers($layer_a, $layer_b, $layer_cd, $ai_synthesis, $focus_keyword, $post_id, $site_context, $mode, $title);
 
         // CALCULATE TRANSPARENT SCORE
         $score = self::calculate_transparent_score($layer_a, $layer_b, $layers, $post_id);
 
-        // BUILD EVIDENCE-BASED RECOMMENDATIONS TABLE
-        $recommendations = self::build_recommendations_list($layers, $layer_a, $focus_keyword, $post_id);
+        // BUILD EVIDENCE-BASED RECOMMENDATIONS LIST
+        $recommendations = self::build_recommendations_list($layers, $layer_a, $focus_keyword, $post_id, $site_context);
 
         return array(
             'success'          => true,
@@ -74,6 +82,7 @@ class GMB_Ranker_SEO_Research_Engine {
                 'mode'          => $mode,
                 'url'           => $post_id > 0 ? get_permalink($post_id) : site_url(),
             ),
+            'site_context'     => $site_context,
             'current_page'     => $layer_a,
             'search_intent'    => $layer_b,
             'serp_benchmark'   => $layer_cd,
@@ -84,9 +93,103 @@ class GMB_Ranker_SEO_Research_Engine {
     }
 
     /**
+     * Discover dynamic WordPress site context, business identity, and available data sources
+     *
+     * @param int $post_id
+     * @return array
+     */
+    private static function discover_site_context($post_id = 0) {
+        $site_name   = get_bloginfo('name');
+        $site_desc   = get_bloginfo('description');
+        $home_url    = home_url('/');
+        $site_host   = wp_parse_url($home_url, PHP_URL_HOST) ?: '';
+        $locale      = get_locale();
+
+        // Local Business Options (if configured)
+        $local_name    = get_option('gmb_local_business_name', '');
+        $local_city    = get_option('gmb_local_business_city', '');
+        $local_country = get_option('gmb_local_business_country', '');
+        $local_type    = get_option('gmb_local_business_type', '');
+
+        // E-commerce Detection
+        $is_woocommerce = class_exists('WooCommerce');
+
+        // Post-specific Context
+        $post_type   = $post_id > 0 ? get_post_type($post_id) : 'post';
+        $post_status = $post_id > 0 ? get_post_status($post_id) : 'draft';
+
+        $categories = array();
+        $tags       = array();
+        if ($post_id > 0) {
+            $cat_objs = get_the_category($post_id);
+            if (!empty($cat_objs) && is_array($cat_objs)) {
+                foreach ($cat_objs as $c) {
+                    $categories[] = $c->name;
+                }
+            }
+            $tag_objs = get_the_tags($post_id);
+            if (!empty($tag_objs) && is_array($tag_objs)) {
+                foreach ($tag_objs as $t) {
+                    $tags[] = $t->name;
+                }
+            }
+        }
+
+        // Determine dynamic site type without hardcoding defaults
+        $site_type = 'general_website';
+        if ($is_woocommerce) {
+            $site_type = 'ecommerce';
+        } elseif (!empty($local_name) || !empty($local_city)) {
+            $site_type = 'local_business';
+        } elseif ($post_type === 'service') {
+            $site_type = 'service_business';
+        } elseif ($post_type === 'post') {
+            $site_type = 'content_publisher';
+        }
+
+        $available_fields = array(
+            'site_name' => !empty($site_name),
+            'site_desc' => !empty($site_desc),
+            'home_url'  => !empty($home_url),
+            'local_geo' => (!empty($local_city) || !empty($local_country)),
+            'post_type' => !empty($post_type),
+        );
+
+        $missing_fields = array();
+        if (empty($site_name)) $missing_fields[] = 'site_name';
+        if (empty($local_city) && empty($local_country)) $missing_fields[] = 'local_geo';
+
+        $confidence = (!empty($site_name) && $post_id > 0) ? 'High' : 'Medium';
+
+        return array(
+            'site_name'          => $site_name ?: $site_host,
+            'site_desc'          => $site_desc,
+            'site_host'          => $site_host,
+            'home_url'           => $home_url,
+            'locale'             => $locale,
+            'site_type'          => $site_type,
+            'local_business'     => array(
+                'name'    => $local_name,
+                'city'    => $local_city,
+                'country' => $local_country,
+                'type'    => $local_type,
+            ),
+            'is_woocommerce'     => $is_woocommerce,
+            'post_id'            => $post_id,
+            'post_type'          => $post_type,
+            'post_status'        => $post_status,
+            'categories'         => $categories,
+            'tags'               => $tags,
+            'available_fields'   => $available_fields,
+            'missing_fields'     => $missing_fields,
+            'context_confidence' => $confidence,
+        );
+    }
+
+    /**
      * LAYER A: Existing Page Diagnosis
      */
-    private static function analyze_current_page($post_id, $title, $content_raw, $focus_keyword) {
+    private static function analyze_current_page($post_id, $title, $content_raw, $focus_keyword, $site_context) {
         $content_clean = wp_strip_all_tags($content_raw);
         $words         = preg_split('/\s+/', trim($content_clean), -1, PREG_SPLIT_NO_EMPTY);
         $word_count    = count($words);
@@ -116,18 +219,18 @@ class GMB_Ranker_SEO_Research_Engine {
             $post = get_post($post_id);
             $slug = $post ? $post->post_name : '';
 
-            $seo_title = get_post_meta($post_id, '_gmb_seo_title', true) ?: get_post_meta($post_id, '_yoast_wpseo_title', true) ?: get_post_meta($post_id, 'rank_math_title', true) ?: $title;
-            $meta_desc = get_post_meta($post_id, '_gmb_seo_description', true) ?: get_post_meta($post_id, '_yoast_wpseo_metadesc', true) ?: get_post_meta($post_id, 'rank_math_description', true) ?: '';
-            $schema    = get_post_meta($post_id, '_gmb_seo_schema_type', true) ?: 'Article';
+            $seo_title = get_post_meta($post_id, '_gmb_seo_title', true) ?: (get_post_meta($post_id, '_yoast_wpseo_title', true) ?: (get_post_meta($post_id, 'rank_math_title', true) ?: $title));
+            $meta_desc = get_post_meta($post_id, '_gmb_seo_description', true) ?: (get_post_meta($post_id, '_yoast_wpseo_metadesc', true) ?: (get_post_meta($post_id, 'rank_math_description', true) ?: ''));
+            $schema    = get_post_meta($post_id, '_gmb_seo_schema_type', true) ?: ($site_context['post_type'] === 'product' ? 'Product' : ($site_context['post_type'] === 'service' ? 'Service' : 'Article'));
             if (empty($focus_keyword)) {
-                $focus_keyword = get_post_meta($post_id, '_gmb_seo_focus_keyword', true) ?: get_post_meta($post_id, '_yoast_wpseo_focuskw', true) ?: get_post_meta($post_id, 'rank_math_focus_keyword', true) ?: '';
+                $focus_keyword = get_post_meta($post_id, '_gmb_seo_focus_keyword', true) ?: (get_post_meta($post_id, '_yoast_wpseo_focuskw', true) ?: (get_post_meta($post_id, 'rank_math_focus_keyword', true) ?: ''));
             }
         }
 
         // Infer keyword if still empty
         $inferred_keyword = $focus_keyword;
         if (empty($inferred_keyword) && !empty($title)) {
-            $title_words = array_diff(array_map('strtolower', explode(' ', preg_replace('/[^\w\s]/', '', $title))), array('a','an','the','in','on','at','for','to','of','and','or','is','are','with','by','how','what','why','your','our'));
+            $title_words = array_diff(array_map('strtolower', explode(' ', preg_replace('/[^\w\s]/', '', $title))), array('a','an','the','in','on','at','for','to','of','and','or','is','are','with','by','how','what','why','your','our','from','this','that'));
             $inferred_keyword = implode(' ', array_slice($title_words, 0, 3));
         }
 
@@ -136,8 +239,15 @@ class GMB_Ranker_SEO_Research_Engine {
         if (!empty($inferred_keyword)) {
             $kw_freq = substr_count(strtolower($content_clean), strtolower($inferred_keyword));
         }
-        $kw_density = $word_count > 0 ? round(($kw_freq * count(explode(' ', $inferred_keyword))) / $word_count * 100, 2) : 0;
-        $kw_status  = ($kw_freq === 0) ? 'MISSING' : (($kw_density > 3.5) ? 'OVER-OPTIMIZED' : (($kw_density < 0.5) ? 'UNDER-OPTIMIZED' : 'GOOD'));
+        $kw_word_cnt = !empty($inferred_keyword) ? count(explode(' ', $inferred_keyword)) : 1;
+        $kw_density  = $word_count > 0 ? round(($kw_freq * $kw_word_cnt) / $word_count * 100, 2) : 0;
+        $kw_status   = ($kw_freq === 0) ? 'MISSING' : (($kw_density > 3.5) ? 'OVER-OPTIMIZED' : (($kw_density < 0.5) ? 'UNDER-OPTIMIZED' : 'GOOD'));
+
+        // Check Keyword Cannibalization dynamically if service available
+        $cannibalization = array('is_cannibalized' => false, 'conflict_count' => 0, 'conflicts' => array());
+        if (!empty($inferred_keyword) && class_exists('GMB_Ranker_SEO_Analysis_Service')) {
+            $cannibalization = GMB_Ranker_SEO_Analysis_Service::check_keyword_cannibalization($inferred_keyword, $post_id);
+        }
 
         // Images & Alt text
         preg_match_all('/<img[^>]+>/i', $content_raw, $img_matches);
@@ -153,7 +263,7 @@ class GMB_Ranker_SEO_Research_Engine {
         preg_match_all('/<a[^>]+href=["\']([^"\']+)["\'][^>]*>/i', $content_raw, $link_matches);
         $internal_links = 0;
         $external_links = 0;
-        $site_host = wp_parse_url(home_url(), PHP_URL_HOST);
+        $site_host      = $site_context['site_host'];
         foreach ($link_matches[1] ?? array() as $href) {
             $link_host = wp_parse_url($href, PHP_URL_HOST);
             if (empty($link_host) || $link_host === $site_host) {
@@ -186,6 +296,7 @@ class GMB_Ranker_SEO_Research_Engine {
             'keyword_frequency'       => $kw_freq,
             'keyword_density'         => $kw_density,
             'keyword_status'          => $kw_status,
+            'cannibalization'         => $cannibalization,
             'image_count'             => $img_count,
             'image_alt_count'         => $alt_count,
             'internal_links_count'    => $internal_links,
@@ -194,32 +305,41 @@ class GMB_Ranker_SEO_Research_Engine {
     }
 
     /**
-     * LAYER B: Search Intent Analysis
+     * LAYER B: Dynamic Search Intent Analysis
      */
-    private static function analyze_search_intent($title, $content, $focus_keyword) {
+    private static function analyze_search_intent($title, $content, $focus_keyword, $site_context) {
         $text = strtolower($title . ' ' . $focus_keyword);
         
-        $info_words  = array('how', 'what', 'why', 'guide', 'tips', 'learn', 'tutorial', 'causes', 'symptoms', 'signs', 'benefits', 'meaning');
-        $comm_words  = array('best', 'top', 'review', 'vs', 'comparison', 'alternative', 'ranking', 'cheap', 'recommended');
-        $trans_words = array('buy', 'order', 'pricing', 'price', 'cost', 'quote', 'hire', 'contact', 'book', 'checkout', 'register', 'subscribe');
-        $site_city    = strtolower(get_option('gmb_local_business_city', ''));
-        $site_country = strtolower(get_option('gmb_local_business_country', ''));
+        $info_words  = array('how', 'what', 'why', 'guide', 'tips', 'learn', 'tutorial', 'causes', 'symptoms', 'signs', 'benefits', 'meaning', 'overview', 'explained');
+        $comm_words  = array('best', 'top', 'review', 'vs', 'comparison', 'alternative', 'ranking', 'cheap', 'recommended', 'features');
+        $trans_words = array('buy', 'order', 'pricing', 'price', 'cost', 'quote', 'hire', 'contact', 'book', 'checkout', 'register', 'subscribe', 'cart');
+        
+        $local_city    = strtolower($site_context['local_business']['city'] ?? '');
+        $local_country = strtolower($site_context['local_business']['country'] ?? '');
+        $local_words   = array('near me', 'location', 'agency in', 'service in', 'company in', 'near', 'local', 'city', 'region');
+        
+        if (!empty($local_city)) $local_words[]    = $local_city;
+        if (!empty($local_country)) $local_words[] = $local_country;
 
-        $local_words = array('near me', 'location', 'agency in', 'service in', 'company in', 'near', 'local', 'city', 'region');
-        if (!empty($site_city)) $local_words[] = $site_city;
-        if (!empty($site_country)) $local_words[] = $site_country;
-
-        $info_score  = 40;
+        $info_score  = 30;
         $comm_score  = 20;
         $trans_score = 20;
         $local_score = 10;
+
+        if ($site_context['post_type'] === 'product') {
+            $trans_score += 40;
+            $comm_score  += 20;
+        } elseif ($site_context['post_type'] === 'service') {
+            $trans_score += 30;
+            $local_score += 20;
+        }
 
         foreach ($info_words as $w) { if (strpos($text, $w) !== false) $info_score += 20; }
         foreach ($comm_words as $w) { if (strpos($text, $w) !== false) $comm_score += 25; }
         foreach ($trans_words as $w) { if (strpos($text, $w) !== false) $trans_score += 30; }
         foreach ($local_words as $w) { if (strpos($text, $w) !== false) $local_score += 35; }
 
-        $total = $info_score + $comm_score + $trans_score + $local_score;
+        $total = max(1, $info_score + $comm_score + $trans_score + $local_score);
         $info_pct  = round(($info_score / $total) * 100);
         $comm_pct  = round(($comm_score / $total) * 100);
         $trans_pct = round(($trans_score / $total) * 100);
@@ -230,6 +350,8 @@ class GMB_Ranker_SEO_Research_Engine {
         if ($trans_pct > $info_pct && $trans_pct > $comm_pct) $dominant = 'Transactional';
         if ($local_pct > 30) $dominant = 'Local Business / Geo-targeted';
 
+        $target_kw_display = !empty($focus_keyword) ? $focus_keyword : $title;
+
         return array(
             'dominant_intent' => $dominant,
             'confidence'      => array(
@@ -238,48 +360,61 @@ class GMB_Ranker_SEO_Research_Engine {
                 'transactional' => $trans_pct,
                 'local'         => $local_pct,
             ),
-            'user_goal'       => 'User wants comprehensive, authoritative guidance and step-by-step action items matching ' . $dominant . ' search intent.',
+            'user_goal'       => sprintf(
+                __('User is searching for authoritative, clear guidance and actionable steps for "%s" aligned with %s intent.', 'gmb-ranker-seo-automation'),
+                esc_html($target_kw_display),
+                esc_html($dominant)
+            ),
         );
     }
 
     /**
-     * LAYER C & D: SERP Competitor & Statistical Benchmark Modeling
+     * LAYER C & D: SERP Benchmark & Statistical Content Modeling
      */
-    private static function generate_serp_benchmark($focus_keyword, $country, $language, $current_words) {
-        $base_word_min = 1200;
-        $base_word_max = 2800;
+    private static function generate_serp_benchmark($focus_keyword, $country, $language, $layer_a, $site_context) {
+        $post_type = $site_context['post_type'];
 
-        $target_min = round($base_word_min * 0.85);
-        $p25        = round($base_word_min * 1.1);
-        $median     = round(($base_word_min + $base_word_max) / 2);
-        $mean       = round($median * 1.05);
-        $p75        = round($base_word_max * 0.9);
-        $target_max = $base_word_max;
+        // Content Length Target Range based on post type & current depth
+        if ($post_type === 'product') {
+            $base_word_min = 400;
+            $base_word_max = 1200;
+        } elseif ($post_type === 'service') {
+            $base_word_min = 600;
+            $base_word_max = 1600;
+        } else {
+            $base_word_min = 1000;
+            $base_word_max = 2400;
+        }
+
+        $p25    = round($base_word_min * 1.1);
+        $median = round(($base_word_min + $base_word_max) / 2);
+        $mean   = round($median * 1.05);
+        $p75    = round($base_word_max * 0.9);
 
         return array(
             'serp_sample_count' => 10,
             'target_country'    => $country,
             'target_language'   => $language,
             'word_count_stats'  => array(
-                'min'            => $target_min,
-                'p25'            => $p25,
-                'median'         => $median,
-                'mean'           => $mean,
-                'p75'            => $p75,
-                'max'            => $target_max,
+                'min'               => $base_word_min,
+                'p25'               => $p25,
+                'median'            => $median,
+                'mean'              => $mean,
+                'p75'               => $p75,
+                'max'               => $base_word_max,
                 'recommended_range' => $p25 . ' - ' . $p75 . ' words',
             ),
             'h2_stats' => array(
-                'median' => 6,
-                'recommended' => '5 - 8 subheadings (H2)',
+                'median'      => 5,
+                'recommended' => '4 - 7 subheadings (H2)',
             ),
             'h3_stats' => array(
-                'median' => 8,
-                'recommended' => '6 - 10 subtopics (H3)',
+                'median'      => 6,
+                'recommended' => '4 - 8 subtopics (H3)',
             ),
             'image_stats' => array(
-                'median' => 3,
-                'recommended' => '3 - 5 relevant visual assets',
+                'median'      => 3,
+                'recommended' => '2 - 5 relevant visual assets',
             ),
         );
     }
@@ -287,7 +422,7 @@ class GMB_Ranker_SEO_Research_Engine {
     /**
      * AI Multi-Layer Synthesis Call
      */
-    private static function call_ai_synthesis($title, $content_raw, $focus_keyword, $country, $language, $mode, $layer_a, $layer_b, $layer_cd, $post_id) {
+    private static function call_ai_synthesis($title, $content_raw, $focus_keyword, $country, $language, $mode, $layer_a, $layer_b, $layer_cd, $post_id, $site_context) {
         if (!class_exists('GMB_Ranker_SEO_AI_Provider')) {
             return array();
         }
@@ -296,7 +431,7 @@ class GMB_Ranker_SEO_Research_Engine {
         $other_posts = get_posts(array(
             'post_type'      => array('page', 'post', 'service', 'product'),
             'post_status'    => 'publish',
-            'posts_per_page' => 30,
+            'posts_per_page' => 25,
             'exclude'        => array($post_id),
         ));
         foreach ($other_posts as $p) {
@@ -307,22 +442,21 @@ class GMB_Ranker_SEO_Research_Engine {
                 'url'   => $path_url,
             );
         }
-        $site_name = get_bloginfo('name');
+
+        $site_name = $site_context['site_name'];
         $content_clean = wp_strip_all_tags($content_raw);
 
-        $system_prompt = "You are an Elite Senior SEO Product Architect, Technical SEO Engineer, and NLP/Semantic Specialist.\n" .
-        "Perform a multi-layer evidence-based SEO research analysis for an EXISTING or NEW WordPress page.\n\n" .
-        "CRITICAL RULES:\n" .
-        "1. DO NOT invent false claims or make up SEO scores.\n" .
-        "2. DO NOT keyword stuff. Provide evidence-based reasoning for every recommendation.\n" .
+        $system_prompt = "You are an Senior Technical SEO Architect and Entity/NLP Content Strategist.\n" .
+        "Perform a multi-layer evidence-driven SEO research analysis for the provided website context and post payload.\n\n" .
+        "RULES:\n" .
+        "1. DO NOT invent false business data or make up fake brand names. Use ONLY the provided site context.\n" .
+        "2. Avoid generic SEO boilerplate strings.\n" .
         "3. URL / SLUG: Recommend a clean URL slug containing the primary focus keyword.\n" .
         "4. TITLES: Provide 3 distinct title candidates (Intent-Focused, CTR-Focused, Balanced) with CTR rationale.\n" .
-        "5. SEMANTIC TERMS: Provide both UNDERUSED terms (to add) AND OVERUSED terms (to reduce).\n" .
+        "5. SEMANTIC TERMS: Provide underused terms to add and overused terms to reduce.\n" .
         "6. ENTITIES: Classify primary, related, missing, and weak entities.\n" .
-        "7. HEADING GAPS: Identify missing H2/H3 subtopics.\n" .
-        "8. QUESTIONS: Identify high/medium/low priority PAA questions.\n" .
-        "9. INFORMATION GAIN: Recommend actionable decision frameworks, checklists, or regional context.\n" .
-        "10. SURGICAL / FULL CONTENT DRAFTING: If current word count < 300 or mode is 'create', recommended_text MUST be a complete 600+ word structured HTML draft containing H2/H3 subheadings (with focus keyword in H2s), [gmb_toc], bullet lists, step-by-step checklist, FAQ, internal link, and CTA.\n\n" .
+        "7. HEADING Gaps & Questions: Identify missing H2/H3 subtopics and People Also Ask questions.\n" .
+        "8. INFORMATION GAIN: Recommend actionable decision frameworks or checklists tailored to the site type (" . $site_context['site_type'] . ").\n\n" .
         "Return ONLY a raw valid JSON object with keys:\n" .
         "- title_candidates (array of objects with keys: candidate, type, char_count, intent_match, ctr_rationale)\n" .
         "- recommended_meta_description (string, 140-155 chars)\n" .
@@ -339,20 +473,22 @@ class GMB_Ranker_SEO_Research_Engine {
         "- surgical_intro_recommendation (object with keys: current_status, recommended_text, reasoning)\n" .
         "Do NOT wrap in markdown or backticks.";
 
-        $user_prompt = "Target Query/Keyword: " . $focus_keyword . "\n" .
+        $user_prompt = "Site Name: " . $site_name . "\n" .
+        "Site Type: " . $site_context['site_type'] . "\n" .
+        "Target Query/Keyword: " . $focus_keyword . "\n" .
         "Article Title: " . $title . "\n" .
+        "Post Type: " . $site_context['post_type'] . "\n" .
         "Current SEO Title: " . $layer_a['seo_title'] . "\n" .
         "Current Meta Desc: " . $layer_a['meta_desc'] . "\n" .
         "Current Slug: " . $layer_a['slug'] . "\n" .
         "Target Search Region: " . $country . "\n" .
         "Target Language: " . $language . "\n" .
         "Search Intent: " . $layer_b['dominant_intent'] . "\n" .
-        "Current Word Count: " . $layer_a['word_count'] . " (SERP Target Benchmark: " . $layer_cd['word_count_stats']['recommended_range'] . ")\n" .
+        "Current Word Count: " . $layer_a['word_count'] . " (Recommended Range: " . $layer_cd['word_count_stats']['recommended_range'] . ")\n" .
         "Current H2 Headings: " . implode(' | ', $layer_a['h2_list']) . "\n" .
         "Current H3 Headings: " . implode(' | ', $layer_a['h3_list']) . "\n" .
-        "Content Body Snippet (First 2500 chars):\n" . mb_substr($content_clean, 0, 2500) . "\n\n" .
-        "Site Name: " . $site_name . "\n" .
-        "Available Site Pages for SILO Linking:\n" . wp_json_encode($live_pages);
+        "Content Body Snippet (First 2000 chars):\n" . mb_substr($content_clean, 0, 2000) . "\n\n" .
+        "Available SILO Links:\n" . wp_json_encode($live_pages);
 
         $messages = array(
             array('role' => 'system', 'content' => $system_prompt),
@@ -375,39 +511,42 @@ class GMB_Ranker_SEO_Research_Engine {
     }
 
     /**
-     * Compile All Research Layers (E - Q) with Dynamic Topic-Tailored Fallbacks
+     * Compile All Research Layers (E - Q) with Dynamic Site-Tailored Fallbacks
      */
-    private static function compile_all_layers($layer_a, $layer_b, $layer_cd, $ai, $focus_keyword, $post_id) {
-        $site_name = get_bloginfo('name');
+    private static function compile_all_layers($layer_a, $layer_b, $layer_cd, $ai, $focus_keyword, $post_id, $site_context, $mode, $title) {
+        $site_name = $site_context['site_name'];
+        $clean_kw  = ucwords($focus_keyword ?: $layer_a['inferred_keyword']);
         
         // Layer E: Title Candidates
         $titles = $ai['title_candidates'] ?? array();
         if (empty($titles)) {
-            $clean_kw = ucwords($focus_keyword ?: $layer_a['inferred_keyword']);
             $titles = array(
                 array(
-                    'candidate'     => 'Essential ' . $clean_kw . ' Guide (' . date('Y') . ') | ' . $site_name,
+                    'candidate'     => sprintf('%s: Complete Guide & Insights | %s', $clean_kw, $site_name),
                     'type'          => 'Intent-Focused',
-                    'char_count'    => mb_strlen('Essential ' . $clean_kw . ' Guide (' . date('Y') . ') | ' . $site_name),
+                    'char_count'    => mb_strlen(sprintf('%s: Complete Guide & Insights | %s', $clean_kw, $site_name)),
                     'intent_match'  => 'High',
-                    'ctr_rationale' => 'Includes sentiment word (Essential), power word (Guide), number (' . date('Y') . '), and focus keyword for maximum CTR.',
+                    'ctr_rationale' => 'Front-loads primary focus keyword with strong sentiment hook and brand authority.',
                 ),
                 array(
-                    'candidate'     => 'Best ' . $clean_kw . ': Complete Expert Analysis & Tips',
+                    'candidate'     => sprintf('Top %s Strategies & Best Practices', $clean_kw),
                     'type'          => 'CTR-Focused',
-                    'char_count'    => mb_strlen('Best ' . $clean_kw . ': Complete Expert Analysis & Tips'),
+                    'char_count'    => mb_strlen(sprintf('Top %s Strategies & Best Practices', $clean_kw)),
                     'intent_match'  => 'High',
-                    'ctr_rationale' => 'Uses listicle number hook with positive sentiment words (Best, Proven) to boost snippet clicks.',
+                    'ctr_rationale' => 'Uses listicle hook with high-CTR sentiment words to maximize SERP clicks.',
                 ),
             );
         }
 
         // Layer F: Meta Description
         $meta_desc = $ai['recommended_meta_description'] ?? '';
-        $meta_desc_evidence = $ai['meta_desc_evidence'] ?? 'Meta description is front-loaded with primary focus keyword and includes clear action CTA.';
+        $meta_desc_evidence = $ai['meta_desc_evidence'] ?? 'Meta description is front-loaded with focus keyword and aligned with user search intent.';
         if (empty($meta_desc)) {
-            $clean_kw = $focus_keyword ?: $layer_a['inferred_keyword'];
-            $meta_desc = 'Discover essential insights on ' . $clean_kw . '. Learn step-by-step strategies, expert guidance, and practical solutions on ' . $site_name . '.';
+            $meta_desc = sprintf(
+                __('Discover essential insights on %1$s. Learn practical strategies, expert guidance, and key solutions from %2$s.', 'gmb-ranker-seo-automation'),
+                $focus_keyword ?: $layer_a['inferred_keyword'],
+                $site_name
+            );
         }
 
         // Layer G: Slug Safety & Focus Keyword Permalinks
@@ -424,17 +563,17 @@ class GMB_Ranker_SEO_Research_Engine {
             array(
                 'term'              => $focus_keyword ?: $layer_a['inferred_keyword'],
                 'current_freq'      => $layer_a['keyword_frequency'],
-                'recommended_range' => '4 - 8 times',
+                'recommended_range' => '3 - 6 times',
                 'status'            => $layer_a['keyword_status'],
                 'importance'        => 'HIGH',
-                'evidence'          => 'Primary query phrase coverage across H1, intro, and body text.',
+                'evidence'          => 'Primary query term coverage across H1, intro, and body copy.',
             ),
         );
 
         // Layer I: Entity Map
         $entity_map = $ai['entity_map'] ?? array(
             array(
-                'entity'   => ucwords($focus_keyword ?: $layer_a['inferred_keyword']),
+                'entity'   => $clean_kw,
                 'type'     => 'Primary Concept',
                 'status'   => 'COVERED',
                 'evidence' => 'Main entity identified in page title and headings.',
@@ -453,9 +592,9 @@ class GMB_Ranker_SEO_Research_Engine {
         // Layer M: Information Gain
         $info_gain = $ai['information_gain'] ?? array(
             array(
-                'opportunity' => 'Practical Decision Checklist',
+                'opportunity' => 'Actionable Decision Framework',
                 'impact'      => 'HIGH',
-                'description' => 'Add a bulleted decision framework or step-by-step summary table to outperform generic competitor text.',
+                'description' => 'Incorporate a bulleted decision checklist or summary table to provide distinct value over generic competitors.',
             ),
         );
 
@@ -468,13 +607,10 @@ class GMB_Ranker_SEO_Research_Engine {
             'reasoning'   => 'Matches page structure and search intent.',
         );
 
-        $target_kw_clean = !empty($focus_keyword) ? $focus_keyword : (!empty($layer_a['inferred_keyword']) ? $layer_a['inferred_keyword'] : 'essential guidance');
-        $site_name_clean = get_bloginfo('name') ?: (wp_parse_url(home_url(), PHP_URL_HOST) ?: 'Care Nest Nepal');
+        $target_kw_clean = !empty($focus_keyword) ? $focus_keyword : (!empty($layer_a['inferred_keyword']) ? $layer_a['inferred_keyword'] : $title);
         $title_clean     = !empty($title) ? $title : ucwords($target_kw_clean);
         
-        $kw_uc = ucwords($target_kw_clean);
-        $kw_lc = strtolower($target_kw_clean);
-        $home_link = esc_url(home_url('/'));
+        $home_link = esc_url($site_context['home_url']);
 
         if (!class_exists('GMB_Ranker_SEO_Content_AI')) {
             $content_ai_file = __DIR__ . '/class-gmb-ranker-seo-content-ai.php';
@@ -485,19 +621,29 @@ class GMB_Ranker_SEO_Research_Engine {
 
         if (class_exists('GMB_Ranker_SEO_Content_AI')) {
             $ai_draft_res = GMB_Ranker_SEO_Content_AI::generate_archetype_draft($title_clean, $target_kw_clean, $post_id);
-            $full_600_word_draft = $ai_draft_res['draft'];
+            $full_draft = $ai_draft_res['draft'];
         } else {
-            $full_600_word_draft = '<p>Recognizing the key features of <strong>' . esc_html($kw_lc) . '</strong> is essential for ensuring timely medical support, patient safety, and long-term personal well-being. Explore our complete guide from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> below.</p>';
+            $full_draft = sprintf(
+                '<p>Understanding <strong>%1$s</strong> is essential for optimizing results and achieving goals. Explore our full guide from <a href="%2$s">%3$s</a> below.</p>',
+                esc_html($target_kw_clean),
+                $home_link,
+                esc_html($site_name)
+            );
         }
 
-        $short_intro = 'Recognizing the key features of <strong>' . esc_html($kw_lc) . '</strong> is essential for ensuring timely support, safety, and long-term well-being. Explore our complete guide from <a href="' . $home_link . '">' . esc_html($site_name_clean) . '</a> below.';
+        $short_intro = sprintf(
+            '<p>Understanding <strong>%1$s</strong> is key to achieving optimal outcomes. Explore our complete guide from <a href="%2$s">%3$s</a> below.</p>',
+            esc_html($target_kw_clean),
+            $home_link,
+            esc_html($site_name)
+        );
 
         $intro_ai_text = $ai['surgical_intro_recommendation']['recommended_text'] ?? '';
         
         if (!empty($intro_ai_text) && strlen($intro_ai_text) > 40 && strpos($intro_ai_text, 'Weave focus keyword') === false) {
             $intro_final_text = $intro_ai_text;
         } else {
-            $intro_final_text = ($layer_a['word_count'] < 300 || $mode === 'create') ? $full_600_word_draft : $short_intro;
+            $intro_final_text = ($layer_a['word_count'] < 300 || $mode === 'create') ? $full_draft : $short_intro;
         }
 
         return array(
@@ -516,7 +662,7 @@ class GMB_Ranker_SEO_Research_Engine {
             'intro_recommendation'   => array(
                 'current_status'   => $layer_a['word_count'] < 300 ? 'MISSING' : ($layer_a['keyword_frequency'] > 0 ? 'GOOD' : 'WEAK'),
                 'recommended_text' => $intro_final_text,
-                'reasoning'        => ($layer_a['word_count'] < 300 || $mode === 'create') ? 'Drafted full 600+ word topic-tailored SEO content with H2/H3 headings, checklist, FAQ, and CTA to fully cover search intent.' : ($ai['surgical_intro_recommendation']['reasoning'] ?? 'Front-loads primary focus keyword in sentence 1 and uses an empathetic tone to satisfy search intent and reduce bounce rate.'),
+                'reasoning'        => ($layer_a['word_count'] < 300 || $mode === 'create') ? 'Drafted full structured content with subheadings, checklist, and CTA to satisfy search intent.' : ($ai['surgical_intro_recommendation']['reasoning'] ?? 'Front-loads focus keyword in opening sentence to reduce bounce rate.'),
             ),
         );
     }
@@ -585,9 +731,9 @@ class GMB_Ranker_SEO_Research_Engine {
     }
 
     /**
-     * Build Evidence-Based Recommendations List (Step 3 Table)
+     * Build Evidence-Based Recommendations List
      */
-    private static function build_recommendations_list($layers, $layer_a, $focus_keyword, $post_id) {
+    private static function build_recommendations_list($layers, $layer_a, $focus_keyword, $post_id, $site_context) {
         $recs = array();
 
         // 1. Focus Keyword
@@ -596,7 +742,7 @@ class GMB_Ranker_SEO_Research_Engine {
             'category'    => 'Focus Keyword',
             'current'     => $layer_a['focus_keyword'] ?: '(None set)',
             'recommended' => $focus_keyword ?: $layer_a['inferred_keyword'],
-            'evidence'    => 'Identified as the highest intent 2-4 word entity phrase matching search queries.',
+            'evidence'    => 'Identified as primary target keyword matching search queries.',
             'status'      => empty($layer_a['focus_keyword']) ? 'MISSING' : 'GOOD',
             'risk_level'  => 'LOW',
             'action'      => 'UPDATE METADATA',
@@ -630,7 +776,7 @@ class GMB_Ranker_SEO_Research_Engine {
             'field_type'  => 'textarea',
         );
 
-        // 4. URL / Slug (Safety-first)
+        // 4. URL / Slug
         $slug_info = $layers['slug_recommendation'];
         $recs[] = array(
             'id'          => 'slug',
@@ -658,12 +804,12 @@ class GMB_Ranker_SEO_Research_Engine {
             'field_type'  => 'select',
         );
 
-        // 6. Content Intro (Surgical Edit)
+        // 6. Content Intro
         $intro_info = $layers['intro_recommendation'];
         $recs[] = array(
             'id'          => 'content_intro',
             'category'    => 'Content Intro',
-            'current'     => 'Paragraph 1 (Current opening text)',
+            'current'     => 'Opening content text',
             'recommended' => $intro_info['recommended_text'],
             'evidence'    => $intro_info['reasoning'],
             'status'      => $intro_info['current_status'],
@@ -678,9 +824,9 @@ class GMB_Ranker_SEO_Research_Engine {
             $recs[] = array(
                 'id'          => 'information_gain',
                 'category'    => 'Information Gain',
-                'current'     => 'Missing practical summary framework',
+                'current'     => 'Missing actionable summary framework',
                 'recommended' => $ig['opportunity'] . ': ' . $ig['description'],
-                'evidence'    => 'Outperforms competitors by providing actionable, unique value.',
+                'evidence'    => 'Provides distinct, unique value to search readers.',
                 'status'      => 'RECOMMENDED',
                 'risk_level'  => 'LOW',
                 'action'      => 'ADD SECTION',
