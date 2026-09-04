@@ -58,6 +58,22 @@ if (!class_exists('GMB_Ranker_SEO_Settings_Registry')) {
          * @return mixed
          */
         public function protect_missing_options_on_save($value, $option, $old_value) {
+            // Protect secret key options from being overwritten by masked strings (containing '*' or '•')
+            $secret_options = array(
+                'gmb_ranker_api_key',
+                'gmb_ai_openrouter_key',
+                'gmb_ai_groq_key',
+                'gmb_ai_gemini_key',
+                'gmb_ai_openai_key',
+                'gmb_ai_claude_key',
+                'gmb_integration_webhook_secret',
+            );
+            if (in_array($option, $secret_options, true)) {
+                if (is_string($value) && (strpos($value, '*') !== false || strpos($value, '•') !== false)) {
+                    return $old_value;
+                }
+            }
+
             if (isset($_POST['option_page'])) {
                 $is_plugin_option = (strpos($option, 'gmb_') === 0 || strpos($option, 'gps_') === 0);
                 if ($is_plugin_option && !isset($_POST[$option]) && !isset($_FILES[$option])) {

@@ -275,7 +275,7 @@ if (function_exists('wp_enqueue_script')) {
                         <label for="wiz_api_key"><?php esc_html_e('GMB Ranker API Secret Key', 'gmb-ranker-seo-automation'); ?></label>
                     </div>
                     <div class="wiz-form-input-col">
-                        <input type="password" id="wiz_api_key" class="wiz-input" value="<?php echo esc_attr($s['api_key_masked']); ?>" placeholder="gr_sec_..." />
+                        <input type="password" id="wiz_api_key" class="wiz-input" value="<?php echo esc_attr($s['api_key']); ?>" placeholder="gr_sec_..." autocomplete="off" />
                         <div class="wiz-form-desc"><?php esc_html_e('Your unique secret key for headless API requests and remote indexing hooks.', 'gmb-ranker-seo-automation'); ?></div>
                     </div>
                 </div>
@@ -299,7 +299,7 @@ if (function_exists('wp_enqueue_script')) {
                         <label for="wiz_ai_key"><?php esc_html_e('AI Provider API Key', 'gmb-ranker-seo-automation'); ?></label>
                     </div>
                     <div class="wiz-form-input-col">
-                        <input type="password" id="wiz_ai_key" class="wiz-input" value="<?php echo esc_attr($s['ai_key_masked']); ?>" placeholder="sk-or-... / gsk_..." />
+                        <input type="password" id="wiz_ai_key" class="wiz-input" value="<?php echo esc_attr($s['ai_key']); ?>" placeholder="sk-or-... / gsk_..." autocomplete="off" />
                         <div class="wiz-form-desc"><?php esc_html_e('Enter your provider key. OpenRouter and Groq offer generous free keys.', 'gmb-ranker-seo-automation'); ?></div>
                     </div>
                 </div>
