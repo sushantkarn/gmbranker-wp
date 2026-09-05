@@ -2964,9 +2964,15 @@
       });
     }
 
+    window.gmbCloseSchemaModal = function (e) {
+      if (e && e.preventDefault) e.preventDefault();
+      var $modal = $("#gmb-schema-modal");
+      $modal.removeClass("active is-open is-active").attr("aria-hidden", "true").hide();
+      return false;
+    };
+
     $(document).on("click", "#gmb-schema-modal-close-btn", function (e) {
-      e.preventDefault();
-      $("#gmb-schema-modal").removeClass("active is-open").hide();
+      window.gmbCloseSchemaModal(e);
     });
 
     $(document).on("click", "#gmb-schema-modal", function (e) {

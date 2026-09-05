@@ -616,7 +616,7 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
             <div class="gmb-modal-box gmb-modal-box-schema">
                 <div class="gmb-modal-header">
                     <span class="gmb-modal-title"><?php esc_html_e('Schema Generator', 'gmb-ranker-seo-automation'); ?></span>
-                    <span class="gmb-modal-close" id="gmb-schema-modal-close-btn" title="<?php esc_attr_e('Close Modal', 'gmb-ranker-seo-automation'); ?>" role="button" tabindex="0">&#x2715;</span>
+                    <button type="button" class="gmb-modal-close" id="gmb-schema-modal-close-btn" title="<?php esc_attr_e('Close Modal', 'gmb-ranker-seo-automation'); ?>" aria-label="<?php esc_attr_e('Close Modal', 'gmb-ranker-seo-automation'); ?>" onclick="return window.gmbCloseSchemaModal ? window.gmbCloseSchemaModal(event) : false;">&#x2715;</button>
                 </div>
                 <div class="gmb-modal-tabs" role="tablist">
                     <button type="button" class="gmb-modal-tab-btn active" data-schema-tab="schema-tab-templates" role="tab" aria-selected="true" aria-controls="schema-tab-templates" onclick="return window.gmbSwitchSchemaTab ? window.gmbSwitchSchemaTab('schema-tab-templates', event) : false;"><?php esc_html_e('Schema Templates', 'gmb-ranker-seo-automation'); ?></button>
