@@ -1171,16 +1171,17 @@
     });
 
     // Modal Tab Switching (General vs Social)
-    $(document).on("click", ".gmb-modal-tabs .gmb-modal-tab-btn", function (e) {
+    $(document).on("click", ".gmb-modal-tabs .gmb-modal-tab-btn[data-modal-tab], .gmb-modal-tabs .gmb-modal-tab-btn[data-target]", function (e) {
       e.preventDefault();
       var targetModalTab =
         $(this).attr("data-modal-tab") || $(this).attr("data-target");
       if (!targetModalTab) return;
 
-      $(".gmb-modal-tabs .gmb-modal-tab-btn").removeClass("active");
-      $(this).addClass("active");
+        $(this).closest(".gmb-modal-tabs").find(".gmb-modal-tab-btn").removeClass("active").attr("aria-selected", "false");
+        $(this).addClass("active");
+        $(this).attr("aria-selected", "true");
 
-      $(".gmb-modal-tab-content").hide().attr("aria-hidden", "true");
+      $(this).closest(".gmb-modal-box").find(".gmb-modal-tab-content").hide().attr("aria-hidden", "true");
       $("#" + targetModalTab).show();
       $("#" + targetModalTab).attr("aria-hidden", "false");
     });
@@ -3022,11 +3023,12 @@
         var targetTab = $(this).attr("data-schema-tab");
         if (!targetTab) return;
 
-        $("#gmb-schema-modal .gmb-modal-tab-btn").removeClass("active");
+        $("#gmb-schema-modal .gmb-modal-tab-btn[data-schema-tab]").removeClass("active").attr("aria-selected", "false");
         $(this).addClass("active");
+        $(this).attr("aria-selected", "true");
 
-        $("#gmb-schema-modal .gmb-schema-tab-content").hide();
-        $("#" + targetTab).show();
+        $("#gmb-schema-modal .gmb-schema-tab-content").hide().removeClass("active").attr("aria-hidden", "true");
+        $("#" + targetTab).show().addClass("active").attr("aria-hidden", "false");
       },
     );
 
