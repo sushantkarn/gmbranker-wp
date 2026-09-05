@@ -54,8 +54,13 @@ class GMB_Ranker_SEO_CLI_Controller {
 
         $stored_keys = array_filter($stored_keys);
 
-        // If no key is set yet or matches any configured key or user is admin
-        if (empty($stored_keys) || current_user_can('manage_options')) {
+        // A missing key must fail closed. The previous empty-key bypass made
+        // the command endpoint public on every fresh installation.
+        if (empty($stored_keys) && !current_user_can('manage_options')) {
+            return new WP_Error('rest_forbidden', 'API authentication is not configured.', array('status' => 503));
+        }
+
+        if (current_user_can('manage_options') && empty($api_key)) {
             return true;
         }
 
@@ -104,8 +109,8 @@ class GMB_Ranker_SEO_CLI_Controller {
                         'site_name'         => get_bloginfo('name'),
                         'post_count'        => $total_posts,
                         'missing_meta_count'=> $missing_meta,
-                        'health_score'      => max(50, 100 - ($missing_meta * 3)),
-                        'schema_active'     => true,
+                        'health_score'      => null,
+                        'schema_active'     => (bool) get_option('gmb_ranker_schema_type', ''),
                         'llmstxt_active'    => file_exists(ABSPATH . 'llms.txt'),
                     ),
                 ));
@@ -114,10 +119,13 @@ class GMB_Ranker_SEO_CLI_Controller {
                 $posts = get_posts(array('numberposts' => 10, 'post_status' => 'publish'));
                 $striking = array();
                 foreach ($posts as $p) {
-                    $impr = get_post_meta($p->ID, '_gmb_seo_impressions', true) ?: wp_rand(250, 1200);
-                    $clicks = get_post_meta($p->ID, '_gmb_seo_clicks', true) ?: wp_rand(2, 10);
-                    $ctr = $impr > 0 ? ($clicks / $impr) : 0.005;
-                    $pos = get_post_meta($p->ID, '_gmb_seo_position', true) ?: wp_rand(11, 18);
+                    $impr = get_post_meta($p->ID, '_gmb_seo_impressions', true);
+                    $clicks = get_post_meta($p->ID, '_gmb_seo_clicks', true);
+                    $pos = get_post_meta($p->ID, '_gmb_seo_position', true);
+                    if ($impr === '' || $clicks === '' || $pos === '') {
+                        continue;
+                    }
+                    $ctr = $impr > 0 ? ($clicks / $impr) : 0;
                     
                     if ($ctr < 0.02) {
                         $striking[] = array(
@@ -138,16 +146,17 @@ class GMB_Ranker_SEO_CLI_Controller {
                 ));
 
             case 'experiment':
-                if (!$post_id) {
-                    $first = get_posts(array('numberposts' => 1, 'post_status' => 'publish'));
-                    $post_id = !empty($first) ? $first[0]->ID : 1;
+                $new_title = !empty($options['title']) ? sanitize_text_field($options['title']) : '';
+                $new_desc = !empty($options['description']) ? sanitize_textarea_field($options['description']) : '';
+                if (!$post_id || !$new_title || !$new_desc) {
+                    return new WP_Error('missing_experiment_input', 'A post ID, title, and description are required.');
                 }
                 $post = get_post($post_id);
-                $old_title = get_post_meta($post_id, '_gmb_seo_title', true) ?: ($post ? $post->post_title : 'Original Title');
+                if (!$post) {
+                    return new WP_Error('invalid_post', 'The experiment post does not exist.');
+                }
+                $old_title = get_post_meta($post_id, '_gmb_seo_title', true) ?: $post->post_title;
                 $old_desc  = get_post_meta($post_id, '_gmb_seo_description', true) ?: get_bloginfo('description');
-
-                $new_title = "Trusted " . ($post ? $post->post_title : "Services") . " | Certified Local Experts";
-                $new_desc  = "Top-rated " . ($post ? $post->post_title : "services") . ". Book certified professionals today. Fast response & 100% satisfaction guaranteed.";
 
                 if (!$is_dry_run) {
                     update_post_meta($post_id, '_gmb_seo_title_baseline', $old_title);
@@ -228,7 +237,13 @@ class GMB_Ranker_SEO_CLI_Controller {
                 ));
 
             case 'llmstxt':
-                $llms_content = "# " . get_bloginfo('name') . " AI Sitemap\n\n> Comprehensive AI Directory\n\n- Site: " . home_url() . "\n";
+                $site_name = get_bloginfo('name');
+                $site_description = get_bloginfo('description');
+                $llms_content = '# ' . $site_name . "\n\n";
+                if (!empty($site_description)) {
+                    $llms_content .= '> ' . $site_description . "\n\n";
+                }
+                $llms_content .= '- Site: ' . home_url() . "\n";
                 if (!$is_dry_run) {
                     update_option('gmb_llms_additional_content', $llms_content);
                 }

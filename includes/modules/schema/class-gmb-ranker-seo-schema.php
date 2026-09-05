@@ -822,6 +822,14 @@ class GMB_Ranker_SEO_Schema {
             return;
         }
 
+        // When an SEO plugin integration is enabled, its graph filters are
+        // the canonical output path. Printing a second standalone graph here
+        // creates duplicate Article/FAQ/LocalBusiness entities.
+        if (($this->is_rank_math_schema_active() && get_option('gmb_schema_integrate_rankmath', '1') !== '0')
+            || ($this->is_yoast_schema_active() && get_option('gmb_schema_integrate_yoast', '1') !== '0')) {
+            return;
+        }
+
         $post_id = $this->get_current_page_id();
         
         $custom_schema = !empty($post_id) ? get_post_meta($post_id, '_gmb_ranker_json_ld', true) : '';

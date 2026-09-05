@@ -319,6 +319,181 @@
   display: none !important;
 }
 
+.gmb-ai-provider-chain {
+  display: grid;
+  gap: 8px;
+}
+
+.gmb-ai-provider-table-head {
+  display: grid;
+  grid-template-columns: 82px minmax(110px, .8fr) minmax(160px, 1.6fr) auto auto auto;
+  gap: 12px;
+  padding: 0 14px 6px 62px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.gmb-ai-provider-row {
+  display: grid;
+  grid-template-columns: 20px 28px 34px minmax(110px, .8fr) minmax(160px, 1.6fr) auto auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #dbe4ef;
+  border-radius: 8px;
+}
+
+.gmb-ai-provider-row.is-dragging {
+  opacity: .55;
+  border-color: #2563eb;
+}
+
+.gmb-ai-provider-drag {
+  cursor: grab;
+  color: #64748b;
+  font-size: 18px;
+}
+
+.gmb-ai-provider-order-controls {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.gmb-ai-provider-order-controls button {
+  padding: 0 2px;
+  min-height: 15px;
+  color: #64748b;
+}
+
+.gmb-ai-provider-model {
+  color: #64748b;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+.gmb-ai-provider-status {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.gmb-ai-provider-status.is-configured,
+.gmb-ai-provider-test-result.is-success { color: #15803d; }
+.gmb-ai-provider-status.is-unconfigured,
+.gmb-ai-provider-test-result.is-error { color: #b45309; }
+.gmb-ai-provider-test-result { min-width: 120px; font-size: 12px; }
+
+.gmb-ai-provider-row .gmb-ai-open-config,
+.gmb-ai-provider-row .gmb-btn-test-ai-provider {
+  white-space: nowrap;
+  min-height: 30px;
+  padding: 3px 9px;
+  font-size: 12px;
+}
+
+.gmb-screen-reader-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.gmb-ai-provider-modal[hidden] { display: none; }
+.gmb-ai-provider-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+}
+.gmb-ai-provider-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, .48);
+}
+.gmb-ai-provider-modal-panel {
+  position: relative;
+  width: min(760px, calc(100% - 32px));
+  max-height: min(760px, calc(100vh - 48px));
+  margin: 24px auto;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #dbe4ef;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, .22);
+}
+.gmb-ai-provider-modal-header,
+.gmb-ai-provider-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.gmb-ai-provider-modal-footer {
+  justify-content: flex-end;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 0;
+  background: #f8fafc;
+}
+.gmb-ai-modal-close {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+.gmb-ai-provider-config-list { padding: 14px 22px; }
+.gmb-ai-section {
+  display: none;
+  padding: 14px 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+.gmb-ai-section.is-selected { display: block !important; }
+.gmb-ai-config-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: #1e293b;
+}
+.gmb-ai-config-state { color: #b45309; font-size: 12px; font-weight: 600; }
+.gmb-ai-config-state.is-configured { color: #15803d; }
+.gmb-ai-modal-open { overflow: hidden; }
+
+@media (max-width: 900px) {
+  .gmb-ai-provider-table-head { display: none; }
+  .gmb-ai-provider-row { grid-template-columns: auto auto 1fr; }
+  .gmb-ai-provider-row > *:nth-child(n+4) { grid-column: 3; }
+  .gmb-ai-provider-row .gmb-ai-provider-model,
+  .gmb-ai-provider-row .gmb-ai-provider-status,
+  .gmb-ai-provider-row .gmb-checkbox-label,
+  .gmb-ai-provider-row .gmb-ai-open-config,
+  .gmb-ai-provider-row .gmb-btn-test-ai-provider,
+  .gmb-ai-provider-row .gmb-ai-provider-test-result { margin-top: 4px; }
+}
+
+@media (max-width: 600px) {
+  .gmb-ai-provider-modal-panel { width: calc(100% - 16px); margin: 8px auto; max-height: calc(100vh - 16px); }
+  .gmb-ai-provider-modal-header,
+  .gmb-ai-provider-modal-footer,
+  .gmb-ai-provider-config-list { padding-left: 14px; padding-right: 14px; }
+  .gmb-ai-section .gmb-grid-2 { grid-template-columns: 1fr; }
+}
+
 /* Action Footer */
 .gmb-integrations-footer {
   display: flex;

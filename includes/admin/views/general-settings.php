@@ -1069,11 +1069,12 @@ $sec_opts = array(
                             <label for="gmb-ai-provider-select-sub"><?php esc_html_e('AI Provider', 'gmb-ranker-seo-automation'); ?></label>
                         </div>
                         <div class="gmb-settings-input-col">
-                            <?php $provider = get_option('gmb_ai_provider', 'openrouter'); ?>
+                            <?php $provider = get_option('gmb_ai_provider', ''); ?>
                             <select name="gmb_ai_provider" id="gmb-ai-provider-select-sub" class="gmb-select gmb-input--md">
                                 <option value="openrouter" <?php selected($provider, 'openrouter'); ?>><?php esc_html_e('OpenRouter (Recommended)', 'gmb-ranker-seo-automation'); ?></option>
                                 <option value="groq" <?php selected($provider, 'groq'); ?>><?php esc_html_e('Groq Cloud', 'gmb-ranker-seo-automation'); ?></option>
                                 <option value="ollama" <?php selected($provider, 'ollama'); ?>><?php esc_html_e('Ollama (Local AI)', 'gmb-ranker-seo-automation'); ?></option>
+                                <option value="nvidia" <?php selected($provider, 'nvidia'); ?>><?php esc_html_e('NVIDIA NIM', 'gmb-ranker-seo-automation'); ?></option>
                             </select>
                         </div>
                     </div>
@@ -1095,7 +1096,7 @@ $sec_opts = array(
                                 <label for="gmb_ai_openrouter_model"><?php esc_html_e('Default Model', 'gmb-ranker-seo-automation'); ?></label>
                             </div>
                             <div class="gmb-settings-input-col">
-                                <input type="text" id="gmb_ai_openrouter_model" name="gmb_ai_openrouter_model" value="<?php echo esc_attr(get_option('gmb_ai_openrouter_model', 'meta-llama/llama-3.1-8b-instruct:free')); ?>" class="gmb-input gmb-input--md" />
+                                <input type="text" id="gmb_ai_openrouter_model" name="gmb_ai_openrouter_model" value="<?php echo esc_attr(get_option('gmb_ai_openrouter_model', '')); ?>" class="gmb-input gmb-input--md" />
                             </div>
                         </div>
                     </div>
@@ -1116,7 +1117,7 @@ $sec_opts = array(
                                 <label for="gmb_ai_groq_model"><?php esc_html_e('Default Model', 'gmb-ranker-seo-automation'); ?></label>
                             </div>
                             <div class="gmb-settings-input-col">
-                                <input type="text" id="gmb_ai_groq_model" name="gmb_ai_groq_model" value="<?php echo esc_attr(get_option('gmb_ai_groq_model', 'llama-3.1-8b-instant')); ?>" class="gmb-input gmb-input--md" />
+                                <input type="text" id="gmb_ai_groq_model" name="gmb_ai_groq_model" value="<?php echo esc_attr(get_option('gmb_ai_groq_model', '')); ?>" class="gmb-input gmb-input--md" />
                             </div>
                         </div>
                     </div>
@@ -1128,7 +1129,7 @@ $sec_opts = array(
                                 <label for="gmb_ai_ollama_url"><?php esc_html_e('Ollama API Base URL', 'gmb-ranker-seo-automation'); ?></label>
                             </div>
                             <div class="gmb-settings-input-col">
-                                <input type="url" id="gmb_ai_ollama_url" name="gmb_ai_ollama_url" value="<?php echo esc_url(get_option('gmb_ai_ollama_url', 'http://localhost:11434')); ?>" class="gmb-input gmb-input--md" />
+                                <input type="url" id="gmb_ai_ollama_url" name="gmb_ai_ollama_url" value="<?php echo esc_url(get_option('gmb_ai_ollama_url', '')); ?>" class="gmb-input gmb-input--md" />
                             </div>
                         </div>
                         <div class="gmb-settings-row gmb-settings-row--align-center">
@@ -1136,8 +1137,19 @@ $sec_opts = array(
                                 <label for="gmb_ai_ollama_model"><?php esc_html_e('Default Model', 'gmb-ranker-seo-automation'); ?></label>
                             </div>
                             <div class="gmb-settings-input-col">
-                                <input type="text" id="gmb_ai_ollama_model" name="gmb_ai_ollama_model" value="<?php echo esc_attr(get_option('gmb_ai_ollama_model', 'llama3')); ?>" class="gmb-input gmb-input--md" />
+                                <input type="text" id="gmb_ai_ollama_model" name="gmb_ai_ollama_model" value="<?php echo esc_attr(get_option('gmb_ai_ollama_model', '')); ?>" class="gmb-input gmb-input--md" />
                             </div>
+                        </div>
+                    </div>
+
+                    <div id="ai-section-nvidia-sub" class="gmb-ai-section <?php echo ($provider !== 'nvidia') ? 'gmb-hidden' : ''; ?>">
+                        <div class="gmb-form-row">
+                            <label for="gmb_ai_nvidia_key"><?php esc_html_e('NVIDIA API Key', 'gmb-ranker-seo-automation'); ?></label>
+                            <input type="password" id="gmb_ai_nvidia_key" name="gmb_ai_nvidia_key" value="<?php echo !empty(get_option('gmb_ai_nvidia_key', '')) ? '********' : ''; ?>" placeholder="<?php esc_attr_e('Enter API Key...', 'gmb-ranker-seo-automation'); ?>" class="gmb-input gmb-input--md" />
+                        </div>
+                        <div class="gmb-form-row">
+                            <label for="gmb_ai_nvidia_model"><?php esc_html_e('NVIDIA Model', 'gmb-ranker-seo-automation'); ?></label>
+                            <input type="text" id="gmb_ai_nvidia_model" name="gmb_ai_nvidia_model" value="<?php echo esc_attr(get_option('gmb_ai_nvidia_model', '')); ?>" class="gmb-input gmb-input--md" />
                         </div>
                     </div>
                     

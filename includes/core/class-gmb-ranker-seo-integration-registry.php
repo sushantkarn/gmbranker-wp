@@ -28,7 +28,7 @@ class GMB_Ranker_SEO_Integration_Registry {
                 'icon'          => 'images/ai/openrouter.svg',
                 'key_option'    => 'gmb_ai_openrouter_key',
                 'model_option'  => 'gmb_ai_openrouter_model',
-                'default_model' => 'meta-llama/llama-3.1-8b-instruct:free',
+                'default_model' => '',
                 'model_presets' => array(
                     'meta-llama/llama-3.1-8b-instruct:free',
                     'mistralai/mistral-7b-instruct:free',
@@ -36,7 +36,7 @@ class GMB_Ranker_SEO_Integration_Registry {
                 ),
                 'doc_url'       => 'https://openrouter.ai/keys',
                 'key_placeholder' => 'sk-or-v1-...',
-                'model_placeholder' => 'meta-llama/llama-3.1-8b-instruct:free',
+                'model_placeholder' => '',
                 'is_local'      => false,
             ),
             'groq' => array(
@@ -46,7 +46,7 @@ class GMB_Ranker_SEO_Integration_Registry {
                 'icon'          => 'images/ai/groq.svg',
                 'key_option'    => 'gmb_ai_groq_key',
                 'model_option'  => 'gmb_ai_groq_model',
-                'default_model' => 'llama-3.1-8b-instant',
+                'default_model' => '',
                 'model_presets' => array(
                     'llama-3.1-8b-instant',
                     'llama-3.3-70b-versatile',
@@ -54,7 +54,7 @@ class GMB_Ranker_SEO_Integration_Registry {
                 ),
                 'doc_url'       => 'https://console.groq.com/keys',
                 'key_placeholder' => 'gsk_...',
-                'model_placeholder' => 'llama-3.1-8b-instant',
+                'model_placeholder' => '',
                 'is_local'      => false,
             ),
             'ollama' => array(
@@ -64,17 +64,31 @@ class GMB_Ranker_SEO_Integration_Registry {
                 'icon'          => 'images/ai/ollama-icon.svg',
                 'url_option'    => 'gmb_ai_ollama_url',
                 'model_option'  => 'gmb_ai_ollama_model',
-                'default_url'   => 'http://localhost:11434',
-                'default_model' => 'llama3',
+                'default_url'   => '',
+                'default_model' => '',
                 'model_presets' => array(
                     'llama3',
                     'mistral',
                     'gemma2',
                 ),
                 'doc_url'       => 'https://ollama.com',
-                'url_placeholder' => 'http://localhost:11434',
-                'model_placeholder' => 'llama3',
+                'url_placeholder' => 'https://your-ollama-host.example',
+                'model_placeholder' => '',
                 'is_local'      => true,
+            ),
+            'nvidia' => array(
+                'id'              => 'nvidia',
+                'name'            => __('NVIDIA NIM', 'gmb-ranker-seo-automation'),
+                'description'     => __('Direct NVIDIA-hosted inference using an administrator-selected model.', 'gmb-ranker-seo-automation'),
+                'icon'            => 'images/ai/openrouter.svg',
+                'key_option'      => 'gmb_ai_nvidia_key',
+                'model_option'    => 'gmb_ai_nvidia_model',
+                'default_model'   => '',
+                'model_presets'   => array(),
+                'doc_url'         => 'https://build.nvidia.com',
+                'key_placeholder' => 'nvapi-...',
+                'model_placeholder' => '',
+                'is_local'        => false,
             ),
         );
 
@@ -92,12 +106,60 @@ class GMB_Ranker_SEO_Integration_Registry {
      * @return string
      */
     public static function get_active_ai_provider() {
-        $provider = get_option('gmb_ai_provider', get_option('gmb_ai_active_provider', 'openrouter'));
+        $provider = get_option('gmb_ai_provider', get_option('gmb_ai_active_provider', ''));
         $valid_providers = array_keys(self::get_ai_providers());
         if (!in_array($provider, $valid_providers, true)) {
-            $provider = 'openrouter';
+            $provider = '';
         }
         return $provider;
+    }
+
+    /**
+     * Return the trusted, persisted provider priority chain.
+     * Existing single-provider installations are migrated in memory until saved.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function get_ai_provider_chain() {
+        $providers = self::get_ai_providers();
+        $stored = get_option('gmb_ai_provider_chain', array());
+        $chain = array();
+        $seen = array();
+
+        if (is_array($stored) && !empty($stored)) {
+            foreach ($stored as $entry) {
+                $provider = is_array($entry) ? sanitize_key($entry['provider'] ?? '') : '';
+                if (!$provider || !isset($providers[$provider]) || isset($seen[$provider])) continue;
+                $chain[] = array(
+                    'provider' => $provider,
+                    'enabled'  => !empty($entry['enabled']) ? 1 : 0,
+                    'priority' => count($chain) + 1,
+                );
+                $seen[$provider] = true;
+            }
+        }
+
+        $active = self::get_active_ai_provider();
+        $ordered_ids = array_keys($providers);
+        usort($ordered_ids, function($left, $right) use ($active) {
+            if ($left === $active) return -1;
+            if ($right === $active) return 1;
+            return 0;
+        });
+        foreach ($ordered_ids as $provider) {
+            if (isset($seen[$provider])) continue;
+            $definition = $providers[$provider];
+            $key = isset($definition['key_option']) ? get_option($definition['key_option'], '') : '';
+            $url = isset($definition['url_option']) ? get_option($definition['url_option'], '') : '';
+            $model = isset($definition['model_option']) ? get_option($definition['model_option'], '') : '';
+            $configured = !empty($model) && (!empty($key) || (!empty($definition['is_local']) && !empty($url)));
+            $chain[] = array(
+                'provider' => $provider,
+                'enabled'  => ($provider === $active || $configured) ? 1 : 0,
+                'priority' => count($chain) + 1,
+            );
+        }
+        return $chain;
     }
 
     /**
@@ -246,13 +308,15 @@ class GMB_Ranker_SEO_Integration_Registry {
             $url_val = isset($pdata['url_option']) ? get_option($pdata['url_option'], $pdata['default_url']) : '';
             $model_val = isset($pdata['model_option']) ? get_option($pdata['model_option'], $pdata['default_model']) : '';
 
+            $configured = !empty($model_val) && (!empty($key_val) || ($pdata['is_local'] && !empty($url_val)));
+
             $ai_provider_data[$pid] = array(
                 'definition'  => $pdata,
                 'key'         => $key_val,
                 'key_masked'  => self::mask_secret($key_val),
                 'url'         => $url_val,
                 'model'       => $model_val,
-                'configured'  => !empty($key_val) || ($pdata['is_local'] && !empty($url_val)),
+                'configured'  => $configured,
             );
         }
 

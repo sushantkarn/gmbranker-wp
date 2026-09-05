@@ -2585,6 +2585,9 @@ function initGmbAdminApp() {
     (window.gmb_ranker_admin && window.gmb_ranker_admin.toggle_module_nonce) ||
     (window.gmb_ranker_admin && window.gmb_ranker_admin.nonce) ||
     "";
+  const gmb_toggle_ajax_url =
+    (window.gmb_ranker_admin && window.gmb_ranker_admin.ajax_url) ||
+    (typeof ajaxurl !== "undefined" ? ajaxurl : "");
 
   function saveDashboardModuleToggle(checkbox) {
     if (!checkbox) return;
@@ -2592,22 +2595,17 @@ function initGmbAdminApp() {
     const slider = checkbox.nextElementSibling;
     if (slider) slider.style.opacity = "0.5";
 
-    const moduleName = checkbox.name;
+    const moduleName = checkbox.name.replace(/^gmb_ranker_module_/, "");
     const moduleValue = checkbox.checked ? "1" : "0";
 
     const formData = new FormData();
     formData.append("action", "gmb_toggle_dashboard_module");
-    if (typeof gmb_ranker_admin !== "undefined") {
-      formData.append(
-        "nonce",
-        gmb_ranker_admin.admin_nonce || gmb_ranker_admin.nonce,
-      );
-    }
     formData.append("nonce", gmb_toggle_module_nonce);
     formData.append("module", moduleName);
-    formData.append("value", moduleValue);
+    // The AJAX handler expects the canonical `state` field.
+    formData.append("state", moduleValue);
 
-    fetch(ajaxurl, {
+    fetch(gmb_toggle_ajax_url, {
       method: "POST",
       body: formData,
     })
@@ -2667,9 +2665,9 @@ function initGmbAdminApp() {
       fd.append("action", "gmb_toggle_dashboard_module");
       fd.append("nonce", gmb_toggle_module_nonce);
       fd.append("module", mod);
-      fd.append("value", "1");
+      fd.append("state", "1");
 
-      fetch(ajaxurl, {
+      fetch(gmb_toggle_ajax_url, {
         method: "POST",
         body: fd,
       })
@@ -2842,7 +2840,7 @@ function initGmbAdminApp() {
   const aiSelectSub = document.getElementById("gmb-ai-provider-select-sub");
   function toggleAiSectionsSub() {
     if (!aiSelectSub) return;
-    const sections = ["openrouter", "groq", "ollama"];
+    const sections = ["openrouter", "groq", "ollama", "nvidia"];
     const currentVal = aiSelectSub.value;
     sections.forEach(function (sec) {
       const elem = document.getElementById("ai-section-" + sec + "-sub");
@@ -2867,20 +2865,22 @@ function initGmbAdminApp() {
     resetAiBtn.addEventListener("click", function () {
       if (confirm("Are you sure you want to reset Content AI settings?")) {
         if (aiSelectSub) {
-          aiSelectSub.value = "openrouter";
+          aiSelectSub.value = "";
           toggleAiSectionsSub();
         }
-        document.querySelector('input[name="gmb_ai_openrouter_key"]').value =
-          "";
-        document.querySelector('input[name="gmb_ai_openrouter_model"]').value =
-          "meta-llama/llama-3-8b-instruct:free";
-        document.querySelector('input[name="gmb_ai_groq_key"]').value = "";
-        document.querySelector('input[name="gmb_ai_groq_model"]').value =
-          "llama3-8b-8192";
-        document.querySelector('input[name="gmb_ai_ollama_url"]').value =
-          "http://localhost:11434";
-        document.querySelector('input[name="gmb_ai_ollama_model"]').value =
-          "llama3";
+        [
+          'gmb_ai_openrouter_key',
+          'gmb_ai_openrouter_model',
+          'gmb_ai_groq_key',
+          'gmb_ai_groq_model',
+          'gmb_ai_ollama_url',
+          'gmb_ai_ollama_model',
+          'gmb_ai_nvidia_key',
+          'gmb_ai_nvidia_model',
+        ].forEach(function (name) {
+          const field = document.querySelector('input[name="' + name + '"]');
+          if (field) field.value = "";
+        });
       }
     });
   }
@@ -2892,7 +2892,7 @@ function initGmbAdminApp() {
 
   function toggleAiSections() {
     if (!aiSelect) return;
-    const sections = ["openrouter", "groq", "ollama"];
+    const sections = ["openrouter", "groq", "ollama", "nvidia"];
     const currentVal = aiSelect.value;
     sections.forEach(function (sec) {
       const elem = document.getElementById("ai-section-" + sec);
@@ -4259,6 +4259,118 @@ function initGmbAdminApp() {
       sections.forEach((s) => (s.style.display = "none"));
       const activeSec = document.getElementById("ai-section-" + val);
       if (activeSec) activeSec.style.display = "block";
+      if (providerChain) {
+        const selectedRow = providerChain.querySelector('[data-provider-id="' + val + '"]');
+        if (selectedRow) {
+          providerChain.insertBefore(selectedRow, providerChain.firstChild);
+          const enabled = selectedRow.querySelector(".gmb-ai-provider-enabled");
+          if (enabled) enabled.checked = true;
+          syncProviderChain();
+        }
+      }
+    });
+  }
+
+  // Integrations: Persist provider priority and test one trusted provider at a time.
+  const providerChain = document.getElementById("gmb-ai-provider-chain");
+  const providerChainInput = document.getElementById("gmb_ai_provider_chain");
+  if (providerChain && providerChainInput) {
+    let draggedProvider = null;
+    const syncProviderChain = function () {
+      const entries = Array.from(providerChain.querySelectorAll(".gmb-ai-provider-row")).map(function (row, index) {
+        row.querySelector(".gmb-ai-provider-priority").textContent = "#" + (index + 1);
+        return {
+          provider: row.getAttribute("data-provider-id") || "",
+          enabled: row.querySelector(".gmb-ai-provider-enabled").checked ? 1 : 0,
+          priority: index + 1,
+        };
+      });
+      providerChainInput.value = JSON.stringify(entries);
+    };
+    providerChain.querySelectorAll(".gmb-ai-provider-row").forEach(function (row) {
+      row.addEventListener("dragstart", function () { draggedProvider = row; row.classList.add("is-dragging"); });
+      row.addEventListener("dragend", function () { draggedProvider = null; row.classList.remove("is-dragging"); syncProviderChain(); });
+      row.addEventListener("dragover", function (event) {
+        event.preventDefault();
+        if (draggedProvider && draggedProvider !== row) {
+          const rect = row.getBoundingClientRect();
+          row.parentNode.insertBefore(draggedProvider, event.clientY < rect.top + rect.height / 2 ? row : row.nextSibling);
+        }
+      });
+      row.querySelector(".gmb-ai-provider-enabled").addEventListener("change", syncProviderChain);
+      row.querySelector(".gmb-ai-provider-up").addEventListener("click", function () {
+        const previous = row.previousElementSibling;
+        if (previous) row.parentNode.insertBefore(row, previous);
+        syncProviderChain();
+      });
+      row.querySelector(".gmb-ai-provider-down").addEventListener("click", function () {
+        const next = row.nextElementSibling;
+        if (next) row.parentNode.insertBefore(next, row);
+        syncProviderChain();
+      });
+    });
+    const chainForm = providerChain.closest("form");
+    if (chainForm) chainForm.addEventListener("submit", syncProviderChain);
+    syncProviderChain();
+
+    providerChain.querySelectorAll(".gmb-btn-test-ai-provider").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const provider = button.getAttribute("data-provider");
+        const resultNode = button.parentNode.querySelector(".gmb-ai-provider-test-result");
+        button.disabled = true;
+        resultNode.textContent = "Testing...";
+        const body = new URLSearchParams();
+        body.append("action", "gmb_ai_test_provider");
+        body.append("provider", provider);
+        body.append("nonce", (window.gmb_ranker_admin && (gmb_ranker_admin.admin_nonce || gmb_ranker_admin.nonce)) || "");
+        fetch(window.gmb_ranker_admin.ajax_url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" }, body: body.toString() })
+          .then(function (response) { return response.json(); })
+          .then(function (payload) {
+            resultNode.textContent = payload.success ? ("Healthy (" + payload.data.latency_ms + " ms)") : ((payload.data && payload.data.message) || "Connection test failed.");
+            resultNode.className = "gmb-ai-provider-test-result " + (payload.success ? "is-success" : "is-error");
+          })
+          .catch(function () { resultNode.textContent = "Connection test failed."; resultNode.className = "gmb-ai-provider-test-result is-error"; })
+          .finally(function () { button.disabled = false; });
+      });
+    });
+  }
+
+  // Integrations: configure providers in one compact, keyboard-friendly dialog.
+  const aiProviderModal = document.getElementById("gmb-ai-provider-config");
+  const aiProviderOpenButtons = document.querySelectorAll(".gmb-ai-open-config");
+  if (aiProviderModal && aiProviderOpenButtons.length) {
+    let lastAiTrigger = null;
+    const aiConfigPanels = aiProviderModal.querySelectorAll("[data-provider-config]");
+    const closeAiProviderModal = function () {
+      aiProviderModal.hidden = true;
+      document.body.classList.remove("gmb-ai-modal-open");
+      if (lastAiTrigger) lastAiTrigger.focus();
+    };
+    const openAiProviderModal = function (provider, trigger) {
+      lastAiTrigger = trigger || null;
+      aiProviderModal.hidden = false;
+      document.body.classList.add("gmb-ai-modal-open");
+      aiConfigPanels.forEach(function (panel) {
+        panel.classList.toggle("is-selected", !provider || panel.getAttribute("data-provider-config") === provider);
+      });
+      const firstInput = provider ? aiProviderModal.querySelector('[data-provider-config="' + provider + '"] input') : aiProviderModal.querySelector("input");
+      if (firstInput) window.setTimeout(function () { firstInput.focus(); }, 0);
+    };
+    aiProviderOpenButtons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        openAiProviderModal(button.getAttribute("data-provider") || "", button);
+      });
+    });
+    aiProviderModal.querySelectorAll("[data-ai-modal-close]").forEach(function (button) {
+      button.addEventListener("click", closeAiProviderModal);
+    });
+    const aiModalSave = aiProviderModal.querySelector(".gmb-ai-modal-save");
+    if (aiModalSave) aiModalSave.addEventListener("click", function () {
+      const providerForm = aiProviderModal.closest("form");
+      if (providerForm && typeof providerForm.requestSubmit === "function") providerForm.requestSubmit();
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && !aiProviderModal.hidden) closeAiProviderModal();
     });
   }
 

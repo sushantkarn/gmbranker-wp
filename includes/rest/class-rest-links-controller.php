@@ -38,6 +38,14 @@ class GMB_Ranker_SEO_REST_Links_Controller {
             ), 400);
         }
 
+        if (!get_post($post_id)) {
+            return new WP_REST_Response(array('success' => false, 'message' => 'The requested post does not exist.'), 404);
+        }
+
+        if (is_user_logged_in() && !current_user_can('edit_post', $post_id)) {
+            return new WP_REST_Response(array('success' => false, 'message' => 'You are not allowed to edit this post.'), 403);
+        }
+
         $success = $this->content_service->inject_link_in_post($post_id, $anchor, $url);
 
         return new WP_REST_Response(array(

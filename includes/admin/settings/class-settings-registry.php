@@ -66,9 +66,13 @@ if (!class_exists('GMB_Ranker_SEO_Settings_Registry')) {
                 'gmb_ai_gemini_key',
                 'gmb_ai_openai_key',
                 'gmb_ai_claude_key',
+                'gmb_ai_nvidia_key',
                 'gmb_integration_webhook_secret',
             );
             if (in_array($option, $secret_options, true)) {
+                if (isset($_POST[$option . '_keep']) && (string) $_POST[$option . '_keep'] === '1' && empty($value)) {
+                    return $old_value;
+                }
                 if (is_string($value) && (strpos($value, '*') !== false || strpos($value, '•') !== false)) {
                     return $old_value;
                 }
@@ -197,6 +201,13 @@ if (!class_exists('GMB_Ranker_SEO_Settings_Registry')) {
                 'gmb_ai_groq_model'               => 'sanitize_text_field',
                 'gmb_ai_ollama_url'               => 'esc_url_raw',
                 'gmb_ai_ollama_model'             => 'sanitize_text_field',
+                'gmb_ai_nvidia_key'               => 'sanitize_text_field',
+                'gmb_ai_nvidia_model'             => 'sanitize_text_field',
+                'gmb_ai_fallback_enabled'         => 'sanitize_text_field',
+                'gmb_ai_fallback_provider'        => 'sanitize_text_field',
+                'gmb_ai_fallback_model'           => 'sanitize_text_field',
+                'gmb_ai_max_retries'              => 'absint',
+                'gmb_ai_provider_chain'           => array(__CLASS__, 'sanitize_provider_chain'),
             );
 
             $groups = array('gmb_ranker_settings_group', 'gmb_ranker_general_group');
@@ -333,6 +344,13 @@ if (!class_exists('GMB_Ranker_SEO_Settings_Registry')) {
                 'gmb_ai_groq_model'       => 'sanitize_text_field',
                 'gmb_ai_ollama_url'       => 'esc_url_raw',
                 'gmb_ai_ollama_model'     => 'sanitize_text_field',
+                'gmb_ai_nvidia_key'       => 'sanitize_text_field',
+                'gmb_ai_nvidia_model'     => 'sanitize_text_field',
+                'gmb_ai_fallback_enabled' => 'sanitize_text_field',
+                'gmb_ai_fallback_provider'=> 'sanitize_text_field',
+                'gmb_ai_fallback_model'   => 'sanitize_text_field',
+                'gmb_ai_max_retries'      => 'absint',
+                'gmb_ai_provider_chain'   => array(__CLASS__, 'sanitize_provider_chain'),
             );
 
             $groups = array('gmb_ranker_settings_group', 'gmb_ranker_ai_provider_group', 'gmb_ranker_general_group', 'gmb_ranker_integrations_group');
@@ -341,6 +359,30 @@ if (!class_exists('GMB_Ranker_SEO_Settings_Registry')) {
                     $this->register_option($group, $opt, $sanitizer);
                 }
             }
+        }
+
+        /** Normalize the persisted priority chain to trusted provider IDs and booleans. */
+        public static function sanitize_provider_chain($value) {
+            if (is_string($value)) {
+                $decoded = json_decode(wp_unslash($value), true);
+                $value = is_array($decoded) ? $decoded : array();
+            }
+            if (!is_array($value)) return array();
+            $clean = array();
+            $known = class_exists('GMB_Ranker_SEO_Integration_Registry')
+                ? array_keys(GMB_Ranker_SEO_Integration_Registry::get_ai_providers())
+                : array();
+            foreach (array_values($value) as $index => $entry) {
+                if (!is_array($entry)) continue;
+                $provider = isset($entry['provider']) ? sanitize_key($entry['provider']) : '';
+                if (!$provider || !in_array($provider, $known, true)) continue;
+                $clean[] = array(
+                    'provider' => $provider,
+                    'enabled'  => !empty($entry['enabled']) ? 1 : 0,
+                    'priority' => $index + 1,
+                );
+            }
+            return $clean;
         }
 
         /**

@@ -70,7 +70,7 @@ $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : '
                             ?>
                                 <optgroup label="<?php echo esc_attr($grp_label); ?>">
                                     <?php foreach ($options as $val => $lbl) : ?>
-                                        <option value="<?php echo esc_attr($val); ?>" <?php selected($val, 'GLOBAL|google.com'); ?>><?php echo esc_html($lbl); ?></option>
+                                        <option value="<?php echo esc_attr($val); ?>" <?php selected($val, ''); ?>><?php echo esc_html($lbl); ?></option>
                                     <?php endforeach; ?>
                                 </optgroup>
                             <?php endforeach; ?>
@@ -83,6 +83,34 @@ $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : '
                                 <option value="<?php echo esc_attr($lang_code); ?>" <?php selected($lang_code, $site_locale); ?>><?php echo esc_html($lang_lbl); ?></option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+                    <div class="gmb-form-group gmb-col-6">
+                        <label class="gmb-form-label" for="gmb-ai-setup-tone"><?php esc_html_e('Tone of Voice', 'gmb-ranker-seo-automation'); ?></label>
+                        <select id="gmb-ai-setup-tone" class="gmb-integration-select">
+                            <option value="auto" selected><?php esc_html_e('🤖 Auto-detect / Recommend (Site Preference)', 'gmb-ranker-seo-automation'); ?></option>
+                            <option value="professional"><?php esc_html_e('💼 Professional', 'gmb-ranker-seo-automation'); ?></option>
+                            <option value="conversational"><?php esc_html_e('💬 Conversational & Engaging', 'gmb-ranker-seo-automation'); ?></option>
+                            <option value="friendly"><?php esc_html_e('😊 Friendly & Warm', 'gmb-ranker-seo-automation'); ?></option>
+                            <option value="educational"><?php esc_html_e('🎓 Educational & Informative', 'gmb-ranker-seo-automation'); ?></option>
+                            <option value="persuasive"><?php esc_html_e('🚀 Persuasive & Conversion-Oriented', 'gmb-ranker-seo-automation'); ?></option>
+                            <option value="empathetic"><?php esc_html_e('❤️ Empathetic & Supportive', 'gmb-ranker-seo-automation'); ?></option>
+                            <option value="technical"><?php esc_html_e('⚙️ Technical & Expert', 'gmb-ranker-seo-automation'); ?></option>
+                        </select>
+                    </div>
+                    <div class="gmb-form-group gmb-col-6">
+                        <label class="gmb-form-label" for="gmb-ai-setup-intent"><?php esc_html_e('Search Intent', 'gmb-ranker-seo-automation'); ?></label>
+                        <select id="gmb-ai-setup-intent" class="gmb-integration-select">
+                            <option value="auto" selected><?php esc_html_e('🔍 Auto-detect from SERP & Query (Recommended)', 'gmb-ranker-seo-automation'); ?></option>
+                            <option value="informational"><?php esc_html_e('📖 Informational (Know / Learn)', 'gmb-ranker-seo-automation'); ?></option>
+                            <option value="commercial"><?php esc_html_e('⚖️ Commercial Investigation (Compare / Evaluate)', 'gmb-ranker-seo-automation'); ?></option>
+                            <option value="transactional"><?php esc_html_e('🛒 Transactional (Buy / Action)', 'gmb-ranker-seo-automation'); ?></option>
+                            <option value="local"><?php esc_html_e('📍 Local Business / Geo-targeted', 'gmb-ranker-seo-automation'); ?></option>
+                            <option value="navigational"><?php esc_html_e('🧭 Navigational (Find specific page)', 'gmb-ranker-seo-automation'); ?></option>
+                        </select>
+                    </div>
+                    <div class="gmb-form-group gmb-col-12">
+                        <label class="gmb-form-label" for="gmb-ai-setup-instructions"><?php esc_html_e('Additional Content Instructions / Guidelines (Optional)', 'gmb-ranker-seo-automation'); ?></label>
+                        <textarea id="gmb-ai-setup-instructions" class="gmb-integration-input" rows="2" placeholder="<?php esc_attr_e('e.g. Focus on key benefits, specific target audience credentials, subtopics, or custom call-to-action requirements...', 'gmb-ranker-seo-automation'); ?>"></textarea>
                     </div>
                 </div>
             </div>
@@ -98,9 +126,9 @@ $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : '
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                         </svg>
-                        <strong class="gmb-serp-title"><?php esc_html_e('Real SERP Data', 'gmb-ranker-seo-automation'); ?></strong>
+                        <strong class="gmb-serp-title" id="gmb-research-status-title"><?php esc_html_e('Live Research', 'gmb-ranker-seo-automation'); ?></strong>
                         <span class="gmb-serp-divider">|</span>
-                        <span class="gmb-serp-label"><?php esc_html_e('Fetching live results for:', 'gmb-ranker-seo-automation'); ?></span>
+                        <span class="gmb-serp-label" id="gmb-research-status-label"><?php esc_html_e('Preparing analysis for:', 'gmb-ranker-seo-automation'); ?></span>
                         <span class="gmb-serp-kw-pill" id="gmb-serp-kw-pill"><?php esc_html_e('Target Query', 'gmb-ranker-seo-automation'); ?></span>
                     </div>
                 </div>
@@ -118,6 +146,7 @@ $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : '
                                     <small><?php esc_html_e('Extracting content, metadata & SEO signals', 'gmb-ranker-seo-automation'); ?></small>
                                 </div>
                                 <div class="gmb-step-active-ring"></div>
+                                <span class="gmb-step-status-pill in-progress"><?php esc_html_e('In Progress', 'gmb-ranker-seo-automation'); ?></span>
                             </div>
                             <div class="gmb-step-item" id="gmb-res-step-2">
                                 <div class="gmb-step-num-icon">2</div>
@@ -130,16 +159,16 @@ $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : '
                             <div class="gmb-step-item" id="gmb-res-step-3">
                                 <div class="gmb-step-num-icon">3</div>
                                 <div class="gmb-step-text">
-                                    <strong><?php esc_html_e('Fetching SERP Results', 'gmb-ranker-seo-automation'); ?></strong>
-                                    <small><?php esc_html_e('Collecting top ranking pages', 'gmb-ranker-seo-automation'); ?></small>
+                                    <strong><?php esc_html_e('Checking SERP Data', 'gmb-ranker-seo-automation'); ?></strong>
+                                    <small><?php esc_html_e('Checking live search data or benchmark availability', 'gmb-ranker-seo-automation'); ?></small>
                                 </div>
                                 <span class="gmb-step-status-pill pending"><?php esc_html_e('Pending', 'gmb-ranker-seo-automation'); ?></span>
                             </div>
                             <div class="gmb-step-item" id="gmb-res-step-4">
                                 <div class="gmb-step-num-icon">4</div>
                                 <div class="gmb-step-text">
-                                    <strong><?php esc_html_e('Analyzing Competitors', 'gmb-ranker-seo-automation'); ?></strong>
-                                    <small><?php esc_html_e('Extracting content & SEO data', 'gmb-ranker-seo-automation'); ?></small>
+                                    <strong><?php esc_html_e('Preparing Content Benchmarks', 'gmb-ranker-seo-automation'); ?></strong>
+                                    <small><?php esc_html_e('Preparing ranking and content-depth benchmarks', 'gmb-ranker-seo-automation'); ?></small>
                                 </div>
                                 <span class="gmb-step-status-pill pending"><?php esc_html_e('Pending', 'gmb-ranker-seo-automation'); ?></span>
                             </div>
@@ -183,7 +212,10 @@ $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : '
                         <div class="gmb-active-step-card">
                             <span class="gmb-step-counter-badge" id="gmb-active-step-counter"><?php esc_html_e('Step 1 of 8', 'gmb-ranker-seo-automation'); ?></span>
                             <h3 class="gmb-active-step-title" id="gmb-active-step-title"><?php esc_html_e('Analyzing Current Page Structure & Metadata', 'gmb-ranker-seo-automation'); ?></h3>
+                            <div class="gmb-analysis-state" id="gmb-analysis-state"><span class="gmb-analysis-state-dot"></span><strong id="gmb-analysis-state-label" aria-live="polite"><?php esc_html_e('Currently processing', 'gmb-ranker-seo-automation'); ?></strong><span id="gmb-analysis-elapsed" aria-hidden="true"><?php esc_html_e('Elapsed 0s', 'gmb-ranker-seo-automation'); ?></span></div>
                             <p class="gmb-active-step-desc" id="gmb-active-step-desc"><?php esc_html_e('We\'re extracting and evaluating key elements from your WordPress post.', 'gmb-ranker-seo-automation'); ?></p>
+                            <div class="gmb-analysis-current"><strong><?php esc_html_e('Currently:', 'gmb-ranker-seo-automation'); ?></strong> <span id="gmb-analysis-activity"><?php esc_html_e('Preparing page analysis...', 'gmb-ranker-seo-automation'); ?></span></div>
+                            <div class="gmb-analysis-waiting" id="gmb-analysis-waiting" hidden><strong><?php esc_html_e('Waiting for:', 'gmb-ranker-seo-automation'); ?></strong> <span id="gmb-analysis-waiting-for"></span></div>
 
                             <!-- Progress Bar -->
                             <div class="gmb-progress-bar-wrap">
@@ -192,6 +224,7 @@ $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : '
                                 </div>
                                 <span class="gmb-progress-percent" id="gmb-active-progress-percent">0%</span>
                             </div>
+                            <div class="gmb-overall-progress"><span><?php esc_html_e('Overall analysis', 'gmb-ranker-seo-automation'); ?></span><span id="gmb-overall-progress-label"><?php esc_html_e('0 of 8 steps complete', 'gmb-ranker-seo-automation'); ?></span></div>
 
                             <!-- Live Dynamic Tasks List -->
                             <div class="gmb-live-tasks-list" id="gmb-live-tasks-list">
@@ -261,6 +294,14 @@ $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : '
                                     <span class="kv-key"><?php esc_html_e('Mode', 'gmb-ranker-seo-automation'); ?></span>
                                     <strong class="kv-val" id="gmb-overview-mode"><?php esc_html_e('Optimize Existing Content', 'gmb-ranker-seo-automation'); ?></strong>
                                 </div>
+                                <div class="gmb-kv-row">
+                                    <span class="kv-key"><?php esc_html_e('Tone of Voice', 'gmb-ranker-seo-automation'); ?></span>
+                                    <strong class="kv-val" id="gmb-overview-tone"><?php esc_html_e('Auto / Site Preference', 'gmb-ranker-seo-automation'); ?></strong>
+                                </div>
+                                <div class="gmb-kv-row">
+                                    <span class="kv-key"><?php esc_html_e('Search Intent', 'gmb-ranker-seo-automation'); ?></span>
+                                    <strong class="kv-val" id="gmb-overview-intent"><?php esc_html_e('Auto / Infer from SERP', 'gmb-ranker-seo-automation'); ?></strong>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -304,7 +345,7 @@ $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : '
             <button type="button" class="button gmb-btn-secondary" id="gmb-ai-post-modal-cancel"><?php esc_html_e('Cancel', 'gmb-ranker-seo-automation'); ?></button>
             <button type="button" class="button gmb-btn-secondary gmb-hidden" id="gmb-ai-post-modal-prev" style="display: none !important;"><?php esc_html_e('Previous', 'gmb-ranker-seo-automation'); ?></button>
             <button type="button" class="button button-primary gmb-btn--primary" id="gmb-ai-setup-start-btn"><?php esc_html_e('Start AI Analysis', 'gmb-ranker-seo-automation'); ?></button>
-            <button type="button" class="button button-primary gmb-btn--primary gmb-hidden" id="gmb-ai-running-btn" disabled style="display: none !important;"><span class="task-spinner"></span> <?php esc_html_e('Running Analysis...', 'gmb-ranker-seo-automation'); ?></button>
+            <button type="button" class="button button-primary gmb-btn--primary gmb-hidden" id="gmb-ai-running-btn" disabled style="display: none !important;"><span class="task-spinner"></span> <span id="gmb-ai-running-label"><?php esc_html_e('Analyzing current page...', 'gmb-ranker-seo-automation'); ?></span></button>
             <button type="button" class="button button-primary gmb-btn--primary gmb-hidden" id="gmb-ai-post-apply-btn" disabled style="display: none !important;"><?php esc_html_e('Apply Selected AI Optimizations', 'gmb-ranker-seo-automation'); ?></button>
         </div>
     </div>

@@ -148,6 +148,14 @@ class GMB_Ranker_SEO_Core {
 
         // REST API Engine (always initialized)
         $this->modules['rest_api'] = new GMB_Ranker_SEO_REST_API();
+
+        // Register recurring jobs from the active bootstrap. Previously the
+        // scheduler class existed but was never instantiated, so automation
+        // queues and daily reports could remain permanently idle.
+        if (class_exists('GMB_Ranker_SEO_Cron_Scheduler')) {
+            $this->modules['cron_scheduler'] = GMB_Ranker_SEO_Cron_Scheduler::get_instance();
+            add_action('init', array($this->modules['cron_scheduler'], 'register_schedules'), 20);
+        }
     }
 
     /**

@@ -174,7 +174,7 @@ class GMB_Ranker_SEO_Content_Service {
         }
 
         // 7. Tone & CTA
-        $tone = !empty($data['tone']) ? sanitize_text_field($data['tone']) : 'Professional, informative, and engaging';
+        $tone = !empty($data['tone']) ? sanitize_text_field($data['tone']) : '';
         $cta  = !empty($data['cta']) ? sanitize_text_field($data['cta']) : '';
 
         // 8. Internal Links
@@ -1105,4 +1105,3 @@ class GMB_Ranker_SEO_Content_Service {
         return ($norm1 !== '' && $norm1 === $norm2);
     }
 }
-

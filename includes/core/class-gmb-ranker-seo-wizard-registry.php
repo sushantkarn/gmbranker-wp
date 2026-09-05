@@ -128,12 +128,10 @@ class GMB_Ranker_SEO_Wizard_Registry {
      */
     public static function get_ai_providers() {
         return array(
-            'openrouter' => __('OpenRouter (Recommended • Free Tier)', 'gmb-ranker-seo-automation'),
-            'groq'       => __('Groq Cloud (Ultra Fast Llama 3.3)', 'gmb-ranker-seo-automation'),
-            'gemini'     => __('Google Gemini (Flash 1.5)', 'gmb-ranker-seo-automation'),
-            'openai'     => __('OpenAI (GPT-4o Mini)', 'gmb-ranker-seo-automation'),
-            'claude'     => __('Anthropic Claude (Haiku 3.5)', 'gmb-ranker-seo-automation'),
-            'ollama'     => __('Ollama (Local Offline LLM)', 'gmb-ranker-seo-automation'),
+            'openrouter' => __('OpenRouter', 'gmb-ranker-seo-automation'),
+            'groq'       => __('Groq Cloud', 'gmb-ranker-seo-automation'),
+            'ollama'     => __('Ollama (Local AI)', 'gmb-ranker-seo-automation'),
+            'nvidia'     => __('NVIDIA NIM', 'gmb-ranker-seo-automation'),
         );
     }
 
@@ -214,18 +212,12 @@ class GMB_Ranker_SEO_Wizard_Registry {
         $social_image = get_option('gmb_social_share_image', '');
         $api_key      = get_option('gmb_ranker_api_key', '');
 
-        $ai_provider  = get_option('gmb_ai_active_provider', get_option('gmb_ai_provider', 'openrouter'));
+        $ai_provider  = get_option('gmb_ai_provider', get_option('gmb_ai_active_provider', ''));
         $ai_key_raw   = '';
         if ($ai_provider === 'openrouter') {
             $ai_key_raw = get_option('gmb_ai_openrouter_key', '');
         } elseif ($ai_provider === 'groq') {
             $ai_key_raw = get_option('gmb_ai_groq_key', '');
-        } elseif ($ai_provider === 'gemini') {
-            $ai_key_raw = get_option('gmb_ai_gemini_key', '');
-        } elseif ($ai_provider === 'openai') {
-            $ai_key_raw = get_option('gmb_ai_openai_key', '');
-        } elseif ($ai_provider === 'claude') {
-            $ai_key_raw = get_option('gmb_ai_claude_key', '');
         }
 
         $module_sitemaps      = get_option('gmb_ranker_module_sitemaps', '1') !== '0' && get_option('gmb_ranker_module_sitemaps', '1') !== 'off';

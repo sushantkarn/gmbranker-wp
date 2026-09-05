@@ -20,6 +20,7 @@ class GMB_Ranker_SEO_AI_Client {
      */
     const ENDPOINT_OPENROUTER = 'https://openrouter.ai/api/v1/chat/completions';
     const ENDPOINT_GROQ       = 'https://api.groq.com/openai/v1/chat/completions';
+    const ENDPOINT_NVIDIA     = 'https://integrate.api.nvidia.com/v1/chat/completions';
 
     /**
      * Validate and sanitize an Ollama local endpoint to prevent SSRF
@@ -29,7 +30,7 @@ class GMB_Ranker_SEO_AI_Client {
      */
     public static function validate_ollama_endpoint($endpoint_raw) {
         if (empty($endpoint_raw) || !is_string($endpoint_raw)) {
-            return 'http://localhost:11434';
+            return new WP_Error('missing_ollama_url', __('Ollama endpoint URL is required.', 'gmb-ranker-seo-automation'));
         }
 
         $url = trim($endpoint_raw);
@@ -97,6 +98,8 @@ class GMB_Ranker_SEO_AI_Client {
         $provider = strtolower(trim((string)$provider));
         $api_key  = self::sanitize_header_value($api_key);
         $model    = sanitize_text_field(wp_unslash((string)$model));
+        $request_id = function_exists('wp_generate_uuid4') ? wp_generate_uuid4() : uniqid('gmb_ai_', true);
+        $started_at = microtime(true);
 
         // Validate Messages
         if (empty($messages) || !is_array($messages)) {
@@ -133,6 +136,9 @@ class GMB_Ranker_SEO_AI_Client {
                 if (empty($api_key)) {
                     return new WP_Error('missing_api_key', __('OpenRouter API key is required.', 'gmb-ranker-seo-automation'));
                 }
+                if (empty($model)) {
+                    return new WP_Error('missing_model', __('OpenRouter model is required.', 'gmb-ranker-seo-automation'));
+                }
                 $endpoint = self::ENDPOINT_OPENROUTER;
                 $headers['Authorization'] = 'Bearer ' . $api_key;
                 $headers['HTTP-Referer']  = esc_url_raw(home_url());
@@ -143,12 +149,30 @@ class GMB_Ranker_SEO_AI_Client {
                 if (empty($api_key)) {
                     return new WP_Error('missing_api_key', __('Groq API key is required.', 'gmb-ranker-seo-automation'));
                 }
+                if (empty($model)) {
+                    return new WP_Error('missing_model', __('Groq model is required.', 'gmb-ranker-seo-automation'));
+                }
                 $endpoint = self::ENDPOINT_GROQ;
                 $headers['Authorization'] = 'Bearer ' . $api_key;
                 break;
 
+            case 'nvidia':
+                if (empty($api_key)) {
+                    return new WP_Error('missing_api_key', __('NVIDIA API key is required.', 'gmb-ranker-seo-automation'));
+                }
+                if (empty($model)) {
+                    return new WP_Error('missing_model', __('NVIDIA model is required.', 'gmb-ranker-seo-automation'));
+                }
+                $endpoint = self::ENDPOINT_NVIDIA;
+                $headers['Authorization'] = 'Bearer ' . $api_key;
+                $headers['Accept'] = 'application/json';
+                break;
+
             case 'ollama':
-                $raw_ollama_url = !empty($options['ollama_endpoint']) ? $options['ollama_endpoint'] : (!empty($options['ollama_url']) ? $options['ollama_url'] : 'http://localhost:11434');
+                $raw_ollama_url = !empty($options['ollama_endpoint']) ? $options['ollama_endpoint'] : (!empty($options['ollama_url']) ? $options['ollama_url'] : '');
+                if (empty($raw_ollama_url)) {
+                    return new WP_Error('missing_ollama_url', __('Ollama endpoint URL is required.', 'gmb-ranker-seo-automation'));
+                }
                 $validated_base = self::validate_ollama_endpoint($raw_ollama_url);
 
                 if (is_wp_error($validated_base)) {
@@ -160,6 +184,9 @@ class GMB_Ranker_SEO_AI_Client {
                 if (strpos($validated_base, 'http://') === 0) {
                     $ssl_verify = false;
                 }
+                if (empty($model)) {
+                    return new WP_Error('missing_model', __('Ollama model is required.', 'gmb-ranker-seo-automation'));
+                }
                 break;
 
             default:
@@ -168,7 +195,7 @@ class GMB_Ranker_SEO_AI_Client {
 
         // Build Payload
         $payload = array(
-            'model'    => !empty($model) ? $model : ($provider === 'ollama' ? 'llama3' : 'meta-llama/llama-3.1-8b-instruct:free'),
+            'model'    => $model,
             'messages' => $clean_messages,
         );
 
@@ -195,17 +222,50 @@ class GMB_Ranker_SEO_AI_Client {
             return new WP_Error('json_encode_failed', __('Failed to serialize AI completion request payload to JSON.', 'gmb-ranker-seo-automation'));
         }
 
-        // Execute Bounded HTTP Request
-        $response = wp_remote_post($endpoint, array(
-            'headers'     => $headers,
-            'body'        => $json_body,
-            'timeout'     => 45,
-            'redirection' => 0, // Block redirects to prevent SSRF loops
-            'sslverify'   => $ssl_verify,
-        ));
+        // Keep failover responsive: local Ollama may need longer, but a remote
+        // provider should not block the entire research pipeline for minutes.
+        $default_timeout = $provider === 'ollama' ? 45 : 20;
+        $timeout = isset($options['timeout']) && is_numeric($options['timeout'])
+            ? absint($options['timeout'])
+            : $default_timeout;
+        $timeout = min(60, max(5, $timeout));
+
+        // Execute bounded HTTP request.
+        $max_retries = min(2, max(0, absint($options['max_retries'] ?? 0)));
+        $attempt = 0;
+        do {
+            $response = wp_remote_post($endpoint, array(
+                'headers'     => $headers,
+                'body'        => $json_body,
+                'timeout'     => $timeout,
+                'redirection' => 0, // Block redirects to prevent SSRF loops
+                'sslverify'   => $ssl_verify,
+            ));
+
+            $retryable = false;
+            if (is_wp_error($response)) {
+                $retryable = true;
+            } else {
+                $response_code = wp_remote_retrieve_response_code($response);
+                $retryable = ($response_code === 408 || $response_code === 429 || $response_code >= 500);
+            }
+            if (!$retryable || $attempt >= $max_retries) {
+                break;
+            }
+            $retry_after = !is_wp_error($response) ? absint(wp_remote_retrieve_header($response, 'retry-after')) : 0;
+            usleep(min(2000000, max(250000, ($retry_after > 0 ? $retry_after * 1000000 : (250000 * (2 ** $attempt))))));
+            $attempt++;
+        } while ($attempt <= $max_retries);
 
         if (is_wp_error($response)) {
-            return new WP_Error('ai_transport_failed', $response->get_error_message());
+            $message = sanitize_text_field($response->get_error_message());
+            error_log(sprintf('[GMB AI] request_id=%s provider=%s model=%s category=network_error message=%s', $request_id, $provider, $model, $message));
+            return new WP_Error('ai_transport_failed', sprintf(__('AI request failed (%s): %s', 'gmb-ranker-seo-automation'), $request_id, $message), array(
+                'category'   => 'network_error',
+                'provider'   => $provider,
+                'model'      => $model,
+                'request_id' => $request_id,
+            ));
         }
 
         $code     = wp_remote_retrieve_response_code($response);
@@ -213,14 +273,26 @@ class GMB_Ranker_SEO_AI_Client {
         $decoded  = !empty($body) ? json_decode($body, true) : null;
 
         if ($code < 200 || $code >= 300) {
-            $error_msg = isset($decoded['error']['message']) 
-                ? sanitize_text_field($decoded['error']['message']) 
-                : sprintf(__('AI Provider HTTP Error (%d)', 'gmb-ranker-seo-automation'), $code);
-            return new WP_Error('ai_provider_error', $error_msg, array('status' => $code));
+            $error_msg = self::extract_provider_error_message($decoded, $code);
+            $category = self::classify_http_error($code, $error_msg);
+            $duration = round((microtime(true) - $started_at) * 1000);
+            error_log(sprintf('[GMB AI] request_id=%s provider=%s model=%s status=%d category=%s duration_ms=%d response_bytes=%d message=%s', $request_id, $provider, $model, $code, $category, $duration, strlen($body), $error_msg));
+            return new WP_Error('ai_provider_error', sprintf(__('%s (HTTP %d, request %s)', 'gmb-ranker-seo-automation'), $error_msg, $code, $request_id), array(
+                'status'     => $code,
+                'category'   => $category,
+                'provider'   => $provider,
+                'model'      => $model,
+                'request_id' => $request_id,
+            ));
         }
 
         if (!is_array($decoded)) {
-            return new WP_Error('malformed_ai_response', __('Malformed JSON response received from AI provider.', 'gmb-ranker-seo-automation'));
+            return new WP_Error('malformed_ai_response', sprintf(__('AI provider returned malformed JSON (request %s).', 'gmb-ranker-seo-automation'), $request_id), array(
+                'category'   => 'invalid_response',
+                'provider'   => $provider,
+                'model'      => $model,
+                'request_id' => $request_id,
+            ));
         }
 
         // Normalize Extracted Content
@@ -235,11 +307,56 @@ class GMB_Ranker_SEO_AI_Client {
             }
         }
 
+        if (!is_string($content) || trim($content) === '') {
+            return new WP_Error('empty_ai_response', sprintf(__('AI provider returned no usable content (request %s).', 'gmb-ranker-seo-automation'), $request_id), array(
+                'status'     => $code,
+                'category'   => 'empty_response',
+                'provider'   => $provider,
+                'model'      => $model,
+                'request_id' => $request_id,
+            ));
+        }
+
         return array(
             'provider' => $provider,
             'model'    => $payload['model'],
             'content'  => is_string($content) ? trim($content) : '',
             'raw'      => $decoded,
+            'request_id' => $request_id,
         );
+    }
+
+    /**
+     * Extract a useful provider error without returning secrets or the full body.
+     */
+    private static function extract_provider_error_message($decoded, $status) {
+        $message = '';
+        if (is_array($decoded)) {
+            $message = $decoded['error']['message'] ?? ($decoded['message'] ?? '');
+            $nested = $decoded['error']['metadata']['raw'] ?? ($decoded['error']['details'] ?? '');
+            $generic_messages = array('Provider returned error', 'provider returned error', 'Internal Server Error');
+            if (is_string($nested) && (empty($message) || in_array(trim($message), $generic_messages, true))) {
+                $nested_json = json_decode($nested, true);
+                $nested_message = is_array($nested_json) ? ($nested_json['error']['message'] ?? $nested_json['message'] ?? '') : $nested;
+                if (!empty($nested_message)) {
+                    $message = $nested_message;
+                }
+            }
+        }
+
+        $message = sanitize_text_field((string) $message);
+        return $message !== '' ? $message : sprintf(__('AI provider returned HTTP error (%d).', 'gmb-ranker-seo-automation'), intval($status));
+    }
+
+    /**
+     * Classify common provider failures for logs and structured consumers.
+     */
+    private static function classify_http_error($status, $message) {
+        if (intval($status) === 401) return 'authentication_error';
+        if (intval($status) === 403) return 'authorization_error';
+        if (intval($status) === 404 || stripos($message, 'model') !== false) return 'invalid_model';
+        if (intval($status) === 429) return 'rate_limited';
+        if (intval($status) >= 500) return 'provider_error';
+        return 'provider_error';
     }
 }

@@ -25,6 +25,9 @@ class GMB_Ranker_SEO_Keyword_Repository {
         if (empty($kw)) {
             $kw = get_post_meta($post_id, '_yoast_wpseo_focuskw', true);
         }
+        if (empty($kw)) {
+            $kw = get_post_meta($post_id, '_rank_math_focus_keyword', true);
+        }
         return is_string($kw) ? trim($kw) : '';
     }
 
@@ -36,9 +39,10 @@ class GMB_Ranker_SEO_Keyword_Repository {
      * @return bool
      */
     public function set_focus_keyword($post_id, $keyword) {
-        $keyword = sanitize_text_field(trim($keyword));
+        $keyword = sanitize_text_field(trim(preg_replace('/\s+/', ' ', $keyword)));
         update_post_meta($post_id, '_gmb_ranker_focus_keyword', $keyword);
         update_post_meta($post_id, 'rank_math_focus_keyword', $keyword);
+        update_post_meta($post_id, '_rank_math_focus_keyword', $keyword);
         update_post_meta($post_id, '_yoast_wpseo_focuskw', $keyword);
         return true;
     }

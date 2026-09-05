@@ -27,7 +27,7 @@ if (!class_exists('GMB_Ranker_SEO_Ajax_Wizard')) {
          *
          * @var array<string>
          */
-        protected static $allowed_ai_providers = array('openrouter', 'groq', 'gemini', 'openai', 'claude');
+        protected static $allowed_ai_providers = array('openrouter', 'groq', 'ollama', 'nvidia');
 
         /**
          * Constructor
@@ -132,11 +132,11 @@ if (!class_exists('GMB_Ranker_SEO_Ajax_Wizard')) {
             // Step 3: API & AI Provider Configuration
             if ($step === 'api_config') {
                 $key          = isset($_POST['api_key']) ? sanitize_text_field(wp_unslash($_POST['api_key'])) : '';
-                $provider_raw = isset($_POST['ai_provider']) ? sanitize_text_field(wp_unslash($_POST['ai_provider'])) : 'openrouter';
+                $provider_raw = isset($_POST['ai_provider']) ? sanitize_text_field(wp_unslash($_POST['ai_provider'])) : '';
                 $ai_key       = isset($_POST['ai_key']) ? sanitize_text_field(wp_unslash($_POST['ai_key'])) : '';
                 $is_skip      = isset($_POST['skip']) && filter_var($_POST['skip'], FILTER_VALIDATE_BOOLEAN);
 
-                $ai_provider = in_array($provider_raw, self::$allowed_ai_providers, true) ? $provider_raw : 'openrouter';
+                $ai_provider = in_array($provider_raw, self::$allowed_ai_providers, true) ? $provider_raw : '';
 
                 // Only update API key if provided and not masked dummy text
                 if (!$is_skip && !empty($key)) {
@@ -154,9 +154,7 @@ if (!class_exists('GMB_Ranker_SEO_Ajax_Wizard')) {
                         $key_option_map = array(
                             'openrouter' => 'gmb_ai_openrouter_key',
                             'groq'       => 'gmb_ai_groq_key',
-                            'gemini'     => 'gmb_ai_gemini_key',
-                            'openai'     => 'gmb_ai_openai_key',
-                            'claude'     => 'gmb_ai_claude_key',
+                            'nvidia'     => 'gmb_ai_nvidia_key',
                         );
                         if (isset($key_option_map[$ai_provider])) {
                             update_option($key_option_map[$ai_provider], $ai_key);

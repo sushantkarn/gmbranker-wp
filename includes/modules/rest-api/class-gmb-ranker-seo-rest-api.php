@@ -204,6 +204,9 @@ class GMB_Ranker_SEO_REST_API {
                 if (!$post_id || !get_post($post_id)) {
                     return new WP_Error('invalid_post_id', 'Valid post_id is required.', array('status' => 400));
                 }
+                if (is_user_logged_in() && !current_user_can('edit_post', $post_id)) {
+                    return new WP_Error('forbidden', 'You are not allowed to modify this post.', array('status' => 403));
+                }
                 if (isset($payload['seo_title'])) {
                     $title = sanitize_text_field($payload['seo_title']);
                     update_post_meta($post_id, '_gmb_ranker_seo_title', $title);
@@ -240,8 +243,10 @@ class GMB_Ranker_SEO_REST_API {
                     update_post_meta($post_id, '_gmb_ranker_robots', array_map('sanitize_text_field', $payload['robots']));
                 }
 
-                // Recalculate on-page SEO score
-                $audit = class_exists('GMB_Ranker_SEO_Analysis') ? GMB_Ranker_SEO_Analysis::run_onpage_audits($post_id) : array('score' => 80, 'results' => array());
+                // Recalculate from the canonical evidence-based analyzer.
+                $audit = class_exists('GMB_Ranker_SEO_Analysis_Service')
+                    ? (new GMB_Ranker_SEO_Analysis_Service())->audit_post($post_id)
+                    : array('score' => null, 'results' => array(), 'error' => 'analysis_unavailable');
 
                 // If instant indexing requested
                 if (!empty($payload['trigger_instant_indexing'])) {
@@ -253,7 +258,7 @@ class GMB_Ranker_SEO_REST_API {
 
                 $result = array(
                     'post_id'     => $post_id,
-                    'score_after' => isset($audit['score']) ? $audit['score'] : 80,
+                    'score_after' => isset($audit['score']) ? $audit['score'] : null,
                     'results'     => isset($audit['results']) ? $audit['results'] : array(),
                 );
                 break;
@@ -280,6 +285,9 @@ class GMB_Ranker_SEO_REST_API {
                 $post = get_post($post_id);
                 if (!$post) {
                     return new WP_Error('post_not_found', 'Target post not found.', array('status' => 404));
+                }
+                if (is_user_logged_in() && !current_user_can('edit_post', $post_id)) {
+                    return new WP_Error('forbidden', 'You are not allowed to modify this post.', array('status' => 403));
                 }
 
                 $rev_id = wp_update_post(array(
@@ -510,13 +518,11 @@ class GMB_Ranker_SEO_REST_API {
             $semantic_context = !empty($focus_keyword) ? $focus_keyword : implode(', ', $categories);
 
             // 12. On-Page SEO Audit Score
-            $onpage_score = 0;
-            $onpage_results = array();
-            if (class_exists('GMB_Ranker_SEO_Analysis')) {
-                $audit = GMB_Ranker_SEO_Analysis::run_onpage_audits($post->ID);
-                $onpage_score = $audit['score'];
-                $onpage_results = $audit['results'];
-            }
+            $audit = class_exists('GMB_Ranker_SEO_Analysis_Service')
+                ? (new GMB_Ranker_SEO_Analysis_Service())->audit_post($post->ID)
+                : array('score' => null, 'results' => array());
+            $onpage_score = isset($audit['score']) ? $audit['score'] : null;
+            $onpage_results = isset($audit['results']) ? $audit['results'] : array();
 
             $result[] = array(
                 'wpPostId'         => $post->ID,
@@ -574,6 +580,9 @@ class GMB_Ranker_SEO_REST_API {
         $wp_post_id = intval($params['wpPostId']);
         if (!get_post($wp_post_id)) {
             return new WP_Error('invalid_post', 'Post not found', array('status' => 404));
+        }
+        if (is_user_logged_in() && !current_user_can('edit_post', $wp_post_id)) {
+            return new WP_Error('forbidden', 'You are not allowed to modify this post.', array('status' => 403));
         }
 
         // 1. Meta Title Synchronization across all SEO plugins
@@ -707,7 +716,15 @@ class GMB_Ranker_SEO_REST_API {
             update_option('gmb_llms_additional_content', $llms_content);
         }
 
-        return new WP_REST_Response(array('success' => true), 200);
+        $audit = class_exists('GMB_Ranker_SEO_Analysis_Service')
+            ? (new GMB_Ranker_SEO_Analysis_Service())->audit_post($wp_post_id)
+            : array('score' => null, 'results' => array());
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'score'   => isset($audit['score']) ? $audit['score'] : null,
+            'audit'   => $audit,
+        ), 200);
     }
 
     private function replace_text_in_elementor_data(&$elements, $search, $replace) {
@@ -827,11 +844,11 @@ class GMB_Ranker_SEO_REST_API {
 
         $response = GMB_Ranker_SEO_AI_Provider::generate_ai_response($messages);
         if (is_wp_error($response)) {
-            $suggestions = array(
-                'Improve readability by using shorter paragraphs.',
-                'Include proximity location landmarks near business area.',
-                'Add FAQ schema entities to increase search visibility.'
-            );
+            return new WP_REST_Response(array(
+                'success'     => false,
+                'suggestions'  => array(),
+                'message'     => $response->get_error_message(),
+            ), 503);
         } else {
             $clean = preg_replace('/```json|```/i', '', $response);
             $suggestions = json_decode(trim($clean), true);

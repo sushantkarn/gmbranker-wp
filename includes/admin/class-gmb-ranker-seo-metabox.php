@@ -70,7 +70,7 @@ class GMB_Ranker_SEO_Metabox {
             wp_enqueue_script(
                 'gmb-ranker-admin-metabox',
                 class_exists('GMB_Ranker_SEO_Helpers') ? GMB_Ranker_SEO_Helpers::asset_url('js/admin-metabox.js') : plugins_url('assets/js/admin-metabox.js', dirname(dirname(__FILE__))),
-                array('jquery'),
+                array('jquery', 'media-upload', 'media-views'),
                 $js_ver,
                 true
             );
@@ -79,6 +79,9 @@ class GMB_Ranker_SEO_Metabox {
                 'ajaxUrl'            => admin_url('admin-ajax.php'),
                 'nonce'              => wp_create_nonce('gmb_admin_ajax_nonce'),
                 'postId'             => get_the_ID(),
+                'postType'           => get_post_type(get_the_ID()) ?: 'post',
+                'homeUrl'            => home_url('/'),
+                'siteName'           => get_bloginfo('name'),
                 'tocMinHeadings'     => (int) get_option('gmb_toc_min_headings', 2),
                 'moduleToc'          => get_option('gmb_ranker_module_toc', '1') !== '0' && get_option('gmb_ranker_module_toc', '1') !== 'off' && get_option('gmb_toc_auto_insert', '1') !== '0' && get_option('gmb_toc_auto_insert', '1') !== 'off',
                 'moduleSchema'       => get_option('gmb_ranker_module_schema', '1') !== '0' && get_option('gmb_ranker_module_schema', '1') !== 'off',
@@ -180,6 +183,12 @@ class GMB_Ranker_SEO_Metabox {
         if (class_exists('GMB_Ranker_SEO_Metabox_Registry')) {
             GMB_Ranker_SEO_Metabox_Registry::save_post_metadata($post_id, $_POST);
         }
+
+        // Rebuild the saved score from the persisted post and metadata. Never
+        // trust the hidden browser score field as an authoritative value.
+        if (class_exists('GMB_Ranker_SEO_Analysis_Service')) {
+            (new GMB_Ranker_SEO_Analysis_Service())->audit_post($post_id);
+        }
     }
 
     /**
@@ -204,19 +213,6 @@ class GMB_Ranker_SEO_Metabox {
         if ($column === 'gmb_seo_score') {
             $score = get_post_meta($post_id, '_gmb_ranker_seo_score', true);
             
-            // Check Rank Math or Yoast SEO score fallback if empty
-            if ($score === '' || $score === false) {
-                $rm_score = get_post_meta($post_id, 'rank_math_seo_score', true);
-                if ($rm_score !== '' && $rm_score !== false) {
-                    $score = $rm_score;
-                } else {
-                    $yoast_score = get_post_meta($post_id, '_yoast_wpseo_linkdex', true);
-                    if ($yoast_score !== '' && $yoast_score !== false) {
-                        $score = $yoast_score;
-                    }
-                }
-            }
-
             $score_num   = ($score !== '' && $score !== false) ? intval($score) : 0;
             $badge_class = class_exists('GMB_Ranker_SEO_Metabox_Registry') ? GMB_Ranker_SEO_Metabox_Registry::get_score_badge_class($score_num, 'table') : 'gmb-score-badge--poor';
 
@@ -306,7 +302,7 @@ class GMB_Ranker_SEO_Metabox {
             return;
         }
 
-        if (isset($_POST['gmb_author_seo_nonce']) && !wp_verify_nonce($_POST['gmb_author_seo_nonce'], 'gmb_author_seo_save_action')) {
+        if (!isset($_POST['gmb_author_seo_nonce']) || !wp_verify_nonce($_POST['gmb_author_seo_nonce'], 'gmb_author_seo_save_action')) {
             return;
         }
 

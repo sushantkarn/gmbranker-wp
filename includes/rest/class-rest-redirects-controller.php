@@ -29,6 +29,10 @@ class GMB_Ranker_SEO_REST_Redirects_Controller {
     public function handle_redirects($request) {
         $method = $request->get_method();
 
+        if (is_user_logged_in() && !current_user_can('manage_options')) {
+            return new WP_REST_Response(array('success' => false, 'message' => 'Administrator access is required.'), 403);
+        }
+
         if ($method === 'GET') {
             return new WP_REST_Response(array(
                 'rules' => $this->repository->get_all_rules(),
@@ -39,6 +43,10 @@ class GMB_Ranker_SEO_REST_Redirects_Controller {
         $source = $request->get_param('source');
         $target = $request->get_param('target');
         $code   = intval($request->get_param('code')) ?: 301;
+
+        if (!in_array($code, array(301, 302, 307, 308), true)) {
+            return new WP_REST_Response(array('success' => false, 'message' => 'Invalid redirect status code.'), 400);
+        }
 
         if (empty($source) || empty($target)) {
             return new WP_REST_Response(array('success' => false, 'message' => 'Source and target required'), 400);

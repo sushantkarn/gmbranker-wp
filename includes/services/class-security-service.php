@@ -1113,13 +1113,12 @@ class GMB_Ranker_SEO_Security_Service {
             foreach ($admins as $adm) {
                 $adm_id = (int) $adm->ID;
                 if (!in_array($adm_id, $registered_admins, true)) {
-                    // Demote rogue admin
-                    $user_obj = new WP_User($adm_id);
-                    if ($user_obj && method_exists($user_obj, 'set_role')) {
-                        $user_obj->set_role('subscriber');
-                        $user_login = isset($adm->user_login) ? $adm->user_login : 'unknown';
-                        $this->log_security_incident('rogue_admin_blocked', sprintf('Rogue administrator account "%s" (ID: %d) demoted to subscriber.', $user_login, $adm_id));
-                    }
+                    // Never change a user's role automatically. Imports,
+                    // restores, multisite synchronization, and legitimate
+                    // administrators can all create a new ID. Record the
+                    // finding for review instead of locking out an admin.
+                    $user_login = isset($adm->user_login) ? $adm->user_login : 'unknown';
+                    $this->log_security_incident('unapproved_admin_detected', sprintf('Administrator account "%s" (ID: %d) requires manual approval.', $user_login, $adm_id));
                 }
             }
         }

@@ -71,18 +71,30 @@ if (!function_exists('gmb_ranker_get_schema_icon_svg')) {
 wp_nonce_field('gmb_seo_save_nonce', 'gmb_seo_nonce');
 
 $meta_title       = get_post_meta($post->ID, '_gmb_ranker_seo_title', true) ?: '';
+$meta_title       = $meta_title ?: get_post_meta($post->ID, '_yoast_wpseo_title', true);
+$meta_title       = $meta_title ?: get_post_meta($post->ID, 'rank_math_title', true);
 $meta_desc        = get_post_meta($post->ID, '_gmb_ranker_seo_description', true) ?: '';
+$meta_desc        = $meta_desc ?: get_post_meta($post->ID, '_yoast_wpseo_metadesc', true);
+$meta_desc        = $meta_desc ?: get_post_meta($post->ID, 'rank_math_description', true);
 $canonical        = get_post_meta($post->ID, '_gmb_ranker_seo_canonical', true) ?: '';
 $robots           = get_post_meta($post->ID, '_gmb_ranker_seo_robots', true) ?: 'index, follow';
 $json_ld          = get_post_meta($post->ID, '_gmb_ranker_json_ld', true) ?: '';
 $breadcrumb_title = get_post_meta($post->ID, '_gmb_ranker_breadcrumb_title', true) ?: '';
 $redirect_url     = get_post_meta($post->ID, '_gmb_ranker_redirect_url', true) ?: '';
 $redirect_code    = get_post_meta($post->ID, '_gmb_ranker_redirect_code', true) ?: '301';
-$max_snippet      = get_post_meta($post->ID, '_gmb_ranker_max_snippet', true) ?: '-1';
-$max_video        = get_post_meta($post->ID, '_gmb_ranker_max_video', true) ?: '-1';
-$max_image        = get_post_meta($post->ID, '_gmb_ranker_max_image', true) ?: 'large';
+$max_snippet      = get_post_meta($post->ID, '_gmb_ranker_seo_max_snippet', true) ?: get_post_meta($post->ID, '_gmb_ranker_max_snippet', true) ?: '-1';
+$max_video        = get_post_meta($post->ID, '_gmb_ranker_seo_max_video', true) ?: get_post_meta($post->ID, '_gmb_ranker_max_video', true) ?: '-1';
+$max_image        = get_post_meta($post->ID, '_gmb_ranker_seo_max_image', true) ?: get_post_meta($post->ID, '_gmb_ranker_max_image', true) ?: 'large';
+$max_snippet_enabled = get_post_meta($post->ID, '_gmb_ranker_seo_max_snippet_enabled', true);
+$max_video_enabled   = get_post_meta($post->ID, '_gmb_ranker_seo_max_video_enabled', true);
+$max_image_enabled   = get_post_meta($post->ID, '_gmb_ranker_seo_max_image_enabled', true);
+$max_snippet_enabled = $max_snippet_enabled === '' ? '1' : $max_snippet_enabled;
+$max_video_enabled   = $max_video_enabled === '' ? '1' : $max_video_enabled;
+$max_image_enabled   = $max_image_enabled === '' ? '1' : $max_image_enabled;
 
 $focus_keyword    = get_post_meta($post->ID, '_gmb_ranker_focus_keyword', true) ?: '';
+$focus_keyword    = $focus_keyword ?: get_post_meta($post->ID, '_yoast_wpseo_focuskw', true);
+$focus_keyword    = $focus_keyword ?: get_post_meta($post->ID, 'rank_math_focus_keyword', true);
 $robots_array     = array_map('trim', explode(',', strtolower($robots)));
 ?>
 <div class="gmb-seo-meta-container">
@@ -157,6 +169,7 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
             </div>
         </div>
 
+        <?php $saved_score = get_post_meta($post->ID, '_gmb_ranker_seo_score', true) ?: '0'; ?>
         <div class="gmb-field-group">
             <label for="gmb_seo_focus_keyword_input" class="gmb-field-label"><?php esc_html_e('Focus Keyword', 'gmb-ranker-seo-automation'); ?> <span class="gmb-help-tip gmb-ml-4" data-gmb-tooltip="<?php esc_attr_e('Focus keywords are the key search queries you want this page to rank for.', 'gmb-ranker-seo-automation'); ?>">i</span></label>
             <div class="gmb-focus-keyword-field-wrapper">
@@ -164,12 +177,26 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                     <!-- Pills render dynamically via JS -->
                     <input type="text" id="gmb_seo_focus_keyword_input" class="gmb-keyword-input-el" placeholder="<?php esc_attr_e('Type keyword and press Enter...', 'gmb-ranker-seo-automation'); ?>" />
                 </div>
-                <div class="gmb-keyword-score" id="gmb-metabox-score-badge">
-                    <span id="gmb-metabox-score-val">0</span>/100
+                <?php
+                $saved_score_num = intval($saved_score);
+                if (empty($focus_keyword)) {
+                    $badge_color_class = 'score-unconfigured';
+                } else {
+                    $badge_color_class = ($saved_score_num >= 80) ? 'score-good' : (($saved_score_num >= 40) ? 'score-ok' : 'score-poor');
+                }
+                ?>
+                <div class="gmb-keyword-score <?php echo esc_attr($badge_color_class); ?>" id="gmb-metabox-score-badge" title="<?php esc_attr_e('Overall on-page SEO score', 'gmb-ranker-seo-automation'); ?>">
+                    <span id="gmb-metabox-score-val"><?php echo esc_html($saved_score); ?></span>/100
                 </div>
             </div>
+            <div class="gmb-audit-freshness" id="gmb-audit-freshness" data-analysis-hash="<?php echo esc_attr(get_post_meta($post->ID, '_gmb_ranker_seo_analysis_hash', true)); ?>">
+                <?php if (get_post_meta($post->ID, '_gmb_ranker_seo_analysis_hash', true)) : ?>
+                    <?php esc_html_e('Saved audit', 'gmb-ranker-seo-automation'); ?>
+                <?php else : ?>
+                    <?php esc_html_e('Not audited yet', 'gmb-ranker-seo-automation'); ?>
+                <?php endif; ?>
+            </div>
             <input type="hidden" id="gmb_seo_focus_keyword_hidden" name="gmb_seo_focus_keyword" value="<?php echo esc_attr($focus_keyword); ?>" />
-            <?php $saved_score = get_post_meta($post->ID, '_gmb_ranker_seo_score', true) ?: '0'; ?>
             <input type="hidden" id="gmb_seo_score_hidden" name="gmb_seo_score" value="<?php echo esc_attr($saved_score); ?>" />
             
             <?php $is_pillar = get_post_meta($post->ID, '_gmb_ranker_seo_is_pillar', true); ?>
@@ -311,14 +338,14 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
         <div class="gmb-audit-wrapper gmb-mt-14">
             <!-- Basic SEO Accordion -->
             <div class="gmb-accordion-section" id="gmb-acc-basic">
-                <div class="gmb-accordion-header">
+                <div class="gmb-accordion-header" role="button" tabindex="0" aria-expanded="true" aria-controls="gmb-basic-list-wrapper">
                     <div class="gmb-accordion-title-area">
                         <span class="gmb-text-bold"><?php esc_html_e('Basic SEO', 'gmb-ranker-seo-automation'); ?></span>
                         <span class="gmb-badge-count error" id="gmb-basic-count">0 Errors</span>
                     </div>
                     <svg class="gmb-accordion-arrow" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                 </div>
-                <div class="gmb-accordion-content">
+                <div class="gmb-accordion-content" id="gmb-basic-list-wrapper">
                     <div class="gmb-accordion-inner">
                         <ul class="gmb-audit-list" id="gmb-basic-list"></ul>
                     </div>
@@ -327,14 +354,14 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
 
             <!-- Additional Accordion -->
             <div class="gmb-accordion-section collapsed" id="gmb-acc-additional">
-                <div class="gmb-accordion-header">
+                <div class="gmb-accordion-header" role="button" tabindex="0" aria-expanded="false" aria-controls="gmb-additional-list-wrapper">
                     <div class="gmb-accordion-title-area">
                         <span class="gmb-text-bold"><?php esc_html_e('Additional', 'gmb-ranker-seo-automation'); ?></span>
                         <span class="gmb-badge-count error" id="gmb-additional-count">0 Errors</span>
                     </div>
                     <svg class="gmb-accordion-arrow" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                 </div>
-                <div class="gmb-accordion-content">
+                <div class="gmb-accordion-content" id="gmb-additional-list-wrapper">
                     <div class="gmb-accordion-inner">
                         <ul class="gmb-audit-list" id="gmb-additional-list"></ul>
                     </div>
@@ -343,14 +370,14 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
 
             <!-- Title Readability Accordion -->
             <div class="gmb-accordion-section collapsed" id="gmb-acc-title">
-                <div class="gmb-accordion-header">
+                <div class="gmb-accordion-header" role="button" tabindex="0" aria-expanded="false" aria-controls="gmb-title-list-wrapper">
                     <div class="gmb-accordion-title-area">
                         <span class="gmb-text-bold"><?php esc_html_e('Title Readability', 'gmb-ranker-seo-automation'); ?></span>
                         <span class="gmb-badge-count error" id="gmb-title-count">0 Errors</span>
                     </div>
                     <svg class="gmb-accordion-arrow" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                 </div>
-                <div class="gmb-accordion-content">
+                <div class="gmb-accordion-content" id="gmb-title-list-wrapper">
                     <div class="gmb-accordion-inner">
                         <ul class="gmb-audit-list" id="gmb-title-list"></ul>
                     </div>
@@ -359,14 +386,14 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
 
             <!-- Content Readability Accordion -->
             <div class="gmb-accordion-section collapsed" id="gmb-acc-content">
-                <div class="gmb-accordion-header">
+                <div class="gmb-accordion-header" role="button" tabindex="0" aria-expanded="false" aria-controls="gmb-content-list-wrapper">
                     <div class="gmb-accordion-title-area">
                         <span class="gmb-text-bold"><?php esc_html_e('Content Readability', 'gmb-ranker-seo-automation'); ?></span>
                         <span class="gmb-badge-count error" id="gmb-content-count">0 Errors</span>
                     </div>
                     <svg class="gmb-accordion-arrow" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                 </div>
-                <div class="gmb-accordion-content">
+                <div class="gmb-accordion-content" id="gmb-content-list-wrapper">
                     <div class="gmb-accordion-inner">
                         <ul class="gmb-audit-list" id="gmb-content-list"></ul>
                     </div>
@@ -431,7 +458,7 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                 <div class="gmb-adv-robots-list">
                     <div class="gmb-adv-robot-item">
                         <label class="gmb-robot-option gmb-adv-robot-label">
-                            <input type="checkbox" class="gmb-adv-robot-toggle" checked />
+                            <input type="checkbox" name="gmb_seo_max_snippet_enabled" value="1" class="gmb-adv-robot-toggle" <?php checked($max_snippet_enabled, '1'); ?> />
                             <span class="gmb-robot-option-name"><?php esc_html_e('Max Snippet', 'gmb-ranker-seo-automation'); ?></span>
                             <span class="gmb-help-tip" data-gmb-tooltip="<?php esc_attr_e('Specify a maximum text-length, in characters, of a snippet for your page.', 'gmb-ranker-seo-automation'); ?>">?</span>
                         </label>
@@ -441,7 +468,7 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                     </div>
                     <div class="gmb-adv-robot-item">
                         <label class="gmb-robot-option gmb-adv-robot-label">
-                            <input type="checkbox" class="gmb-adv-robot-toggle" checked />
+                            <input type="checkbox" name="gmb_seo_max_video_enabled" value="1" class="gmb-adv-robot-toggle" <?php checked($max_video_enabled, '1'); ?> />
                             <span class="gmb-robot-option-name"><?php esc_html_e('Max Video Preview', 'gmb-ranker-seo-automation'); ?></span>
                             <span class="gmb-help-tip" data-gmb-tooltip="<?php esc_attr_e('Specify a maximum duration in seconds of an animated video preview.', 'gmb-ranker-seo-automation'); ?>">?</span>
                         </label>
@@ -451,7 +478,7 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                     </div>
                     <div class="gmb-adv-robot-item">
                         <label class="gmb-robot-option gmb-adv-robot-label">
-                            <input type="checkbox" class="gmb-adv-robot-toggle" checked />
+                            <input type="checkbox" name="gmb_seo_max_image_enabled" value="1" class="gmb-adv-robot-toggle" <?php checked($max_image_enabled, '1'); ?> />
                             <span class="gmb-robot-option-name"><?php esc_html_e('Max Image Preview', 'gmb-ranker-seo-automation'); ?></span>
                             <span class="gmb-help-tip" data-gmb-tooltip="<?php esc_attr_e('Specify a maximum size of image preview to be shown for images on this page.', 'gmb-ranker-seo-automation'); ?>">?</span>
                         </label>
@@ -500,7 +527,7 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
             </div>
             <div class="gmb-setting-content-col">
                 <label class="gmb-form-toggle">
-                    <input type="checkbox" id="gmb_enable_redirect_toggle" class="gmb-toggle-input" <?php checked(!empty($redirect_url)); ?> />
+                    <input type="checkbox" id="gmb_enable_redirect_toggle" name="gmb_seo_redirect_enabled" value="1" class="gmb-toggle-input" <?php checked(!empty($redirect_url)); ?> />
                     <span class="gmb-form-toggle__track">
                         <span class="gmb-form-toggle__thumb"></span>
                     </span>
@@ -604,184 +631,184 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                         
                         <div class="gmb-schema-template-grid" id="gmb-schema-templates-grid">
                             
-                            <div class="gmb-schema-template-card" data-type="Article">
+                            <div class="gmb-schema-template-card" data-type="Article" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Article', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Article</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Article">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Article" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Article', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Book">
+                            <div class="gmb-schema-template-card" data-type="Book" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Book', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Book</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Book">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Book" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Book', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Course">
+                            <div class="gmb-schema-template-card" data-type="Course" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Course', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Course</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Course">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Course" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Course', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Dataset">
+                            <div class="gmb-schema-template-card" data-type="Dataset" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Dataset', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Dataset</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Dataset">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Dataset" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Dataset', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Event">
+                            <div class="gmb-schema-template-card" data-type="Event" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Event', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Event</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Event">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Event" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Event', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="FAQ Page">
+                            <div class="gmb-schema-template-card" data-type="FAQ Page" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('FAQ Page', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">FAQ Page</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="FAQ Page">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="FAQ Page" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('FAQ Page', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="FactCheck">
+                            <div class="gmb-schema-template-card" data-type="FactCheck" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('FactCheck', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">FactCheck</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="FactCheck">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="FactCheck" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('FactCheck', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="HowTo">
+                            <div class="gmb-schema-template-card" data-type="HowTo" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('HowTo', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">HowTo</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="HowTo">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="HowTo" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('HowTo', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Job Posting">
+                            <div class="gmb-schema-template-card" data-type="Job Posting" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Job Posting', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Job Posting</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Job Posting">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Job Posting" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Job Posting', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Movie">
+                            <div class="gmb-schema-template-card" data-type="Movie" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Movie', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Movie</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Movie">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Movie" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Movie', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Music">
+                            <div class="gmb-schema-template-card" data-type="Music" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Music', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Music</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Music">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Music" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Music', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Person">
+                            <div class="gmb-schema-template-card" data-type="Person" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Person', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Person</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Person">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Person" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Person', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Product">
+                            <div class="gmb-schema-template-card" data-type="Product" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Product', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Product</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Product">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Product" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Product', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Recipe">
+                            <div class="gmb-schema-template-card" data-type="Recipe" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Recipe', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Recipe</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Recipe">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Recipe" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Recipe', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Restaurant">
+                            <div class="gmb-schema-template-card" data-type="Restaurant" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Restaurant', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v4M21 2v20M21 2h-4c-1.1 0-2 .9-2 2v3c0 1.1.9 2 2 2h4"></path></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Restaurant</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Restaurant">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Restaurant" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Restaurant', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Service">
+                            <div class="gmb-schema-template-card" data-type="Service" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Service', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Service</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Service">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Service" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Service', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Software">
+                            <div class="gmb-schema-template-card" data-type="Software" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Software', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Software</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Software">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Software" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Software', event);">+ Use</button>
                             </div>
 
-                            <div class="gmb-schema-template-card" data-type="Video">
+                            <div class="gmb-schema-template-card" data-type="Video" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Video', event);">
                                 <div class="gmb-schema-template-info">
                                     <div class="gmb-schema-template-icon">
                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
                                     </div>
                                     <span class="gmb-schema-template-name">Video</span>
                                 </div>
-                                <button type="button" class="button gmb-use-schema-btn" data-type="Video">+ Use</button>
+                                <button type="button" class="button gmb-use-schema-btn" data-type="Video" onclick="if(window.gmbUseSchemaTemplate) window.gmbUseSchemaTemplate('Video', event);">+ Use</button>
                             </div>
                         </div>
                     </div>

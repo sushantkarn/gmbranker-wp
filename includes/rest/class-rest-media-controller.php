@@ -54,6 +54,11 @@ class GMB_Ranker_SEO_REST_Media_Controller {
             return new WP_REST_Response(array('success' => false, 'message' => 'Attachment ID required'), 400);
         }
 
+        $attachment = get_post($attachment_id);
+        if (!$attachment || 'attachment' !== $attachment->post_type || (is_user_logged_in() && !current_user_can('edit_post', $attachment_id))) {
+            return new WP_REST_Response(array('success' => false, 'message' => 'You are not allowed to edit this attachment.'), 403);
+        }
+
         $alt = $request->get_param('alt');
         if (isset($alt)) {
             update_post_meta($attachment_id, '_wp_attachment_image_alt', sanitize_text_field($alt));

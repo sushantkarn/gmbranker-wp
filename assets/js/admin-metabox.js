@@ -5,16 +5,158 @@
 (function ($) {
   "use strict";
 
-  // Global AI Modal opener will be bound inside document.ready
+  function escAttr(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function escHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  window.gmbOpenSchemaModal = function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var $modal = $("#gmb-schema-modal");
+    if ($modal.length) {
+      $modal.appendTo("body");
+      $modal.addClass("active is-open").css("display", "flex").show();
+    }
+  };
+
+  window.gmbUseSchemaTemplate = function (schemaType, e, openBuilder) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!schemaType) return;
+
+    var $list = $("#gmb-schema-in-use-list");
+    var schemaTypeEscaped = escAttr(schemaType);
+    var schemaTypeHtml = escHtml(schemaType);
+    var schemaIcon = (typeof window.gmbGetSchemaIcon === "function")
+      ? window.gmbGetSchemaIcon(schemaType)
+      : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>';
+    if ($list.find('.gmb-schema-active-card').filter(function () {
+      return $(this).attr('data-schema-active') === String(schemaType);
+    }).length === 0) {
+      var cardHtml =
+        '<div class="gmb-schema-active-card" data-schema-active="' +
+        schemaTypeEscaped +
+        '">' +
+        '<div class="gmb-schema-active-info">' +
+        '<span class="gmb-schema-active-icon">' +
+        schemaIcon +
+        "</span>" +
+        '<strong class="gmb-schema-active-title">' +
+        schemaTypeHtml +
+        "</strong>" +
+        "</div>" +
+        '<div class="gmb-schema-active-actions">' +
+        '<button type="button" class="gmb-schema-action-btn gmb-schema-edit-btn" data-type="' +
+        schemaTypeEscaped +
+        '" title="Edit Schema">' +
+        '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>' +
+        "</button>" +
+        '<button type="button" class="gmb-schema-action-btn gmb-schema-code-btn" data-type="' +
+        schemaTypeEscaped +
+        '" title="Code Validation">' +
+        '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>' +
+        "</button>" +
+        '<button type="button" class="gmb-schema-action-btn gmb-remove-schema-btn" data-type="' +
+        schemaTypeEscaped +
+        '" title="Delete Schema">' +
+        '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
+        "</button>" +
+        "</div>" +
+        "</div>";
+      $("#gmb-no-active-schema-notice").hide();
+      $list.append(cardHtml);
+      var active = [];
+      $("#gmb-schema-in-use-list .gmb-schema-active-card").each(function () {
+        var t = $(this).attr("data-schema-active");
+        if (t) active.push(t);
+      });
+      $("#gmb_seo_active_schemas").val(active.join(","));
+    }
+
+    $("#gmb-schema-modal").removeClass("active is-open").hide();
+    if (openBuilder !== false && typeof window.gmbOpenSchemaBuilder === "function") {
+      window.gmbOpenSchemaBuilder(schemaType, "edit");
+    }
+  };
+
+  $(document).on("click", "#gmb-schema-generator-open-btn", function (e) {
+    window.gmbOpenSchemaModal(e);
+  });
+
+  $(document).on("click", ".gmb-schema-edit-btn, .gmb-schema-code-btn", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var type = $(this).attr("data-type");
+    if (type && typeof window.gmbOpenSchemaBuilder === "function") {
+      window.gmbOpenSchemaBuilder(type, $(this).hasClass("gmb-schema-code-btn") ? "validation" : "edit");
+    }
+  });
+
+  window.gmbOpenSnippetModal = function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var $modal = $("#gmb-snippet-modal");
+    if ($modal.length) {
+      $modal.appendTo("body");
+      $modal.addClass("active is-open").css("display", "flex").show();
+    }
+  };
+
+  window.gmbCloseSnippetModal = function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    $("#gmb-snippet-modal").removeClass("active is-open").hide();
+  };
+
+  window.gmbSwitchTab = function (targetTab, btnEl) {
+    if (!targetTab) return;
+    var $btn = btnEl ? $(btnEl) : $('.gmb-tab-btn[data-tab="' + targetTab + '"]');
+    var $container = $btn.length ? $btn.closest(".gmb-seo-meta-container") : $(".gmb-seo-meta-container");
+    if (!$container.length) $container = $(".gmb-seo-meta-container");
+
+    $container.find(".gmb-seo-tabs .gmb-tab-btn").removeClass("active is-active");
+    if ($btn.length) $btn.addClass("active is-active");
+    $('.gmb-tab-btn[data-tab="' + targetTab + '"]').addClass("active is-active");
+    $container.find(".gmb-seo-tabs .gmb-tab-btn").attr("aria-selected", "false");
+    $container.find('.gmb-seo-tabs .gmb-tab-btn[data-tab="' + targetTab + '"]').attr("aria-selected", "true");
+
+    $container.find(".gmb-tab-content").removeClass("active").hide();
+    $container.find(".gmb-tab-content").attr("aria-hidden", "true");
+    $("#" + targetTab).addClass("active").fadeIn(150);
+    $("#" + targetTab).attr("aria-hidden", "false");
+  };
 
   $(document).ready(function () {
+    function initModalHierarchy() {
+      $(".gmb-modal-backdrop, .gmb-modal-overlay").each(function () {
+        if (!$(this).parent().is("body")) {
+          $(this).appendTo("body");
+        }
+      });
+    }
+    initModalHierarchy();
+    setTimeout(initModalHierarchy, 500);
 
-// ==========================================
+    // ==========================================
     // ==========================================
     // Single Page AI SEO Auto-Fix Handler (NeuronWriter 3-Step Flow)
     // ==========================================
     var currentAiStep = 1;
     var stepTimer = null;
+    var progressPollTimer = null;
     var globalAjaxResultData = null;
     var keywordCannibalizationCache = {};
     var pendingCannibalizationCheck = null;
@@ -46,6 +188,7 @@
           for (var i = 1; i <= 8; i++) {
             var $item = $("#gmb-res-step-" + i);
             $item.removeClass("active").addClass("completed");
+            $item.find(".gmb-step-active-ring").remove();
             $item.find(".gmb-step-status-pill").removeClass("pending in-progress").addClass("completed").text("Completed");
           }
           $("#gmb-active-step-counter").text("Step 8 of 8");
@@ -135,6 +278,26 @@
       setAiModalStep(1);
     };
 
+    $(document).on("change", "#gmb-ai-setup-mode", function () {
+      var m = $(this).val();
+      if (m === "create") {
+        $("#gmb-ai-setup-url").prop("readonly", false).attr("placeholder", "Proposed URL permalink...");
+        $("#gmb-ai-setup-instructions").attr("placeholder", "Enter target audience, writing instructions, required subtopics, CTA requirements, or brand guidelines (Optional - AI will research automatically if empty)...");
+        var kw = $("#gmb-ai-setup-query").val().trim() || $("#gmb-ai-setup-title").val().trim();
+        if (kw) {
+          var homeUrl = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.homeUrl ? gmbMetaboxData.homeUrl : window.location.origin) + "/";
+          var proposedSlug = kw.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+          $("#gmb-ai-setup-url").val(homeUrl + proposedSlug);
+        }
+      } else {
+        $("#gmb-ai-setup-url").prop("readonly", true);
+        var slug = $("#post_name").val() || $("#editable-post-name").text() || "";
+        var homeUrl = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.homeUrl ? gmbMetaboxData.homeUrl : window.location.origin) + "/";
+        $("#gmb-ai-setup-url").val(homeUrl + slug);
+        $("#gmb-ai-setup-instructions").attr("placeholder", "e.g. Focus on key benefits, specific target audience credentials, subtopics, or custom call-to-action requirements...");
+      }
+    });
+
     $(document).on("click", "#gmb-ai-optimize-post-btn, .gmb-btn--ai-post, [data-action='gmb-open-ai-modal']", function (e) {
       window.gmbOpenAiModal(e);
     });
@@ -155,6 +318,8 @@
       var countryVal = $("#gmb-ai-setup-country").val();
       var countryText = $("#gmb-ai-setup-country option:selected").text().split("|")[0].trim();
       var language = $("#gmb-ai-setup-language").val();
+      var tone = $("#gmb-ai-setup-tone").length ? $("#gmb-ai-setup-tone").val() : "auto";
+      var intent = $("#gmb-ai-setup-intent").length ? $("#gmb-ai-setup-intent").val() : "auto";
 
       if (!targetQuery) {
         alert("Please enter a target query/keyword to rank for.");
@@ -173,6 +338,8 @@
       $("#gmb-overview-country").text(countryText);
       $("#gmb-overview-language").text($("#gmb-ai-setup-language option:selected").text());
       $("#gmb-overview-mode").text($("#gmb-ai-setup-mode option:selected").text().split("(")[0].trim());
+      $("#gmb-overview-tone").text($("#gmb-ai-setup-tone option:selected").text() || tone);
+      $("#gmb-overview-intent").text($("#gmb-ai-setup-intent option:selected").text() || intent);
 
       var researchSteps = [
         {
@@ -197,7 +364,7 @@
         },
         {
           stepNum: 3,
-          title: "Fetching SERP Results",
+          title: "Checking SERP Data",
           desc: "Collecting top ranking competitor pages for target region.",
           progress: 45,
           tasksHtml: '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Targeted Google SERP endpoint</div>' +
@@ -206,7 +373,7 @@
         },
         {
           stepNum: 4,
-          title: "Analyzing Competitors",
+          title: "Preparing Content Benchmarks",
           desc: "Extracting statistical percentiles for word count, headings, and images.",
           progress: 60,
           tasksHtml: '<div class="gmb-task-row done"><span class="task-check-circle">✓</span> Calculating 25th & 75th percentiles</div>' +
@@ -250,17 +417,15 @@
         }
       ];
 
-      var stepIdx = 0;
       var ajaxFinishedData = null;
-      var timelineCompleted = false;
 
       function updateStepUI(idx) {
         var s = researchSteps[idx];
         $("#gmb-active-step-counter").text("Step " + s.stepNum + " of 8");
         $("#gmb-active-step-title").text(s.title);
         $("#gmb-active-step-desc").text(s.desc);
-        $("#gmb-active-progress-fill").css("width", s.progress + "%");
-        $("#gmb-active-progress-percent").text(s.progress + "%");
+        $("#gmb-active-progress-fill").css("width", "0%");
+        $("#gmb-active-progress-percent").text("Processing...");
         $("#gmb-live-tasks-list").html(s.tasksHtml);
 
         for (var i = 1; i <= 8; i++) {
@@ -334,7 +499,7 @@
               var potVal = (data.score && data.score.potential) ? parseInt(data.score.potential, 10) : Math.min(100, curVal + 15);
               labelText = curVal + " / 100 (Potential: " + potVal + " / 100)";
             } else {
-              labelText = "85 / 100 (Potential: 95 / 100)";
+              labelText = "Score unavailable";
             }
           }
           $("#gmb-ai-potential-score").text(labelText);
@@ -347,7 +512,7 @@
             var oppCount = 0;
             recs.forEach(function (r) {
               if (r.status === "FIX NEEDED" || r.status === "MISSING" || r.risk_level === "HIGH RISK") {
-                $oppList.append('<li><strong>' + r.category + ':</strong> ' + r.evidence + '</li>');
+                $oppList.append('<li><strong>' + escHtml(r.category || r.id) + ':</strong> ' + escHtml(r.evidence || '') + '</li>');
                 oppCount++;
               }
             });
@@ -370,47 +535,55 @@
 
             recs.forEach(function (r) {
               var statusPillClass = "gmb-status-pill--success";
-              if (r.status === "FIX NEEDED" || r.status === "MISSING" || r.status === "UNDER-OPTIMIZED") {
+              if (r.status === "FIX NEEDED" || r.status === "MISSING" || r.status === "UNDER-OPTIMIZED" || r.status === "AI GENERATION REQUIRED") {
                 statusPillClass = "gmb-status-pill--warning";
               } else if (r.status === "OVER-OPTIMIZED" || r.risk_level === "HIGH RISK") {
                 statusPillClass = "gmb-status-pill--danger";
               }
 
+              var recValue = (r.recommended !== undefined && r.recommended !== null) ? r.recommended.toString() : '';
               var inputControl = '';
               if (r.id === 'focus_keyword') {
-                inputControl = '<input type="text" id="gmb-ai-input-focus" value="' + (r.recommended || '') + '" class="gmb-integration-input gmb-input-sm" />';
+                inputControl = '<input type="text" id="gmb-ai-input-focus" value="' + escAttr(recValue) + '" placeholder="[Enter Focus Keyword]" class="gmb-integration-input gmb-input-sm" />';
               } else if (r.id === 'seo_title') {
-                inputControl = '<input type="text" id="gmb-ai-input-title" value="' + (r.recommended || '') + '" class="gmb-integration-input gmb-input-sm" />';
+                inputControl = '<input type="text" id="gmb-ai-input-title" value="' + escAttr(recValue) + '" placeholder="[Enter SEO Title]" class="gmb-integration-input gmb-input-sm" />';
               } else if (r.id === 'meta_description') {
-                inputControl = '<textarea id="gmb-ai-input-desc" rows="2" class="gmb-integration-input gmb-input-sm">' + (r.recommended || '') + '</textarea>';
+                var descPlaceholder = r.error ? '[AI generation failed: ' + escAttr(r.error) + ']' : '[AI generation required]';
+                inputControl = '<textarea id="gmb-ai-input-desc" rows="2" placeholder="' + descPlaceholder + '" class="gmb-integration-input gmb-input-sm">' + escAttr(recValue) + '</textarea>';
               } else if (r.id === 'slug') {
-                inputControl = '<input type="text" id="gmb-ai-input-slug" value="' + (r.recommended || '') + '" class="gmb-integration-input gmb-input-sm" ' + (r.action === 'KEEP CURRENT URL' ? 'disabled' : '') + ' />';
+                inputControl = '<input type="text" id="gmb-ai-input-slug" value="' + escAttr(recValue) + '" placeholder="[Enter URL Slug]" class="gmb-integration-input gmb-input-sm" ' + (r.action === 'KEEP CURRENT URL' ? 'disabled' : '') + ' />';
               } else if (r.id === 'schema_preset') {
-                var schemaVal = r.recommended || 'Article';
+                var schemaVal = recValue;
                 inputControl = '<select id="gmb-ai-input-schema" class="gmb-integration-select gmb-input-sm">' +
+                  '<option value=""' + (schemaVal === '' ? ' selected' : '') + '>Select schema type</option>' +
                   '<option value="WebPage"' + (schemaVal === 'WebPage' ? ' selected' : '') + '>WebPage</option>' +
-                  '<option value="Article"' + (schemaVal === 'Article' ? ' selected' : '') + '>Article</option>' +
                   '<option value="AboutPage"' + (schemaVal === 'AboutPage' ? ' selected' : '') + '>AboutPage</option>' +
                   '<option value="Service"' + (schemaVal === 'Service' ? ' selected' : '') + '>Service</option>' +
                   '<option value="LocalBusiness"' + (schemaVal === 'LocalBusiness' ? ' selected' : '') + '>LocalBusiness</option>' +
                   '<option value="Product"' + (schemaVal === 'Product' ? ' selected' : '') + '>Product</option>' +
                 '</select>';
               } else if (r.id === 'content_intro') {
-                inputControl = '<textarea id="gmb-ai-input-intro" rows="5" class="gmb-integration-input gmb-input-sm" style="min-height: 110px; font-family: monospace; font-size: 12px; line-height: 1.4;">' + (r.recommended || '') + '</textarea>';
+                var introPlaceholder = r.error ? '[AI generation failed: ' + escAttr(r.error) + ']' : '[AI generation required]';
+                inputControl = '<textarea id="gmb-ai-input-intro" rows="5" placeholder="' + introPlaceholder + '" class="gmb-integration-input gmb-input-sm" style="min-height: 110px; font-family: monospace; font-size: 12px; line-height: 1.4;">' + escAttr(recValue) + '</textarea>';
               } else {
-                inputControl = '<span>' + (r.recommended || '') + '</span>';
+                inputControl = '<span>' + escAttr(recValue) + '</span>';
               }
 
-              var isChecked = (r.risk_level !== 'HIGH RISK' && r.action !== 'KEEP CURRENT URL');
+              var hasRecommendedValue = recValue.trim().length > 0;
+              var isChecked = (r.risk_level !== 'HIGH RISK' && r.action !== 'KEEP CURRENT URL' && r.status !== 'AI GENERATION REQUIRED' && hasRecommendedValue);
+              // Existing body copy is high-impact; let Optimize users opt into the surgical intro change.
+              if (r.id === 'content_intro' && $("#gmb-ai-setup-mode").val() === "optimize") {
+                isChecked = false;
+              }
               var checkAttr = isChecked ? 'checked' : '';
               selectableCount++;
               if (isChecked) checkedCount++;
 
               rowsHtml += '<tr>' +
-                '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="' + r.id + '" ' + checkAttr + ' /></td>' +
-                '<td><strong>' + r.category + '</strong></td>' +
+                '<td class="gmb-td-checkbox"><input type="checkbox" class="gmb-ai-post-check" data-factor="' + escAttr(r.id) + '" ' + checkAttr + ' /></td>' +
+                '<td><strong>' + escHtml(r.category || r.id) + '</strong></td>' +
                 '<td>' + inputControl + '</td>' +
-                '<td><span class="gmb-status-pill ' + statusPillClass + '">' + (r.status || 'RECOMMENDED') + '</span></td>' +
+                '<td><span class="gmb-status-pill ' + statusPillClass + '">' + escHtml(r.status || 'RECOMMENDED') + '</span></td>' +
                 '</tr>';
             });
 
@@ -421,28 +594,68 @@
         }, 600);
       }
 
-      function checkReadyToAdvance() {
-        if (ajaxFinishedData && timelineCompleted) {
-          populateAndShowStep3(ajaxFinishedData);
+      if (stepTimer) clearInterval(stepTimer);
+      function applyProgressState(state) {
+        if (!state || state.status === "missing") return;
+        var step = Math.max(1, Math.min(8, parseInt(state.step, 10) || 1));
+        var status = state.status || "processing";
+        var progress = (state.progress === null || typeof state.progress === "undefined") ? null : Math.max(0, Math.min(100, parseInt(state.progress, 10)));
+        var stateLabels = { processing: "Currently processing", waiting: "Waiting", retrying: "Retrying", complete: "Analysis complete", error: "Analysis could not complete" };
+        var stepTitles = ["", "Analyzing Current Page", "Detecting Search Intent", "Checking SERP Data", "Preparing Content Benchmarks", "Semantic & Entity Analysis", "Content Gap Analysis", "Optimization Strategy", "Finalizing Results"];
+        var activities = state.activity || "Working on the current research step...";
+        $("#gmb-active-step-counter").text("Step " + step + " of 8");
+        $("#gmb-active-step-title").text(stepTitles[step] || "Research step " + step);
+        $("#gmb-active-step-desc").text(state.message || "Working with the current research data.");
+        $("#gmb-analysis-state-label").text(stateLabels[status] || "Currently processing");
+        $("#gmb-analysis-activity").text(activities);
+        $("#gmb-analysis-elapsed").text("Elapsed " + (state.elapsed || 0) + "s");
+        $("#gmb-analysis-state").attr("data-status", status);
+        $("#gmb-research-status-title").text(status === "waiting" ? "Waiting" : (status === "error" ? "Research error" : "Live Research"));
+        $("#gmb-research-status-label").text(state.waiting_for ? "Waiting for " + state.waiting_for + ":" : (state.activity || "Current activity") + ":");
+        $("#gmb-analysis-waiting").prop("hidden", status !== "waiting" && status !== "retrying");
+        $("#gmb-analysis-waiting-for").text(state.waiting_for || "");
+        $("#gmb-active-progress-fill").css("width", progress === null ? "42%" : progress + "%").parent().attr("aria-valuenow", progress === null ? 0 : progress);
+        $("#gmb-active-progress-fill").toggleClass("is-indeterminate", progress === null);
+        $("#gmb-active-progress-percent").text(progress === null ? "Processing..." : progress + "%");
+        $("#gmb-overall-progress-label").text(Math.max(0, step - (status === "complete" ? 0 : 1)) + " of 8 steps complete");
+        $("#gmb-ai-running-label").text((stateLabels[status] || "Processing") + "... " + activities);
+        var taskIndicator = status === "complete" ? '<span class="task-check-circle">✓</span>' : '<span class="task-spinner"></span>';
+        var taskClass = status === "complete" ? "done" : "running";
+        var waitingTask = state.waiting_for ? '<div class="gmb-task-row waiting"><span class="task-hollow-circle">◌</span> Waiting for ' + escHtml(state.waiting_for) + '</div>' : "";
+        $("#gmb-live-tasks-list").html('<div class="gmb-task-row ' + taskClass + '">' + taskIndicator + ' ' + escHtml(activities) + '</div>' + waitingTask);
+        for (var i = 1; i <= 8; i++) {
+          var $item = $("#gmb-res-step-" + i);
+          var $pill = $item.find(".gmb-step-status-pill");
+          if (i < step || (status === "complete" && i === step)) {
+            $item.removeClass("active").addClass("completed");
+            $item.find(".gmb-step-active-ring").remove();
+            $pill.removeClass("pending in-progress").addClass("completed").text("Completed");
+          } else if (i === step && status !== "complete") {
+            $item.addClass("active").removeClass("completed");
+            if (!$item.find(".gmb-step-active-ring").length) $item.append('<div class="gmb-step-active-ring"></div>');
+            $pill.removeClass("pending completed").addClass("in-progress").text(stateLabels[status] || "In Progress");
+          } else {
+            $item.removeClass("active completed");
+            $pill.removeClass("in-progress completed").addClass("pending").text("Pending");
+          }
         }
+        if (state.provider) $("#gmb-analysis-activity").text(activities + " (" + state.provider + ")");
       }
 
-      updateStepUI(0);
-
-      if (stepTimer) clearInterval(stepTimer);
-      stepTimer = setInterval(function () {
-        stepIdx++;
-        if (stepIdx < researchSteps.length) {
-          updateStepUI(stepIdx);
-          if (stepIdx === researchSteps.length - 1) {
-            timelineCompleted = true;
-            checkReadyToAdvance();
-          }
-        } else {
-          timelineCompleted = true;
-          checkReadyToAdvance();
-        }
-      }, 900);
+      var progressToken = "gmb" + Date.now().toString(36) + Math.random().toString(36).slice(2);
+      function pollProgress() {
+        if (progressPollTimer) clearTimeout(progressPollTimer);
+        $.post(gmbMetaboxData.ajaxUrl, { action: "gmb_ai_research_progress", nonce: gmbMetaboxData.nonce, progress_token: progressToken })
+          .done(function (res) {
+            if (res && res.success) {
+              applyProgressState(res.data);
+              if (res.data.status !== "complete" && res.data.status !== "error") progressPollTimer = setTimeout(pollProgress, 1200);
+            }
+          })
+          .fail(function () { progressPollTimer = setTimeout(pollProgress, 1800); });
+      }
+      $("#gmb-live-tasks-list").html('<div class="gmb-task-row running"><span class="task-spinner"></span> Preparing the research pipeline...</div>');
+      pollProgress();
 
       // Extract content safely
       var postContent = "";
@@ -451,12 +664,21 @@
       } else if ($("#content").length) {
         postContent = $("#content").val();
       } else if (typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.select("core/editor")) {
-        postContent = wp.data.select("core/editor").getEditedPostAttribute("content") || "";
+        var editorStore = wp.data.select("core/editor");
+        if (editorStore && typeof editorStore.getEditedPostAttribute === "function") {
+          postContent = editorStore.getEditedPostAttribute("content") || "";
+        }
       }
 
-      var postId = $("#post_ID").val() || 0;
+      var postId = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.postId)
+        ? gmbMetaboxData.postId
+        : ($("#post_ID").val() || 0);
       var curTitle = $("#gmb_seo_title_input").val() || "";
       var curDesc = $("#gmb_seo_desc_input").val() || "";
+
+      var userInstructions = $("#gmb-ai-setup-instructions").length ? $("#gmb-ai-setup-instructions").val().trim() : "";
+      var tone = $("#gmb-ai-setup-tone").length ? $("#gmb-ai-setup-tone").val() : "auto";
+      var intent = $("#gmb-ai-setup-intent").length ? $("#gmb-ai-setup-intent").val() : "auto";
 
       $.ajax({
         url: gmbMetaboxData.ajaxUrl,
@@ -473,24 +695,34 @@
           meta_description: curDesc,
           mode: mode,
           country: countryVal,
-          language: language
+          language: language,
+          tone: tone,
+          intent: intent,
+          search_intent: intent,
+          user_instructions: userInstructions,
+          progress_token: progressToken
         },
         success: function (res) {
           if (!res.success || !res.data) {
             if (stepTimer) clearInterval(stepTimer);
-            alert("AI research failed: " + (res.data || "Unknown error"));
-            setAiModalStep(1);
+            if (progressPollTimer) clearTimeout(progressPollTimer);
+            applyProgressState({ step: 1, status: "error", activity: "Analysis failed", message: (res.data && res.data.message) || "The research pipeline could not continue.", progress: null, elapsed: 0 });
+            var failureMessage = (res.data && res.data.message) || (typeof res.data === "string" ? res.data : "Unknown error");
+            alert("AI research failed: " + failureMessage);
             return;
           }
 
           ajaxFinishedData = res.data;
           globalAjaxResultData = res.data;
-          checkReadyToAdvance();
+          if (progressPollTimer) clearTimeout(progressPollTimer);
+          applyProgressState({ step: 8, status: "complete", activity: "Analysis complete", message: "All research findings were validated and the report is ready.", progress: 100, elapsed: 0 });
+          populateAndShowStep3(ajaxFinishedData);
         },
         error: function (xhr, status, err) {
           if (stepTimer) clearInterval(stepTimer);
+          if (progressPollTimer) clearTimeout(progressPollTimer);
+          applyProgressState({ step: 1, status: "error", activity: "Analysis failed", message: err || "The research request failed.", progress: null, elapsed: 0 });
           alert("AJAX Error during research: " + (err || "Network error"));
-          setAiModalStep(1);
         }
       });
     });
@@ -512,8 +744,16 @@
 
     $(document).on("click", "#gmb-ai-post-modal-close, #gmb-ai-post-modal-cancel", function (e) {
       e.preventDefault();
-      $("#gmb-ai-post-seo-modal").css("display", "none").removeClass("active");
+      closeAiSeoModal();
     });
+
+    // Helper: Close AI SEO Modal safely
+    function closeAiSeoModal() {
+      $("#gmb-ai-post-seo-modal")
+        .attr("style", "display: none !important;")
+        .removeClass("active is-active")
+        .attr("aria-hidden", "true");
+    }
 
     // Apply Selected Recommendations Button Handler
     $(document).on("click", "#gmb-ai-post-apply-btn", function (e) {
@@ -539,96 +779,236 @@
       var appliedSchema = applySchema ? $("#gmb-ai-input-schema").val() : "";
       var appliedIntro = applyIntro ? ($("#gmb-ai-input-intro").val() || "").trim() : "";
 
+      // “Select all” can also check informational or generation-failed rows.
+      // Never turn those rows into empty writes that clear valid metadata.
+      applyFocus = applyFocus && !!focusKw;
+      applyTitle = applyTitle && !!appliedTitle;
+      applyDesc = applyDesc && !!appliedDesc;
+      applySlug = applySlug && !!appliedSlug && !$("#gmb-ai-input-slug").is(":disabled");
+      applySchema = applySchema && !!appliedSchema;
+      applyIntro = applyIntro && !!appliedIntro;
+      var applyToc = $('.gmb-ai-post-check[data-factor="table_of_contents"]:checked').length > 0;
+      if (!applyFocus && !applyTitle && !applyDesc && !applySlug && !applySchema && !applyIntro && !applyToc) {
+        alert("Select at least one actionable SEO recommendation.");
+        return;
+      }
+
+      // 1. Inject Focus Keyword
       if (focusKw) {
-        $("#gmb_seo_focus_keyword_hidden").val(focusKw);
-        if (typeof keywords !== "undefined") {
-          keywords = [focusKw];
-        }
-        if (typeof renderKeywordPills === "function") {
-          renderKeywordPills();
-        }
-      }
-      if (appliedTitle) {
-        $("#gmb_seo_title_input").val(appliedTitle).trigger("input").trigger("change");
-        $("#title").val(appliedTitle).trigger("change");
-        if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
-          wp.data.dispatch("core/editor").editPost({ title: appliedTitle });
-        }
-      }
-      if (appliedDesc) {
-        $("#gmb_seo_desc_input").val(appliedDesc).trigger("input").trigger("change");
-      }
-      if (appliedIntro) {
-        var formattedContent = (appliedIntro.trim().indexOf("<") === 0) ? appliedIntro : ('<p>' + appliedIntro + '</p>');
-        if (typeof tinymce !== "undefined" && tinymce.get("content") && !tinymce.get("content").isHidden()) {
-          var curBody = tinymce.get("content").getContent();
-          tinymce.get("content").setContent(formattedContent + (curBody ? '\n' + curBody : ''));
-        } else if ($("#content").length) {
-          var curText = $("#content").val();
-          $("#content").val(formattedContent + (curText ? '\n' + curText : '')).trigger("change");
-        } else if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
-          var curBlocks = wp.data.select("core/editor").getBlocks();
-          var newBlock = wp.blocks.createBlock("core/freeform", { content: formattedContent });
-          wp.data.dispatch("core/editor").resetBlocks([newBlock].concat(curBlocks));
+        try {
+          if (typeof window.gmbSetFocusKeywords === "function") {
+            window.gmbSetFocusKeywords(focusKw);
+          }
+          $("#gmb_seo_focus_keyword_hidden").val(focusKw).trigger("change");
+          $("#gmb_seo_focus_keyword_input").val(focusKw).trigger("change");
+          if (typeof keywords !== "undefined") {
+            keywords = [focusKw];
+          }
+          if (typeof renderKeywordPills === "function") {
+            renderKeywordPills();
+          }
+        } catch (eFocus) {
+          console.warn("Focus keyword injection error:", eFocus);
         }
       }
 
+      // 2. Inject SEO Title
+      if (appliedTitle) {
+        try {
+          $("#gmb_seo_title_input").val(appliedTitle).trigger("input").trigger("change");
+          $("#title").val(appliedTitle).trigger("change");
+          if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
+            wp.data.dispatch("core/editor").editPost({ title: appliedTitle });
+          }
+        } catch (eTitle) {
+          console.warn("Title injection error:", eTitle);
+        }
+      }
+
+      // 3. Inject Meta Description
+      if (appliedDesc) {
+        try {
+          $("#gmb_seo_desc_input").val(appliedDesc).trigger("input").trigger("change");
+        } catch (eDesc) {
+          console.warn("Description injection error:", eDesc);
+        }
+      }
+
+      // 4. Inject URL / Slug
+      if (appliedSlug) {
+        try {
+          $("#post_name").val(appliedSlug).trigger("change");
+          $("#editable-post-name").text(appliedSlug);
+          if (typeof wp !== "undefined" && wp.data && wp.data.dispatch && wp.data.dispatch("core/editor")) {
+            wp.data.dispatch("core/editor").editPost({ slug: appliedSlug });
+          }
+        } catch (eSlug) {
+          console.warn("Slug injection error:", eSlug);
+        }
+      }
+
+      // 5. Inject Schema Preset
+      if (appliedSchema) {
+        try {
+          if ($("#gmb_seo_schema_type").length) {
+            $("#gmb_seo_schema_type").val(appliedSchema).trigger("change");
+          }
+          if ($("#gmb_seo_active_schemas").length) {
+            $("#gmb_seo_active_schemas").val(appliedSchema).trigger("change");
+          }
+          // Keep the visible Schema tab in sync with the AI result. Passing
+          // false prevents opening the schema builder as a side effect.
+          if (typeof window.gmbUseSchemaTemplate === "function") {
+            window.gmbUseSchemaTemplate(appliedSchema, null, false);
+          }
+        } catch (eSchema) {
+          console.warn("Schema injection error:", eSchema);
+        }
+      }
+
+      // 6. Inject Article Content into Editor (Gutenberg / TinyMCE / Standard Textarea)
+      if (appliedIntro) {
+        try {
+          var optimizeExisting = $("#gmb-ai-setup-mode").val() === "optimize";
+          var formattedContent = (appliedIntro.trim().indexOf("<") === 0) ? appliedIntro : ('<p>' + appliedIntro + '</p>');
+          var contentInjected = false;
+
+          // A. Try Gutenberg Block Editor first
+          if (typeof wp !== "undefined" && wp.data && wp.data.select && wp.data.select("core/editor") && wp.data.dispatch && wp.data.dispatch("core/editor")) {
+            try {
+              var editorSelect = wp.data.select("core/editor");
+              var editorDispatch = wp.data.dispatch("core/editor");
+              var parsedBlocks = [];
+
+              if (wp.blocks && typeof wp.blocks.parse === "function") {
+                parsedBlocks = wp.blocks.parse(formattedContent);
+              } else if (wp.blocks && typeof wp.blocks.htmlToBlocks === "function") {
+                parsedBlocks = wp.blocks.htmlToBlocks(formattedContent);
+              } else if (wp.blocks && typeof wp.blocks.createBlock === "function") {
+                parsedBlocks = [wp.blocks.createBlock("core/freeform", { content: formattedContent })];
+              }
+
+              if (parsedBlocks && parsedBlocks.length > 0) {
+                var curBlocks = editorSelect.getBlocks ? (editorSelect.getBlocks() || []) : [];
+                if (optimizeExisting) {
+                  var firstParagraphIndex = curBlocks.findIndex(function (block) { return block && block.name === "core/paragraph"; });
+                  if (firstParagraphIndex >= 0) {
+                    curBlocks.splice.apply(curBlocks, [firstParagraphIndex, 1].concat(parsedBlocks));
+                    editorDispatch.resetBlocks(curBlocks);
+                  } else {
+                    editorDispatch.resetBlocks(parsedBlocks.concat(curBlocks));
+                  }
+                } else {
+                  editorDispatch.resetBlocks(parsedBlocks.concat(curBlocks));
+                }
+                contentInjected = true;
+              }
+            } catch (errGutenberg) {
+              console.warn("Gutenberg block injection error:", errGutenberg);
+            }
+          }
+
+          // B. Try TinyMCE Visual Editor
+          if (!contentInjected && typeof tinymce !== "undefined" && tinymce.get("content") && !tinymce.get("content").isHidden()) {
+            try {
+              var curBody = tinymce.get("content").getContent();
+              var updatedBody = optimizeExisting ? curBody.replace(/<p\b[^>]*>[\s\S]*?<\/p>/i, formattedContent) : formattedContent + (curBody ? '\n' + curBody : '');
+              tinymce.get("content").setContent(updatedBody);
+              contentInjected = true;
+            } catch (errTiny) {
+              console.warn("TinyMCE injection error:", errTiny);
+            }
+          }
+
+          // C. Try Textarea fallback
+          if ($("#content").length) {
+            try {
+              var curText = $("#content").val() || "";
+              var updatedText = optimizeExisting ? curText.replace(/<p\b[^>]*>[\s\S]*?<\/p>/i, formattedContent) : formattedContent + (curText ? '\n' + curText : '');
+              $("#content").val(updatedText).trigger("change");
+            } catch (errText) {
+              console.warn("Textarea content injection error:", errText);
+            }
+          }
+        } catch (eIntro) {
+          console.warn("Content intro injection error:", eIntro);
+        }
+      }
+
+      // 7. Save to DB if existing post or close popup immediately
       var postId = $("#post_ID").val() || 0;
       if (postId > 0) {
+        var quickSaveData = {
+          action: "gmb_quick_save_ai_seo_fields",
+          nonce: gmbMetaboxData.nonce,
+          post_id: postId
+        };
+        if (applyFocus) quickSaveData.focus_keyword = focusKw;
+        if (applyTitle) quickSaveData.meta_title = appliedTitle;
+        if (applyDesc) quickSaveData.meta_description = appliedDesc;
+        if (applySlug) quickSaveData.slug = appliedSlug;
+        if (applySchema) quickSaveData.schema_preset = appliedSchema;
+        if (applyToc) quickSaveData.table_of_contents = "1";
+        if (applyIntro) {
+          quickSaveData.content_intro = appliedIntro;
+          quickSaveData.content_mode = $("#gmb-ai-setup-mode").val() === "optimize" ? "replace_intro" : "prepend";
+        }
         $.ajax({
           url: gmbMetaboxData.ajaxUrl,
           type: "POST",
-          data: {
-            action: "gmb_quick_save_ai_seo_fields",
-            nonce: gmbMetaboxData.nonce,
-            post_id: postId,
-            focus_keyword: focusKw,
-            meta_title: appliedTitle,
-            meta_description: appliedDesc,
-            slug: appliedSlug,
-            schema_preset: appliedSchema,
-            table_of_contents: $('.gmb-ai-post-check[data-factor="table_of_contents"]:checked').length > 0 ? '1' : '0',
-            content_intro: appliedIntro
-          },
+          data: quickSaveData,
           success: function (res) {
-            var msg = (res && res.data && res.data.message) ? res.data.message : "Selected AI optimizations applied!";
-            alert(msg);
-            $("#gmb-ai-post-seo-modal").css("display", "none").removeClass("active");
-            if (res && res.data && typeof res.data.score !== "undefined") {
-              $("#gmb-ai-potential-score").text(res.data.score + " / 100");
+            if (!res || !res.success) {
+              var saveMessage = res && res.data && res.data.message ? res.data.message : (res && typeof res.data === "string" ? res.data : "Unknown server error");
+              alert("SEO changes could not be saved: " + saveMessage);
+              return;
+            }
+            closeAiSeoModal();
+            if (res.data && typeof res.data.score !== "undefined") {
+              var savedScore = parseInt(res.data.score, 10);
+              if (!isNaN(savedScore)) {
+                $("#gmb-metabox-score-val").text(savedScore);
+                $("#gmb-seo-score-val, #gmb-publish-score-val").text(savedScore + " / 100");
+                $("#gmb_seo_score_hidden").val(savedScore);
+              }
             }
             if (typeof window.gmbRunContentAnalysis === "function") {
               window.gmbRunContentAnalysis();
+            } else if (typeof recalculateScore === "function") {
+              recalculateScore();
             }
           },
-          error: function () {
-            alert("Failed to save selected AI optimizations to database.");
+          error: function (xhr, status, err) {
+            alert("SEO changes could not be saved: " + (err || "Network error"));
           }
         });
       } else {
-        $("#gmb-ai-post-seo-modal").css("display", "none").removeClass("active");
-        alert("Selected AI optimizations applied to metabox fields.");
+        closeAiSeoModal();
       }
     });
 
-    // ==========================================
-    // 1. Metabox Main Tab Switching
-    // ==========================================
+    window.gmbSwitchTab = function (targetTab, btnEl) {
+      if (!targetTab) return;
+      var $btn = btnEl ? $(btnEl) : $('.gmb-tab-btn[data-tab="' + targetTab + '"]');
+      var $container = $btn.length ? $btn.closest(".gmb-seo-meta-container") : $(".gmb-seo-meta-container");
+      if (!$container.length) $container = $(".gmb-seo-meta-container");
+
+      $container.find(".gmb-seo-tabs .gmb-tab-btn").removeClass("active is-active");
+      if ($btn.length) $btn.addClass("active is-active");
+      $('.gmb-tab-btn[data-tab="' + targetTab + '"]').addClass("active is-active");
+      $container.find(".gmb-seo-tabs .gmb-tab-btn").attr("aria-selected", "false");
+      $container.find('.gmb-seo-tabs .gmb-tab-btn[data-tab="' + targetTab + '"]').attr("aria-selected", "true");
+
+      $container.find(".gmb-tab-content").removeClass("active").hide();
+      $container.find(".gmb-tab-content").attr("aria-hidden", "true");
+      $("#" + targetTab).addClass("active").fadeIn(150);
+      $("#" + targetTab).attr("aria-hidden", "false");
+    };
+
     $(document).on("click", ".gmb-seo-tabs .gmb-tab-btn", function (e) {
       e.preventDefault();
       var targetTab = $(this).attr("data-tab") || $(this).attr("data-target");
-      if (!targetTab) return;
-
-      var $container = $(this).closest(".gmb-seo-meta-container");
-      $container
-        .find(".gmb-seo-tabs .gmb-tab-btn")
-        .removeClass("active is-active");
-      $(this).addClass("active is-active");
-
-      $container.find(".gmb-tab-content").removeClass("active").hide();
-      $("#" + targetTab)
-        .addClass("active")
-        .fadeIn(150);
+      window.gmbSwitchTab(targetTab, this);
     });
 
     // ==========================================
@@ -643,11 +1023,15 @@
           $(this).attr("data-social-tab") || $(this).attr("data-social-target");
         if (!targetPane) return;
 
-        $(".gmb-social-tab-btn, .gmb-social-subtab-btn").removeClass("active");
-        $(this).addClass("active");
+      $(".gmb-social-tab-btn, .gmb-social-subtab-btn").removeClass("active");
+      $(this).addClass("active");
+      $(".gmb-social-tab-btn, .gmb-social-subtab-btn").attr("aria-selected", "false");
+      $(this).attr("aria-selected", "true");
 
-        $(".gmb-social-pane").hide();
-        $("#" + targetPane).fadeIn(150);
+      $(".gmb-social-pane").hide();
+      $(".gmb-social-pane").attr("aria-hidden", "true");
+      $("#" + targetPane).fadeIn(150);
+      $("#" + targetPane).attr("aria-hidden", "false");
       },
     );
 
@@ -657,28 +1041,27 @@
     $(document).on("click", ".gmb-device-btn", function (e) {
       e.preventDefault();
       var device = $(this).attr("data-device") || "desktop";
+
       $(".gmb-device-btn").removeClass("active");
       $(this).addClass("active");
 
-      var $preview = $(".gmb-preview-google");
-      if (device === "mobile") {
-        $preview
-          .removeClass("gmb-preview-device--desktop")
-          .addClass("gmb-preview-device--mobile");
-      } else {
-        $preview
-          .removeClass("gmb-preview-device--mobile")
-          .addClass("gmb-preview-device--desktop");
-      }
+      var $googlePreview = $(this)
+        .closest(".gmb-preview-box")
+        .find(".gmb-preview-google");
+      $googlePreview
+        .removeClass("gmb-preview-device--desktop gmb-preview-device--mobile")
+        .addClass("gmb-preview-device--" + device);
     });
 
     // Advanced Tab: Redirect Toggle Handler
     $(document).on("change", "#gmb_enable_redirect_toggle", function () {
+      var $box = $("#gmb-redirect-details-box");
       if ($(this).is(":checked")) {
-        $("#gmb-redirect-details-box").slideDown(150).css("display", "flex");
+        $box.slideDown(150);
       } else {
-        $("#gmb-redirect-details-box").slideUp(150);
-        $("#gmb_seo_redirect_url").val("");
+        $box.slideUp(150, function () {
+          $(this).hide();
+        });
       }
     });
 
@@ -706,21 +1089,86 @@
       }
     });
 
-    $(document).on("click", "#gmb-edit-snippet-btn", function (e) {
-      e.preventDefault();
-      $("#gmb-snippet-modal").fadeIn(200).css("display", "flex");
-      updateModalPreview();
+    // Apply persisted enabled/disabled state on first render.
+    $(".gmb-adv-robot-toggle").each(function () {
+      $(this).trigger("change");
     });
 
-    $(document).on(
-      "click",
-      "#gmb-modal-close-btn, #gmb-modal-save-btn",
-      function (e) {
+    window.gmbOpenSnippetModal = function (e) {
+      if (e && e.preventDefault) e.preventDefault();
+      var $modal = $("#gmb-snippet-modal");
+      if ($modal.length) {
+        $modal.appendTo("body");
+        $modal.addClass("active is-open").css("display", "flex").show();
+      }
+      if (typeof updateModalPreview === "function") updateModalPreview();
+    };
+
+    window.gmbCloseSnippetModal = function (e) {
+      if (e && e.preventDefault) e.preventDefault();
+      $("#gmb-snippet-modal").removeClass("active is-open").hide();
+      if (typeof syncSnippetFromInputs === "function") syncSnippetFromInputs();
+    };
+
+    $(document).on("click", "#gmb-edit-snippet-btn, .gmb-edit-snippet-btn", window.gmbOpenSnippetModal);
+
+    $(document).on("click", "#gmb-modal-close-btn", window.gmbCloseSnippetModal);
+    $(document).on("keydown", "#gmb-modal-close-btn, #gmb-schema-modal-close-btn, #gmb-schema-builder-close-btn", function (e) {
+      if (e.key === "Enter" || e.key === " " || e.keyCode === 13 || e.keyCode === 32) {
         e.preventDefault();
-        $("#gmb-snippet-modal").fadeOut(150);
-        syncSnippetFromInputs();
-      },
-    );
+        $(this).trigger("click");
+      }
+    });
+
+    $(document).on("click", "#gmb-modal-save-btn", function (e) {
+      e.preventDefault();
+      var $btn = $(this);
+      var original = $btn.text();
+      var postId = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.postId) || $("#post_ID").val() || 0;
+      if (!postId || typeof gmbMetaboxData === "undefined") {
+        window.gmbCloseSnippetModal(e);
+        return;
+      }
+      var data = {
+        action: "gmb_quick_save_ai_seo_fields",
+        nonce: gmbMetaboxData.nonce,
+        post_id: postId,
+        meta_title: $("#gmb_seo_title_input").val() || "",
+        meta_description: $("#gmb_seo_desc_input").val() || "",
+        canonical: $("#gmb_seo_canonical_input").val() || "",
+        focus_keyword: $("#gmb_seo_focus_keyword_hidden").val() || "",
+        is_pillar: $("#gmb_seo_is_pillar_input").is(":checked") ? "1" : "0",
+        facebook_title: $("#gmb_seo_fb_title").val() || "",
+        facebook_desc: $("#gmb_seo_fb_desc").val() || "",
+        facebook_image: $("#gmb_seo_fb_image").val() || "",
+        twitter_title: $("#gmb_seo_tw_title").val() || "",
+        twitter_desc: $("#gmb_seo_tw_desc").val() || "",
+        twitter_image: $("#gmb_seo_tw_image").val() || "",
+        twitter_card_type: $("#gmb_seo_tw_card_type").val() || "summary_large_image"
+      };
+      $btn.prop("disabled", true).text("Saving...");
+      $.ajax({ url: gmbMetaboxData.ajaxUrl, type: "POST", data: data })
+        .done(function (res) {
+          if (!res || !res.success) {
+            alert("Snippet changes could not be saved: " + ((res && res.data && res.data.message) || "Save failed"));
+            return;
+          }
+          $("#gmb_seo_title_input").val(data.meta_title);
+          $("#gmb_seo_desc_input").val(data.meta_description);
+          $("#gmb_seo_fb_title_metabox").val(data.facebook_title).trigger("input");
+          $("#gmb_seo_fb_desc_metabox").val(data.facebook_desc).trigger("input");
+          $("#gmb_seo_fb_image_metabox").val(data.facebook_image).trigger("change");
+          $("#gmb_seo_tw_title_metabox").val(data.twitter_title).trigger("input");
+          $("#gmb_seo_tw_desc_metabox").val(data.twitter_desc).trigger("input");
+          $("#gmb_seo_tw_image_metabox").val(data.twitter_image).trigger("change");
+          $("#gmb_seo_tw_card_type").val(data.twitter_card_type).trigger("change");
+          $("#gmb-audit-freshness").removeClass("is-stale").attr("data-analysis-hash", "saved").text("Saved audit");
+          updateModalPreview();
+          window.gmbCloseSnippetModal(e);
+        })
+        .fail(function () { alert("Snippet changes could not be saved. Please try again."); })
+        .always(function () { $btn.prop("disabled", false).text(original); });
+    });
 
     // Modal Tab Switching (General vs Social)
     $(document).on("click", ".gmb-modal-tabs .gmb-modal-tab-btn", function (e) {
@@ -729,11 +1177,12 @@
         $(this).attr("data-modal-tab") || $(this).attr("data-target");
       if (!targetModalTab) return;
 
-      $(".gmb-modal-tab-btn").removeClass("active");
+      $(".gmb-modal-tabs .gmb-modal-tab-btn").removeClass("active");
       $(this).addClass("active");
 
-      $(".gmb-modal-tab-content").hide();
+      $(".gmb-modal-tab-content").hide().attr("aria-hidden", "true");
       $("#" + targetModalTab).show();
+      $("#" + targetModalTab).attr("aria-hidden", "false");
     });
 
     // ==========================================
@@ -935,7 +1384,8 @@
 
     updateSocialCounters();
 
-    $(document).on("input", "#gmb_seo_fb_title_metabox", function () {
+    $(document).on("input", "#gmb_seo_fb_title, #gmb_seo_fb_title_metabox", function () {
+      $("#gmb_seo_fb_title, #gmb_seo_fb_title_metabox").not(this).val($(this).val() || "");
       var val =
         $(this).val() ||
         $("#gmb_seo_title_input").val() ||
@@ -945,7 +1395,8 @@
       updateSocialCounters();
     });
 
-    $(document).on("input", "#gmb_seo_fb_desc_metabox", function () {
+    $(document).on("input", "#gmb_seo_fb_desc, #gmb_seo_fb_desc_metabox", function () {
+      $("#gmb_seo_fb_desc, #gmb_seo_fb_desc_metabox").not(this).val($(this).val() || "");
       var val =
         $(this).val() ||
         $("#gmb_seo_desc_input").val() ||
@@ -954,57 +1405,18 @@
       updateSocialCounters();
     });
 
-    $(document).on("input change", "#gmb_seo_fb_image_metabox", function () {
-      var url = $(this).val();
-      var $clearBtn = $(
-        '.gmb-social-clear-img-btn[data-target="gmb_seo_fb_image_metabox"]',
-      );
-      if (url && url.trim().length > 0) {
-        $("#gmb-fb-preview-img").attr("src", url).show();
-        $("#gmb-fb-preview-placeholder").hide();
-        $clearBtn.show();
-      } else {
-        $("#gmb-fb-preview-img").hide();
-        $("#gmb-fb-preview-placeholder").css("display", "flex");
-        $clearBtn.hide();
-      }
-    });
-
-    $(document).on("input", "#gmb_seo_tw_title_metabox", function () {
-      var val =
-        $(this).val() ||
-        $("#gmb_seo_fb_title_metabox").val() ||
-        $("#gmb_seo_title_input").val() ||
-        $("#title").val() ||
-        "Page Title";
+    $(document).on("input", "#gmb_seo_tw_title, #gmb_seo_tw_title_metabox", function () {
+      $("#gmb_seo_tw_title, #gmb_seo_tw_title_metabox").not(this).val($(this).val() || "");
+      var val = $(this).val() || $("#gmb_seo_title_input").val() || $("#title").val() || "Page Title";
       $("#gmb-tw-preview-title").text(val);
       updateSocialCounters();
     });
 
-    $(document).on("input", "#gmb_seo_tw_desc_metabox", function () {
-      var val =
-        $(this).val() ||
-        $("#gmb_seo_fb_desc_metabox").val() ||
-        $("#gmb_seo_desc_input").val() ||
-        "Twitter summary description preview...";
+    $(document).on("input", "#gmb_seo_tw_desc, #gmb_seo_tw_desc_metabox", function () {
+      $("#gmb_seo_tw_desc, #gmb_seo_tw_desc_metabox").not(this).val($(this).val() || "");
+      var val = $(this).val() || $("#gmb_seo_desc_input").val() || "Twitter summary description preview...";
       $("#gmb-tw-preview-desc").text(val);
       updateSocialCounters();
-    });
-
-    $(document).on("input change", "#gmb_seo_tw_image_metabox", function () {
-      var url = $(this).val();
-      var $clearBtn = $(
-        '.gmb-social-clear-img-btn[data-target="gmb_seo_tw_image_metabox"]',
-      );
-      if (url && url.trim().length > 0) {
-        $("#gmb-tw-preview-img").attr("src", url).show();
-        $("#gmb-tw-preview-placeholder").hide();
-        $clearBtn.show();
-      } else {
-        $("#gmb-tw-preview-img").hide();
-        $("#gmb-tw-preview-placeholder").css("display", "flex");
-        $clearBtn.hide();
-      }
     });
 
     // Twitter Card Type Toggle in Preview Mockup
@@ -1019,25 +1431,6 @@
         $card
           .removeClass("gmb-tw-card--summary")
           .addClass("gmb-tw-card--large");
-      }
-    });
-
-    // Clear Social Image Button
-    $(document).on("click", ".gmb-social-clear-img-btn", function (e) {
-      e.preventDefault();
-      var targetInputId = $(this).attr("data-target");
-      $("#" + targetInputId)
-        .val("")
-        .trigger("input")
-        .trigger("change");
-      $(this).hide();
-    });
-
-    // Click on Mockup Image Box triggers file picker
-    $(document).on("click", ".gmb-media-upload-trigger", function () {
-      var targetInputId = $(this).attr("data-target");
-      if (targetInputId) {
-        $('.gmb-media-upload-btn[data-target="' + targetInputId + '"]').click();
       }
     });
 
@@ -1088,6 +1481,9 @@
     // 6. Focus Keyword Pills & Management
     // ==========================================
     var keywords = [];
+    var keywordSaveTimer = null;
+    var keywordSaveRequest = null;
+    var confirmedKeywords = [];
     var rawKeywordVal = $("#gmb_seo_focus_keyword_hidden").val();
     if (rawKeywordVal) {
       keywords = rawKeywordVal
@@ -1097,88 +1493,234 @@
         })
         .filter(Boolean);
     }
+    confirmedKeywords = keywords.slice();
 
     function renderKeywordPills() {
       var $wrapper = $("#gmb-keyword-container-wrapper");
       $wrapper.find(".gmb-keyword-pill").remove();
 
+      var $input = $("#gmb_seo_focus_keyword_input");
+
       keywords.forEach(function (kw, index) {
         var $pill = $(
           '<span class="gmb-keyword-pill">' +
-            kw +
-            ' <span class="gmb-keyword-pill-remove" data-index="' +
+            escHtml(kw) +
+            ' <button type="button" class="gmb-keyword-pill-remove" data-index="' +
             index +
-            '">&times;</span></span>',
+            '" title="Remove keyword" aria-label="Remove keyword">&times;</button></span>',
         );
-        $wrapper.prepend($pill);
+        if ($input.length) {
+          $pill.insertBefore($input);
+        } else {
+          $wrapper.append($pill);
+        }
       });
 
-      $("#gmb_seo_focus_keyword_hidden").val(keywords.join(", "));
+      var kwString = keywords.join(", ");
+      $("#gmb_seo_focus_keyword_hidden").val(kwString).trigger("change");
 
+      var $notice = $("#gmb-seo-no-keyword-notice");
       if (keywords.length > 0) {
-        $("#gmb-seo-no-keyword-notice").hide();
+        $notice.addClass("is-hidden").hide();
       } else {
-        $("#gmb-seo-no-keyword-notice").show();
+        $notice.removeClass("is-hidden").show();
       }
 
-      recalculateScore();
+      // A temporary Gutenberg/editor API failure must not prevent the pill
+      // event handlers below from being registered.
+      try {
+        recalculateScore();
+      } catch (error) {
+        console.error("GMB Ranker: score refresh failed during keyword render", error);
+      }
+    }
+
+    function persistKeywordState() {
+      var postId = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.postId) || $("#post_ID").val() || 0;
+      if (!postId || typeof gmbMetaboxData === "undefined" || !gmbMetaboxData.ajaxUrl) return;
+      if (keywordSaveTimer) clearTimeout(keywordSaveTimer);
+      keywordSaveTimer = setTimeout(function () {
+        if (keywordSaveRequest && keywordSaveRequest.readyState !== 4) {
+          keywordSaveRequest.abort();
+        }
+        var requestedKeywords = keywords.slice();
+        keywordSaveRequest = $.ajax({
+          url: gmbMetaboxData.ajaxUrl,
+          type: "POST",
+          data: {
+            action: "gmb_quick_save_ai_seo_fields",
+            nonce: gmbMetaboxData.nonce,
+            post_id: postId,
+            focus_keyword: requestedKeywords.join(", ")
+          }
+        }).done(function (res) {
+          if (res && res.success) {
+            confirmedKeywords = requestedKeywords.slice();
+            if (res.data && typeof res.data.score !== "undefined") {
+              $("#gmb-metabox-score-val").text(res.data.score);
+              $("#gmb-publish-score-val").text(res.data.score + " / 100");
+              $("#gmb_seo_score_hidden").val(res.data.score);
+            }
+            $("#gmb-audit-freshness").removeClass("is-stale").attr("data-analysis-hash", "saved").text("Saved audit");
+          } else {
+            keywords = confirmedKeywords.slice();
+            renderKeywordPills();
+            alert("Focus Keyword could not be saved: " + ((res && res.data && res.data.message) || "Save failed"));
+          }
+        }).fail(function (xhr, status) {
+          if (status === "abort") return;
+          if (requestedKeywords.join(", ") !== confirmedKeywords.join(", ")) {
+            keywords = confirmedKeywords.slice();
+            renderKeywordPills();
+          }
+          $("#gmb-audit-freshness").addClass("is-stale").text("Keyword not saved — please try again");
+          alert("Focus Keyword could not be saved. Please try again.");
+        });
+      }, 350);
     }
 
     window.gmbSetFocusKeywords = function (kwString) {
-      if (!kwString) return;
-      var cleanKw = kwString.split(",")[0].trim();
-      if (cleanKw) {
-        keywords = [cleanKw];
+      if (!kwString) {
+        keywords = [];
+      } else {
+        keywords = kwString
+          .split(",")
+          .map(function (k) {
+            return k.trim();
+          })
+          .filter(Boolean);
       }
       renderKeywordPills();
     };
 
     renderKeywordPills();
 
-    $(document).on("keydown", "#gmb_seo_focus_keyword_input", function (e) {
-      if (e.key === "Enter" || e.key === ",") {
-        e.preventDefault();
-        var val = $(this).val().trim();
-        if (val) {
-          keywords = [val];
-          $(this).val("");
-          renderKeywordPills();
+    function addKeywordFromInput($input) {
+      var rawVal = $input.val() || "";
+      if (!rawVal.trim()) return;
+
+      var parts = rawVal.split(",");
+      var added = false;
+
+      parts.forEach(function (part) {
+        var clean = part.replace(/\s+/g, " ").trim();
+        if (clean.length > 200) {
+          alert("Focus Keyword must be 200 characters or fewer.");
+          return;
         }
+        var duplicate = keywords.some(function (existing) {
+          return existing.toLowerCase() === clean.toLowerCase();
+        });
+        if (clean && !duplicate) {
+          keywords.push(clean);
+          added = true;
+        }
+      });
+
+      $input.val("");
+      renderKeywordPills();
+      if (added) persistKeywordState();
+    }
+
+    $(document).on("keydown", "#gmb_seo_focus_keyword_input", function (e) {
+      var val = $(this).val();
+      if (e.key === "Enter" || e.key === "," || e.keyCode === 13 || e.keyCode === 188) {
+        e.preventDefault();
+        addKeywordFromInput($(this));
+      } else if ((e.key === "Backspace" || e.keyCode === 8) && (!val || val.length === 0) && keywords.length > 0) {
+        e.preventDefault();
+        keywords.pop();
+        renderKeywordPills();
+        persistKeywordState();
       }
     });
 
-    $(document).on("click", ".gmb-keyword-pill-remove", function () {
-      var index = $(this).attr("data-index");
-      keywords.splice(index, 1);
-      renderKeywordPills();
+    $(document).on("blur change", "#gmb_seo_focus_keyword_input", function () {
+      addKeywordFromInput($(this));
+    });
+
+    $(document).on("click", ".gmb-keyword-pill-remove", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var index = parseInt($(this).attr("data-index"), 10);
+      if (!isNaN(index) && index >= 0 && index < keywords.length) {
+        keywords.splice(index, 1);
+        renderKeywordPills();
+        persistKeywordState();
+      }
+      return false;
     });
 
     $(document).on("click", ".gmb-focus-keyword-field-wrapper", function (e) {
       if (
         !$(e.target).closest(
-          ".gmb-keyword-pill-remove, #gmb-metabox-score-badge",
+          ".gmb-keyword-pill, .gmb-keyword-pill-remove, #gmb-metabox-score-badge",
         ).length
       ) {
         $("#gmb_seo_focus_keyword_input").focus();
       }
     });
 
+    $(document).on("change", "#gmb_seo_is_pillar_input", function () {
+      var $checkbox = $(this);
+      var postId = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.postId) || $("#post_ID").val() || 0;
+      if (!postId || typeof gmbMetaboxData === "undefined") return;
+      var checked = $checkbox.is(":checked");
+      $checkbox.prop("disabled", true);
+      $.ajax({
+        url: gmbMetaboxData.ajaxUrl,
+        type: "POST",
+        data: {
+          action: "gmb_quick_save_ai_seo_fields",
+          nonce: gmbMetaboxData.nonce,
+          post_id: postId,
+          is_pillar: checked ? "1" : "0"
+        }
+      }).done(function (res) {
+        if (res && res.success && res.data && typeof res.data.score !== "undefined") {
+          $("#gmb-metabox-score-val").text(res.data.score);
+          $("#gmb-publish-score-val").text(res.data.score + " / 100");
+          $("#gmb_seo_score_hidden").val(res.data.score);
+          $("#gmb-audit-freshness").removeClass("is-stale").attr("data-analysis-hash", "saved").text("Saved audit");
+        }
+      }).fail(function () {
+        $checkbox.prop("checked", !checked);
+        alert("Pillar Content could not be saved. Please try again or click Update.");
+      }).always(function () {
+        $checkbox.prop("disabled", false);
+      });
+    });
+
     // ==========================================
-    // 7. Accordion Toggle (Silky-Smooth Slide)
+    // 7. Accordion Toggle (Silky-Smooth Fail-Safe Slide)
     // ==========================================
     $(document).on("click", ".gmb-accordion-header", function (e) {
       e.preventDefault();
-      var $section = $(this).closest(".gmb-accordion-section");
-      var $content = $section.find(".gmb-accordion-content");
+      var $header = $(this);
+      var $section = $header.closest(".gmb-accordion-section");
+      var $content = $section.children(".gmb-accordion-content");
 
-      if ($section.hasClass("collapsed")) {
+      var isCurrentlyCollapsed = $section.hasClass("collapsed") || !$content.is(":visible");
+
+      if (isCurrentlyCollapsed) {
         $section.removeClass("collapsed");
-        $content.hide().stop(true, true).slideDown(220);
+        $header.attr("aria-expanded", "true");
+        $content.stop(true, true).slideDown(220, function () {
+          $(this).css("display", "block");
+        });
       } else {
+        $section.addClass("collapsed");
+        $header.attr("aria-expanded", "false");
         $content.stop(true, true).slideUp(220, function () {
-          $section.addClass("collapsed");
           $(this).css("display", "none");
         });
+      }
+    });
+
+    $(document).on("keydown", ".gmb-accordion-header", function (e) {
+      if (e.key === "Enter" || e.key === " " || e.keyCode === 13 || e.keyCode === 32) {
+        e.preventDefault();
+        $(this).trigger("click");
       }
     });
 
@@ -1187,6 +1729,7 @@
     // ==========================================
     function recalculateScore() {
       var primaryKw = keywords.length > 0 ? keywords[0].toLowerCase() : "";
+      var metaboxConfig = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData) ? gmbMetaboxData : {};
       var title = ($("#gmb_seo_title_input").val() || "").trim();
       if (!title) {
         title = (
@@ -1196,7 +1739,6 @@
         ).trim();
       }
       var desc = ($("#gmb_seo_desc_input").val() || "").trim();
-      var primaryKw = keywords.length > 0 ? keywords[0].toLowerCase() : "";
       var titleLower = title.toLowerCase();
       var descLower = desc.toLowerCase();
 
@@ -1208,10 +1750,13 @@
         wp.data.select &&
         wp.data.select("core/editor")
       ) {
-        content =
-          wp.data.select("core/editor").getEditedPostAttribute("content") ||
-          wp.data.select("core/editor").getEditedPostContent() ||
-          "";
+        var activeEditorStore = wp.data.select("core/editor");
+        if (activeEditorStore && typeof activeEditorStore.getEditedPostAttribute === "function") {
+          content = activeEditorStore.getEditedPostAttribute("content") || "";
+        }
+        if (!content && activeEditorStore && typeof activeEditorStore.getEditedPostContent === "function") {
+          content = activeEditorStore.getEditedPostContent() || "";
+        }
       }
       if (
         !content &&
@@ -1233,11 +1778,16 @@
       var wordCount = textOnly
         ? textOnly.split(/\s+/).filter(Boolean).length
         : 0;
-      var permalink = (
-        $("#sample-permalink").text() ||
-        $("#editable-post-name").text() ||
-        ""
-      ).toLowerCase();
+      var savedScore = parseInt($("#gmb_seo_score_hidden").val(), 10) || 0;
+      // WordPress changes the permalink markup between classic, block, and
+      // custom post editors. Prefer the slug field and fall back through all
+      // known permalink representations instead of trusting one empty node.
+      var permalink = "";
+      $("#post_name, #editable-post-name, #sample-permalink, #sample-permalink a, .edit-slug-box code").each(function () {
+        var candidate = $(this).val ? $(this).val() : "";
+        candidate = candidate || $(this).attr("href") || $(this).text() || "";
+        if (!permalink && String(candidate).trim()) permalink = String(candidate).trim().toLowerCase();
+      });
 
       // ==========================================
       // 1. Basic SEO (6 Tests)
@@ -1255,9 +1805,9 @@
           tip: "Focus keyword is present in the SEO Title.",
         });
       } else {
-        basicFails++;
+        if (primaryKw) basicFails++;
         basicItems.push({
-          status: "fail",
+          status: primaryKw ? "fail" : "warn",
           text: primaryKw
             ? "Focus Keyword not found in the SEO Title."
             : "Add a Focus Keyword to your post.",
@@ -1274,19 +1824,23 @@
           tip: "Focus keyword is present in the meta description.",
         });
       } else {
-        basicFails++;
+        if (primaryKw) basicFails++;
         basicItems.push({
-          status: "fail",
-          text: "Focus Keyword not found in SEO Meta Description.",
+          status: primaryKw ? "fail" : "warn",
+          text: primaryKw ? "Focus Keyword not found in SEO Meta Description." : "Add a Focus Keyword to evaluate the meta description.",
           tip: "Include your focus keyword inside the meta description for better CTR.",
         });
       }
 
-      // 3. Focus Keyword in URL
+      // 3. Focus Keyword in URL. Compare against the slug, not the full
+      // display URL, and allow significant phrase terms in natural slugs.
+      var permalinkSlug = permalink
+        .replace(/^https?:\/\/[^/]+/i, "")
+        .replace(/[^a-z0-9]+/g, " ");
       if (
         primaryKw &&
-        permalink &&
-        permalink.indexOf(primaryKw.replace(/\s+/g, "-")) !== -1
+        permalinkSlug &&
+        checkKeywordInText(permalinkSlug, primaryKw)
       ) {
         basicPasses++;
         basicItems.push({
@@ -1294,7 +1848,7 @@
           text: "Focus Keyword used in the URL.",
           tip: "Focus keyword is included in the permalink slug.",
         });
-      } else if (primaryKw && permalink) {
+      } else if (primaryKw && permalinkSlug) {
         basicFails++;
         basicItems.push({
           status: "fail",
@@ -1338,10 +1892,10 @@
           tip: "Focus keyword appears in the first 10% of content.",
         });
       } else {
-        basicFails++;
+        if (primaryKw) basicFails++;
         basicItems.push({
-          status: "fail",
-          text: "Use Focus Keyword at the beginning of your content.",
+          status: primaryKw ? "fail" : "warn",
+          text: primaryKw ? "Use Focus Keyword at the beginning of your content." : "Assign a Focus Keyword to check the content opening.",
           tip: "Include your focus keyword within the first paragraph or first 100 words.",
         });
       }
@@ -1355,10 +1909,10 @@
           tip: "Focus keyword is present in the main content.",
         });
       } else {
-        basicFails++;
+        if (primaryKw) basicFails++;
         basicItems.push({
-          status: "fail",
-          text: "Use Focus Keyword in the content.",
+          status: primaryKw ? "fail" : "warn",
+          text: primaryKw ? "Use Focus Keyword in the content." : "Assign a Focus Keyword to check content usage.",
           tip: "Mention your focus keyword naturally throughout the content.",
         });
       }
@@ -1400,7 +1954,9 @@
         var iconHtml =
           item.status === "pass"
             ? '<span class="gmb-audit-icon pass">&#10003;</span>'
-            : '<span class="gmb-audit-icon fail">&#10005;</span>';
+            : item.status === "warn"
+              ? '<span class="gmb-audit-icon warn">&#33;</span>'
+              : '<span class="gmb-audit-icon fail">&#10005;</span>';
         var tipHtml = item.tip
           ? '<span class="gmb-help-tip" data-gmb-tooltip="' +
             item.tip +
@@ -1419,12 +1975,14 @@
 
       $("#gmb-basic-count")
         .text(
-          basicFails === 0
-            ? "All Good"
+          !primaryKw && basicFails === 0
+            ? "Setup needed"
+            : basicFails === 0
+              ? "All Good"
             : basicFails + " " + (basicFails === 1 ? "Error" : "Errors"),
         )
-        .removeClass("error success")
-        .addClass(basicFails === 0 ? "success" : "error");
+        .removeClass("error success warning")
+        .addClass(!primaryKw && basicFails === 0 ? "warning" : (basicFails === 0 ? "success" : "error"));
 
       // ==========================================
       // 2. Additional SEO (8 Tests)
@@ -1452,10 +2010,10 @@
           tip: "Focus keyword used in subheadings.",
         });
       } else {
-        addFails++;
+        if (primaryKw) addFails++;
         addItems.push({
-          status: "fail",
-          text: "Use Focus Keyword in subheading(s) like H2, H3, H4, etc..",
+          status: primaryKw ? "fail" : "warn",
+          text: primaryKw ? "Use Focus Keyword in subheading(s) like H2, H3, H4, etc.." : "Assign a Focus Keyword to check subheadings.",
           tip: "Add your focus keyword inside H2 or H3 section headings.",
         });
       }
@@ -1490,16 +2048,16 @@
           tip: "GMB Ranker Image SEO automatically injects keyword-rich alt tags on frontend render.",
         });
       } else if (totalImages === 0) {
-        addFails++;
+        if (primaryKw) addFails++;
         addItems.push({
-          status: "fail",
-          text: "Add an image with your Focus Keyword as alt text.",
+          status: primaryKw ? "fail" : "warn",
+          text: primaryKw ? "Add an image with your Focus Keyword as alt text." : "Assign a Focus Keyword to check image alt text.",
           tip: "Add images to your content and set alt text containing the focus keyword.",
         });
       } else {
-        addFails++;
+        if (primaryKw) addFails++;
         addItems.push({
-          status: "fail",
+          status: primaryKw ? "fail" : "warn",
           text: "Add an image with your Focus Keyword as alt text.",
           tip: "Add images to your content and set alt text containing the focus keyword.",
         });
@@ -1525,19 +2083,18 @@
           tip: "Keyword density is within the ideal range of 1-2%.",
         });
       } else {
-        addFails++;
+        if (primaryKw) addFails++;
         addItems.push({
-          status: "fail",
-          text:
-            "Keyword Density is " +
-            density +
-            "%. Aim for around 1% Keyword Density.",
+          status: primaryKw ? "fail" : "warn",
+          text: primaryKw
+            ? "Keyword Density is " + density + "%. Aim for around 1% Keyword Density."
+            : "Assign a Focus Keyword to measure keyword density.",
           tip: "Keep keyword density around 1% to avoid keyword stuffing.",
         });
       }
 
       // 4. URL Length (< 75 characters)
-      var urlLength = permalink ? permalink.length : title.length;
+      var urlLength = permalinkSlug ? permalinkSlug.trim().length : title.length;
       if (urlLength > 0 && urlLength <= 75) {
         addPasses++;
         addItems.push({
@@ -1736,6 +2293,8 @@
         var iconHtml =
           item.status === "pass"
             ? '<span class="gmb-audit-icon pass">&#10003;</span>'
+            : item.status === "warn"
+              ? '<span class="gmb-audit-icon warn">&#33;</span>'
             : '<span class="gmb-audit-icon fail">&#10005;</span>';
         var tipHtml = item.tip
           ? '<span class="gmb-help-tip" data-gmb-tooltip="' +
@@ -1759,7 +2318,7 @@
             ? "All Good"
             : addFails + " " + (addFails === 1 ? "Error" : "Errors"),
         )
-        .removeClass("error success")
+        .removeClass("error success warning")
         .addClass(addFails === 0 ? "success" : "error");
 
       // ==========================================
@@ -1789,10 +2348,10 @@
           tip: "Keyword is positioned near the front of the title.",
         });
       } else {
-        titleFails++;
+        if (primaryKw) titleFails++;
         titleItems.push({
-          status: "fail",
-          text: "Focus Keyword used at the beginning of SEO title.",
+          status: primaryKw ? "fail" : "warn",
+          text: primaryKw ? "Focus Keyword used at the beginning of SEO title." : "Assign a Focus Keyword to check title placement.",
           tip: "Place your focus keyword within the first few words of the title.",
         });
       }
@@ -1944,6 +2503,8 @@
         var iconHtml =
           item.status === "pass"
             ? '<span class="gmb-audit-icon pass">&#10003;</span>'
+            : item.status === "warn"
+              ? '<span class="gmb-audit-icon warn">&#33;</span>'
             : '<span class="gmb-audit-icon fail">&#10005;</span>';
         var tipHtml = item.tip
           ? '<span class="gmb-help-tip" data-gmb-tooltip="' +
@@ -2232,32 +2793,80 @@
 
       // ==========================================
       // 5. Calculate Overall Score (0 - 100)
+      // Live editor preview only. The server-side analysis service remains
+      // authoritative for saved scores and post-list values.
       // ==========================================
-      var totalPossible =
-        basicItems.length +
-        addItems.length +
-        titleItems.length +
-        contentItems.length;
-      var totalAchieved = basicPasses + addPasses + titlePasses + contentPasses;
-      if (!primaryKw) {
-        totalAchieved = Math.min(totalAchieved, 5);
+      var weightedScore = 0;
+
+      // 1. Title Length (10 pts)
+      if (metaTitleLen >= 40 && metaTitleLen <= 75) {
+        weightedScore += 10;
       }
-      var score = Math.min(
-        100,
-        Math.round((totalAchieved / totalPossible) * 100),
-      );
-      if (primaryKw && basicFails === 0) {
-        score = Math.max(score, 78);
+
+      // 2. Meta Description (10 pts)
+      if (metaDescLen >= 100 && metaDescLen <= 170) {
+        weightedScore += 10;
+      } else if (metaDescLen > 0) {
+        weightedScore += 5;
       }
-      if (primaryKw && basicFails === 0 && addFails <= 2) {
-        score = Math.max(score, 85);
+
+      // 3. Word Count (15 pts)
+      if (wordCount >= 500) {
+        weightedScore += 15;
+      } else if (wordCount >= 250) {
+        weightedScore += 10;
+      } else if (wordCount > 0) {
+        weightedScore += 5;
       }
-      if (!primaryKw) {
-        score = Math.min(score, 35);
+
+      // 4. Focus Keyword Optimization (35 pts)
+      if (primaryKw) {
+        if (titleHasKw) weightedScore += 10;
+        if (descHasKw) weightedScore += 10;
+        if (kwCount > 0) {
+          weightedScore += 10;
+          if (kwDensity >= 0.5 && kwDensity <= 2.5) {
+            weightedScore += 5;
+          }
+        }
+      } else {
+        if (wordCount >= 200) weightedScore += 15;
       }
+
+      // 5. Table of Contents (10 pts)
+      if (hasExplicitToc || (metaboxConfig.moduleToc && headingsCount >= (metaboxConfig.tocMinHeadings || 2))) {
+        weightedScore += 10;
+      }
+
+      // 6. Schema (10 pts)
+      if (metaboxConfig.moduleSchema !== false) {
+        weightedScore += 10;
+      }
+
+      // 7. Media & Alt (5 pts)
+      if (hasMedia) {
+        if (metaboxConfig.moduleImageSeo) {
+          weightedScore += 5;
+        } else {
+          weightedScore += 2;
+        }
+      }
+
+      // 8. Links (5 pts)
+      if (hasLinks || (metaboxConfig.moduleLinks && (hasInternalLinks || hasExternalLinks))) {
+        weightedScore += 5;
+      }
+
+      // Gutenberg/TinyMCE can be unavailable during initial editor hydration; do not show a false zero.
+      var score = (!content && savedScore > 0) ? savedScore : Math.min(100, Math.max(0, weightedScore));
 
       $("#gmb-metabox-score-val").text(score);
       $("#gmb_seo_score_hidden").val(score);
+
+      var $freshness = $("#gmb-audit-freshness");
+      if ($freshness.length && !$freshness.hasClass("is-stale") && !$freshness.attr("data-analysis-hash")) {
+        $freshness.text("Live preview — save to run the server audit");
+      }
 
       var $scoreBadge = $("#gmb-metabox-score-badge");
       var $pubBadge = $("#gmb-publish-score-val");
@@ -2265,36 +2874,144 @@
         $pubBadge
           .text(score + " / 100")
           .removeClass("green orange red")
-          .addClass(score >= 80 ? "green" : score >= 60 ? "orange" : "red");
+          .addClass(score >= 80 ? "green" : score >= 40 ? "orange" : "red");
       }
 
-      if (score >= 80) {
-        $scoreBadge.css("background-color", "#16a34a");
-      } else if (score >= 50) {
-        $scoreBadge.css("background-color", "#f59e0b");
-      } else {
-        $scoreBadge.css("background-color", "#ef4444");
+      var scoreClass = "score-poor";
+      if (!primaryKw) {
+        scoreClass = "score-unconfigured";
+      } else if (score >= 80) {
+        scoreClass = "score-good";
+      } else if (score >= 40) {
+        scoreClass = "score-ok";
       }
+
+      $scoreBadge
+        .removeClass("score-good score-ok score-poor score-unconfigured")
+        .addClass(scoreClass)
+        .css("background-color", "");
     }
 
+    // The browser score is only a live preview until WordPress saves and audits
+    // the post. Never present it as the latest server-side audit after edits.
+    function markAuditStale() {
+      var $freshness = $("#gmb-audit-freshness");
+      if (!$freshness.length || $freshness.hasClass("is-stale")) {
+        return;
+      }
+      $freshness
+        .addClass("is-stale")
+        .text("Unsaved changes - save to refresh the audit score");
+    }
+
+    $(document).on(
+      "input change",
+      "#title, #content, #gmb_seo_title_input, #gmb_seo_desc_input, #gmb_seo_focus_keyword_input, #gmb_seo_focus_keyword_hidden, #gmb_seo_canonical_input, #gmb_seo_robots_input",
+      markAuditStale,
+    );
+
     recalculateScore();
+
+    // Initialize ARIA state to match the server-rendered visible panels.
+    $(".gmb-tab-content").each(function () {
+      $(this).attr("aria-hidden", $(this).hasClass("active") ? "false" : "true");
+    });
+    $(".gmb-social-pane").each(function () {
+      $(this).attr("aria-hidden", $(this).hasClass("active") ? "false" : "true");
+    });
 
     // ==========================================
     // 9. Schema Generator Modal
     // ==========================================
-    $(document).on("click", "#gmb-schema-generator-open-btn", function (e) {
+    window.gmbOpenSchemaModal = function (e) {
+      if (e && e.preventDefault) e.preventDefault();
+      var $modal = $("#gmb-schema-modal");
+      if ($modal.length) {
+        $modal.appendTo("body");
+        $modal.addClass("active is-open").css("display", "flex").show();
+      }
+    };
+
+    function saveSchemaViaAjax(activeSchemas, schemaJson, callback) {
+      var postId = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.postId) ? gmbMetaboxData.postId : ($("#post_ID").val() || 0);
+      var nonce = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.nonce) ? gmbMetaboxData.nonce : ($("#gmb_seo_nonce").val() || "");
+      var ajaxUrl = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.ajaxUrl) ? gmbMetaboxData.ajaxUrl : (window.ajaxurl || "/wp-admin/admin-ajax.php");
+
+      $.ajax({
+        url: ajaxUrl,
+        type: "POST",
+        dataType: "json",
+        data: {
+          action: "gmb_save_post_schema",
+          nonce: nonce,
+          post_id: postId,
+          active_schemas: activeSchemas || $("#gmb_seo_active_schemas").val() || "",
+          schema_json: schemaJson !== undefined ? schemaJson : ($("#gmb_seo_schema_input").val() || "")
+        },
+        success: function (res) {
+          if (res && res.success) {
+            if (typeof callback === "function") callback(res.data);
+          } else {
+            $("#gmb-schema-modal-save-btn, #gmb-builder-save-post-btn, #gmb-builder-save-template-btn").prop("disabled", false);
+            alert("Error saving schema: " + (res && res.data && res.data.message ? res.data.message : "Save failed"));
+          }
+        },
+        error: function (xhr, status, err) {
+          $("#gmb-schema-modal-save-btn, #gmb-builder-save-post-btn, #gmb-builder-save-template-btn").prop("disabled", false);
+          alert("Network error while saving schema: " + (err || "Save failed"));
+        }
+      });
+    }
+
+    $(document).on("click", "#gmb-schema-modal-close-btn", function (e) {
       e.preventDefault();
-      $("#gmb-schema-modal").fadeIn(200).css("display", "flex");
+      $("#gmb-schema-modal").removeClass("active is-open").hide();
     });
 
-    $(document).on(
-      "click",
-      "#gmb-schema-modal-close-btn, #gmb-schema-modal-save-btn",
-      function (e) {
-        e.preventDefault();
-        $("#gmb-schema-modal").fadeOut(150);
-      },
-    );
+    $(document).on("click", "#gmb-schema-modal", function (e) {
+      if (e.target === this) {
+        $(this).removeClass("active is-open").hide();
+      }
+    });
+
+    $(document).on("keydown", function (e) {
+      if (e.key !== "Escape" && e.keyCode !== 27) return;
+      $("#gmb-schema-modal, #gmb-schema-builder-modal").removeClass("active is-open").hide();
+    });
+
+    $(document).on("click", "#gmb-schema-modal-save-btn", function (e) {
+      e.preventDefault();
+      var $btn = $(this);
+      var origText = $btn.text();
+      $btn.prop("disabled", true).text("Saving...");
+
+      var activeSchemas = $("#gmb_seo_active_schemas").val() || "";
+      var customSchema = $("#gmb_seo_schema_input").val() || "";
+
+      if (customSchema.trim()) {
+        var parsedSchema;
+        try {
+          parsedSchema = JSON.parse(customSchema);
+        } catch (err) {
+          $btn.prop("disabled", false).text(origText);
+          alert("Cannot save schema: invalid JSON. Please correct the syntax first.");
+          return;
+        }
+        if (!parsedSchema || typeof parsedSchema !== "object" || (!parsedSchema["@type"] && !parsedSchema["@graph"])) {
+          $btn.prop("disabled", false).text(origText);
+          alert("Cannot save schema: include an @type or @graph property.");
+          return;
+        }
+      }
+
+      saveSchemaViaAjax(activeSchemas, customSchema, function (data) {
+        $btn.prop("disabled", false).text("Saved!");
+        setTimeout(function () {
+          $btn.text(origText);
+          $("#gmb-schema-modal").removeClass("active is-open").hide();
+        }, 600);
+      });
+    });
 
     // Schema Generator Tab Switcher
     $(document).on(
@@ -2308,10 +3025,96 @@
         $("#gmb-schema-modal .gmb-modal-tab-btn").removeClass("active");
         $(this).addClass("active");
 
-        $(".gmb-schema-tab-content").hide();
+        $("#gmb-schema-modal .gmb-schema-tab-content").hide();
         $("#" + targetTab).show();
       },
     );
+
+    // Import Tab Submit Handler
+    $(document).on("click", "#gmb-schema-import-submit-btn", function (e) {
+      e.preventDefault();
+      var rawInput = ($("#gmb_seo_schema_import_input").val() || "").trim();
+      if (!rawInput) {
+        alert("Please paste JSON-LD markup or a script block to import.");
+        return;
+      }
+
+      // Strip <script> tags if present
+      var cleanJson = rawInput.replace(/<script[^>]*>/gi, "").replace(/<\/script>/gi, "").trim();
+
+      var parsedObj = null;
+      try {
+        parsedObj = JSON.parse(cleanJson);
+      } catch (errJson) {
+        alert("Invalid JSON-LD format. Please verify syntax and try again: " + errJson.message);
+        return;
+      }
+
+      if (!parsedObj || typeof parsedObj !== "object") {
+        alert("Imported content must be a valid JSON-LD object or array.");
+        return;
+      }
+
+      if (!parsedObj["@type"] && !parsedObj["@graph"]) {
+        alert("Imported JSON-LD must include an @type or @graph property.");
+        return;
+      }
+
+      var detectedType = parsedObj["@type"] || "Article";
+      if (Array.isArray(detectedType)) detectedType = detectedType[0];
+      detectedType = String(detectedType || "Article");
+      if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(detectedType)) {
+        alert("The imported schema contains an unsupported schema type.");
+        return;
+      }
+
+      $("#gmb_seo_schema_input").val(JSON.stringify(parsedObj, null, 2));
+
+      // Add to active schema list
+      var $list = $("#gmb-schema-in-use-list");
+      if ($list.find('[data-schema-active="' + detectedType + '"]').length === 0) {
+        var iconSvg = getSchemaIcon(detectedType);
+        var cardHtml =
+          '<div class="gmb-schema-active-card" data-schema-active="' +
+          detectedType +
+          '">' +
+          '<div class="gmb-schema-active-info">' +
+          '<span class="gmb-schema-active-icon">' +
+          iconSvg +
+          "</span>" +
+          '<strong class="gmb-schema-active-title">' +
+          detectedType +
+          "</strong>" +
+          "</div>" +
+          '<div class="gmb-schema-active-actions">' +
+          '<button type="button" class="gmb-schema-action-btn gmb-schema-edit-btn" data-type="' +
+          detectedType +
+          '" title="Edit Schema">' +
+          '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>' +
+          "</button>" +
+          '<button type="button" class="gmb-schema-action-btn gmb-schema-code-btn" data-type="' +
+          detectedType +
+          '" title="Code Validation">' +
+          '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>' +
+          "</button>" +
+          '<button type="button" class="gmb-schema-action-btn gmb-remove-schema-btn" data-type="' +
+          detectedType +
+          '" title="Delete Schema">' +
+          '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
+          "</button>" +
+          "</div>" +
+          "</div>";
+        $("#gmb-no-active-schema-notice").hide();
+        $list.append(cardHtml);
+        updateActiveSchemasHidden();
+      }
+
+      var activeSchemas = $("#gmb_seo_active_schemas").val() || detectedType;
+      saveSchemaViaAjax(activeSchemas, JSON.stringify(parsedObj), function () {
+        alert("Imported " + detectedType + " schema successfully!");
+        $("#gmb-schema-modal .gmb-modal-tab-btn[data-schema-tab='schema-tab-templates']").trigger("click");
+      });
+    });
 
     // ==========================================
     // 9. Schema Generator Modal & Real Icons
@@ -2360,6 +3163,21 @@
       var k = (type || "").toLowerCase().replace(/[\s\-_]/g, "");
       return schemaIcons[k] || schemaIcons["article"];
     }
+    window.gmbGetSchemaIcon = getSchemaIcon;
+
+    // Repair cards that were created by an older handler without an icon.
+    $("#gmb-schema-in-use-list .gmb-schema-active-card").each(function () {
+      var $card = $(this);
+      var type = $card.attr("data-schema-active") || "Article";
+      var $icon = $card.children(".gmb-schema-active-info").find(".gmb-schema-active-icon");
+      if (!$icon.length) {
+        $icon = $('<span class="gmb-schema-active-icon"></span>');
+        $card.children(".gmb-schema-active-info").prepend($icon);
+      }
+      if (!$icon.find("svg").length) {
+        $icon.html(getSchemaIcon(type));
+      }
+    });
 
     function updateActiveSchemasHidden() {
       var active = [];
@@ -2374,7 +3192,7 @@
     // 9. Schema Generator & Schema Builder
     // ==========================================
     var currentBuilderType = "Article";
-    var currentBuilderMode = "simple"; // 'simple' or 'advanced'
+    var currentBuilderMode = "simple";
 
     function getPostFieldValue(id, defaultVal) {
       var val = $(id).val();
@@ -2428,7 +3246,7 @@
 
       var k = (type || "Article").toLowerCase().replace(/[\s\-_]/g, "");
 
-      if (k === "article") {
+      if (k === "article" || k === "blogposting" || k === "newsarticle") {
         var articleType =
           $("#gmb_schema_field_article_type").val() || "Article";
         schema["@type"] = articleType;
@@ -2441,13 +3259,95 @@
         };
         schema["author"] = {
           "@type": "Person",
-          name: "Author",
+          name: $("#gmb_schema_field_author").val() || "Author",
         };
         schema["publisher"] = {
           "@type": "Organization",
           name: siteName,
           url: homeUrl,
         };
+      } else if (k === "book") {
+        schema["@type"] = "Book";
+        schema["name"] = $("#gmb_schema_field_book_name").val() || headline || title;
+        schema["description"] = $("#gmb_schema_field_book_desc").val() || description || desc;
+        schema["author"] = {
+          "@type": "Person",
+          name: $("#gmb_schema_field_book_author").val() || "Author Name"
+        };
+        var isbn = $("#gmb_schema_field_book_isbn").val();
+        if (isbn) schema["isbn"] = isbn;
+      } else if (k === "course") {
+        schema["@type"] = "Course";
+        schema["name"] = $("#gmb_schema_field_course_name").val() || headline || title;
+        schema["description"] = $("#gmb_schema_field_course_desc").val() || description || desc;
+        schema["provider"] = {
+          "@type": "Organization",
+          name: $("#gmb_schema_field_course_provider").val() || siteName,
+          sameAs: homeUrl
+        };
+      } else if (k === "dataset") {
+        schema["@type"] = "Dataset";
+        schema["name"] = $("#gmb_schema_field_dataset_name").val() || headline || title;
+        schema["description"] = $("#gmb_schema_field_dataset_desc").val() || description || desc;
+        schema["license"] = homeUrl;
+      } else if (k === "factcheck") {
+        schema["@type"] = "FactCheck";
+        schema["name"] = headline || title;
+        schema["description"] = description || desc;
+        schema["claimReviewed"] = $("#gmb_schema_field_claim").val() || headline || title;
+        schema["reviewRating"] = {
+          "@type": "Rating",
+          ratingValue: $("#gmb_schema_field_rating").val() || "5",
+          bestRating: "5",
+          worstRating: "1"
+        };
+      } else if (k === "movie") {
+        schema["@type"] = "Movie";
+        schema["name"] = $("#gmb_schema_field_movie_name").val() || headline || title;
+        schema["description"] = $("#gmb_schema_field_movie_desc").val() || description || desc;
+        schema["director"] = {
+          "@type": "Person",
+          name: $("#gmb_schema_field_movie_director").val() || "Director Name"
+        };
+      } else if (k === "music") {
+        schema["@type"] = "MusicAlbum";
+        schema["name"] = $("#gmb_schema_field_music_name").val() || headline || title;
+        schema["description"] = $("#gmb_schema_field_music_desc").val() || description || desc;
+        schema["byArtist"] = {
+          "@type": "MusicGroup",
+          name: $("#gmb_schema_field_music_artist").val() || "Artist Name"
+        };
+      } else if (k === "person") {
+        schema["@type"] = "Person";
+        schema["name"] = $("#gmb_schema_field_person_name").val() || siteName;
+        schema["jobTitle"] = $("#gmb_schema_field_person_job").val() || "Specialist";
+        schema["worksFor"] = {
+          "@type": "Organization",
+          name: siteName
+        };
+      } else if (k === "recipe") {
+        schema["@type"] = "Recipe";
+        schema["name"] = $("#gmb_schema_field_recipe_name").val() || headline || title;
+        schema["description"] = $("#gmb_schema_field_recipe_desc").val() || description || desc;
+        schema["author"] = {
+          "@type": "Person",
+          name: siteName
+        };
+      } else if (k === "restaurant") {
+        schema["@type"] = "Restaurant";
+        schema["name"] = $("#gmb_schema_field_rest_name").val() || siteName;
+        schema["description"] = $("#gmb_schema_field_rest_desc").val() || description || desc;
+        schema["servesCuisine"] = $("#gmb_schema_field_rest_cuisine").val() || "General";
+      } else if (k === "software") {
+        schema["@type"] = "SoftwareApplication";
+        schema["name"] = $("#gmb_schema_field_soft_name").val() || headline || title;
+        schema["operatingSystem"] = $("#gmb_schema_field_soft_os").val() || "All";
+        schema["applicationCategory"] = $("#gmb_schema_field_soft_cat").val() || "BusinessApplication";
+      } else if (k === "video") {
+        schema["@type"] = "VideoObject";
+        schema["name"] = $("#gmb_schema_field_vid_name").val() || headline || title;
+        schema["description"] = $("#gmb_schema_field_vid_desc").val() || description || desc;
+        schema["uploadDate"] = new Date().toISOString().split("T")[0];
       } else if (k === "product") {
         schema["@type"] = "Product";
         schema["name"] = resolveVariables(
@@ -2548,7 +3448,7 @@
       var $simple = $("#gmb-builder-simple-mode-container");
       var html = "";
 
-      if (k === "article") {
+      if (k === "article" || k === "blogposting" || k === "newsarticle") {
         html +=
           '<div class="gmb-builder-field-row">' +
           '<label class="gmb-builder-label">HEADLINE <span class="gmb-required-star">*</span></label>' +
@@ -2563,20 +3463,86 @@
           '<input type="text" id="gmb_schema_field_keywords" class="gmb-field-input" value="%keywords%" placeholder="%keywords%" />' +
           "</div>" +
           '<div class="gmb-builder-field-row">' +
-          '<label class="gmb-builder-label">ENABLE SPEAKABLE</label>' +
-          '<select id="gmb_schema_field_speakable" class="gmb-field-select">' +
-          '<option value="disable">Disable</option>' +
-          '<option value="enable">Speakable Specification</option>' +
-          "</select>" +
-          '<p class="gmb-builder-help">Add speakable attributes to Article Schema.</p>' +
-          "</div>" +
-          '<div class="gmb-builder-field-row">' +
           '<label class="gmb-builder-label">ARTICLE TYPE <span class="gmb-required-star">*</span></label>' +
           '<select id="gmb_schema_field_article_type" class="gmb-field-select">' +
           '<option value="Article">Article</option>' +
           '<option value="BlogPosting">BlogPosting</option>' +
           '<option value="NewsArticle">NewsArticle</option>' +
           "</select>" +
+          "</div>";
+      } else if (k === "book") {
+        html +=
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">BOOK TITLE <span class="gmb-required-star">*</span></label>' +
+          '<input type="text" id="gmb_schema_field_book_name" class="gmb-field-input" value="%seo_title%" placeholder="%seo_title%" />' +
+          "</div>" +
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">AUTHOR NAME</label>' +
+          '<input type="text" id="gmb_schema_field_book_author" class="gmb-field-input" placeholder="Author Name" />' +
+          "</div>" +
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">ISBN</label>' +
+          '<input type="text" id="gmb_schema_field_book_isbn" class="gmb-field-input" placeholder="e.g. 978-3-16-148410-0" />' +
+          "</div>";
+      } else if (k === "course") {
+        html +=
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">COURSE TITLE <span class="gmb-required-star">*</span></label>' +
+          '<input type="text" id="gmb_schema_field_course_name" class="gmb-field-input" value="%seo_title%" placeholder="%seo_title%" />' +
+          "</div>" +
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">PROVIDER / ORGANIZATION</label>' +
+          '<input type="text" id="gmb_schema_field_course_provider" class="gmb-field-input" value="%site_title%" placeholder="%site_title%" />' +
+          "</div>";
+      } else if (k === "dataset") {
+        html +=
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">DATASET NAME <span class="gmb-required-star">*</span></label>' +
+          '<input type="text" id="gmb_schema_field_dataset_name" class="gmb-field-input" value="%seo_title%" placeholder="%seo_title%" />' +
+          "</div>" +
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">DESCRIPTION</label>' +
+          '<textarea id="gmb_schema_field_dataset_desc" rows="4" class="gmb-field-textarea" placeholder="%seo_description%">%seo_description%</textarea>' +
+          "</div>";
+      } else if (k === "factcheck") {
+        html +=
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">CLAIM REVIEWED <span class="gmb-required-star">*</span></label>' +
+          '<input type="text" id="gmb_schema_field_claim" class="gmb-field-input" value="%seo_title%" placeholder="%seo_title%" />' +
+          "</div>" +
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">RATING (1 to 5)</label>' +
+          '<input type="text" id="gmb_schema_field_rating" class="gmb-field-input" value="5" placeholder="5" />' +
+          "</div>";
+      } else if (k === "movie") {
+        html +=
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">MOVIE TITLE <span class="gmb-required-star">*</span></label>' +
+          '<input type="text" id="gmb_schema_field_movie_name" class="gmb-field-input" value="%seo_title%" placeholder="%seo_title%" />' +
+          "</div>" +
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">DIRECTOR</label>' +
+          '<input type="text" id="gmb_schema_field_movie_director" class="gmb-field-input" placeholder="Director Name" />' +
+          "</div>";
+      } else if (k === "music") {
+        html +=
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">ALBUM / TRACK NAME <span class="gmb-required-star">*</span></label>' +
+          '<input type="text" id="gmb_schema_field_music_name" class="gmb-field-input" value="%seo_title%" placeholder="%seo_title%" />' +
+          "</div>" +
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">ARTIST / BAND</label>' +
+          '<input type="text" id="gmb_schema_field_music_artist" class="gmb-field-input" placeholder="Artist Name" />' +
+          "</div>";
+      } else if (k === "person") {
+        html +=
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">PERSON FULL NAME <span class="gmb-required-star">*</span></label>' +
+          '<input type="text" id="gmb_schema_field_person_name" class="gmb-field-input" value="%site_title%" placeholder="%site_title%" />' +
+          "</div>" +
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">JOB TITLE</label>' +
+          '<input type="text" id="gmb_schema_field_person_job" class="gmb-field-input" placeholder="Specialist" />' +
           "</div>";
       } else if (k === "product") {
         html +=
@@ -2622,6 +3588,46 @@
           '<option value="PreOrder">Pre-Order</option>' +
           "</select>" +
           "</div>";
+      } else if (k === "recipe") {
+        html +=
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">RECIPE NAME <span class="gmb-required-star">*</span></label>' +
+          '<input type="text" id="gmb_schema_field_recipe_name" class="gmb-field-input" value="%seo_title%" placeholder="%seo_title%" />' +
+          "</div>" +
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">DESCRIPTION</label>' +
+          '<textarea id="gmb_schema_field_recipe_desc" rows="4" class="gmb-field-textarea" placeholder="%seo_description%">%seo_description%</textarea>' +
+          "</div>";
+      } else if (k === "restaurant") {
+        html +=
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">RESTAURANT NAME <span class="gmb-required-star">*</span></label>' +
+          '<input type="text" id="gmb_schema_field_rest_name" class="gmb-field-input" value="%site_title%" placeholder="%site_title%" />' +
+          "</div>" +
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">CUISINE TYPE</label>' +
+          '<input type="text" id="gmb_schema_field_rest_cuisine" class="gmb-field-input" placeholder="e.g. Italian, Nepalese, Asian" />' +
+          "</div>";
+      } else if (k === "software") {
+        html +=
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">SOFTWARE TITLE <span class="gmb-required-star">*</span></label>' +
+          '<input type="text" id="gmb_schema_field_soft_name" class="gmb-field-input" value="%seo_title%" placeholder="%seo_title%" />' +
+          "</div>" +
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">OPERATING SYSTEM</label>' +
+          '<input type="text" id="gmb_schema_field_soft_os" class="gmb-field-input" value="All" placeholder="e.g. Windows, macOS, Web" />' +
+          "</div>";
+      } else if (k === "video") {
+        html +=
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">VIDEO TITLE <span class="gmb-required-star">*</span></label>' +
+          '<input type="text" id="gmb_schema_field_vid_name" class="gmb-field-input" value="%seo_title%" placeholder="%seo_title%" />' +
+          "</div>" +
+          '<div class="gmb-builder-field-row">' +
+          '<label class="gmb-builder-label">DESCRIPTION</label>' +
+          '<textarea id="gmb_schema_field_vid_desc" rows="4" class="gmb-field-textarea" placeholder="%seo_description%">%seo_description%</textarea>' +
+          "</div>";
       } else if (k === "faq" || k === "faqpage") {
         html +=
           '<div class="gmb-builder-field-row">' +
@@ -2654,8 +3660,51 @@
 
       $simple.html(html);
 
+      // Rehydrate the builder from saved JSON-LD when editing an existing
+      // schema. This prevents Edit from replacing custom properties with
+      // freshly generated defaults.
+      var currentSchema = null;
+      try {
+        var persistedSchema = JSON.parse($("#gmb_seo_schema_input").val() || "");
+        var persistedType = persistedSchema && persistedSchema["@type"] ? String(persistedSchema["@type"]) : "";
+        if (persistedSchema && typeof persistedSchema === "object" &&
+            (!persistedType || persistedType.toLowerCase().replace(/[\s\-_]/g, "") === k)) {
+          currentSchema = persistedSchema;
+        }
+      } catch (e) {
+        currentSchema = null;
+      }
+      currentSchema = currentSchema || generateSchemaJsonLd(type);
+
+      var simpleFieldMap = {
+        headline: "headline", description: "description", keywords: "keywords",
+        article_type: "@type", book_name: "name", book_desc: "description",
+        book_author: "author", book_isbn: "isbn", course_name: "name",
+        course_desc: "description", course_provider: "provider", dataset_name: "name",
+        dataset_desc: "description", claim: "claimReviewed", rating: "ratingValue",
+        movie_name: "name", movie_desc: "description", movie_director: "director",
+        music_name: "name", music_desc: "description", music_artist: "byArtist",
+        person_name: "name", person_job: "jobTitle", prod_name: "name",
+        prod_desc: "description", prod_sku: "sku", prod_brand: "brand",
+        prod_price: "price", prod_currency: "priceCurrency", prod_avail: "availability",
+        recipe_name: "name", recipe_desc: "description", rest_name: "name",
+        rest_desc: "description", rest_cuisine: "servesCuisine", soft_name: "name",
+        soft_os: "operatingSystem", soft_cat: "applicationCategory", vid_name: "name",
+        vid_desc: "description"
+      };
+      Object.keys(simpleFieldMap).forEach(function (suffix) {
+        var $field = $("#gmb_schema_field_" + suffix);
+        if (!$field.length) return;
+        var value = currentSchema[simpleFieldMap[suffix]];
+        if (value && typeof value === "object") {
+          value = value.name || value["@type"] || value.url || "";
+        }
+        if (value !== undefined && value !== null && value !== "") {
+          $field.val(value);
+        }
+      });
+
       // Populate Advanced property tree
-      var currentSchema = generateSchemaJsonLd(type);
       populateAdvancedPropertyTree(currentSchema);
 
       // Update live validation JSON
@@ -2852,7 +3901,7 @@
       }
     }
 
-    function openSchemaBuilder(schemaType, activeTab) {
+    window.gmbOpenSchemaBuilder = function (schemaType, activeTab) {
       renderSchemaBuilderFields(schemaType || "Article");
 
       if (currentBuilderMode === "advanced") {
@@ -2877,7 +3926,15 @@
         $("#gmb-builder-panel-edit").show();
       }
 
-      $("#gmb-schema-builder-modal").fadeIn(200).css("display", "flex");
+      var $builderModal = $("#gmb-schema-builder-modal");
+      if ($builderModal.length) {
+        $builderModal.appendTo("body");
+        $builderModal.addClass("active is-open").css("display", "flex").show();
+      }
+    };
+
+    function openSchemaBuilder(schemaType, activeTab) {
+      window.gmbOpenSchemaBuilder(schemaType, activeTab);
     }
 
     // Schema Builder Tab Switcher (Edit vs Code Validation)
@@ -3085,7 +4142,7 @@
     // Close Schema Builder Modal
     $(document).on("click", "#gmb-schema-builder-close-btn", function (e) {
       e.preventDefault();
-      $("#gmb-schema-builder-modal").fadeOut(150);
+      $("#gmb-schema-builder-modal").removeClass("active is-open").hide();
     });
 
     // Save for this Post
@@ -3100,37 +4157,58 @@
           updateValidationCode();
         }
         var code = $("#gmb-builder-validation-code").text();
-        $("#gmb_seo_schema_input").val(code);
+      $("#gmb_seo_schema_input").val(code);
 
         var $btn = $(this);
         var origText = $btn.text();
-        $btn.text("Saved!");
-        setTimeout(function () {
-          $btn.text(origText);
-          $("#gmb-schema-builder-modal").fadeOut(150);
-        }, 600);
+        $btn.prop("disabled", true).text("Saving...");
+
+        // "Save as Template" has a different persistence target from
+        // "Save for this Post". Do not silently save it only to post meta.
+        if ($btn.is("#gmb-builder-save-template-btn")) {
+          var templateName = window.prompt("Template name:", currentBuilderType + " - SEO Template");
+          if (!templateName || !templateName.trim()) {
+            $btn.prop("disabled", false).text(origText);
+            return;
+          }
+          $.ajax({
+            url: gmbMetaboxData.ajaxUrl,
+            type: "POST",
+            data: {
+              action: "gmb_save_schema_template",
+              nonce: gmbMetaboxData.nonce,
+              title: templateName.trim(),
+              name: templateName.trim(),
+              type: currentBuilderType,
+              post_type: gmbMetaboxData.postType || "post",
+              schema_json: code,
+              enabled: 1
+            }
+          }).done(function (res) {
+            if (res && res.success) {
+              $btn.text("Saved!");
+              setTimeout(function () { $btn.prop("disabled", false).text(origText); }, 900);
+            } else {
+              alert((res && res.data && res.data.message) || "Template could not be saved.");
+              $btn.prop("disabled", false).text(origText);
+            }
+          }).fail(function () {
+            alert("Template could not be saved. Please try again.");
+            $btn.prop("disabled", false).text(origText);
+          });
+          return;
+        }
+
+        var activeSchemas = $("#gmb_seo_active_schemas").val() || currentBuilderType;
+        saveSchemaViaAjax(activeSchemas, code, function () {
+          $btn.prop("disabled", false).text("Saved!");
+          setTimeout(function () {
+            $btn.text(origText);
+            $("#gmb-schema-builder-modal").removeClass("active is-open").hide();
+          }, 600);
+        });
       },
     );
-
-    // Action: Edit Schema (Pencil Button)
-    $(document).on("click", ".gmb-schema-edit-btn", function (e) {
-      e.preventDefault();
-      var schemaType =
-        $(this).attr("data-type") ||
-        $(this).closest(".gmb-schema-active-card").attr("data-schema-active") ||
-        "Article";
-      openSchemaBuilder(schemaType, "edit");
-    });
-
-    // Action: Code Validation (Eye Button)
-    $(document).on("click", ".gmb-schema-code-btn", function (e) {
-      e.preventDefault();
-      var schemaType =
-        $(this).attr("data-type") ||
-        $(this).closest(".gmb-schema-active-card").attr("data-schema-active") ||
-        "Article";
-      openSchemaBuilder(schemaType, "validation");
-    });
 
     // Action: Use Template in Schema Generator Modal
     $(document).on(
@@ -3152,16 +4230,18 @@
           $list.find('[data-schema-active="' + schemaType + '"]').length === 0
         ) {
           var iconSvg = getSchemaIcon(schemaType);
+          var schemaTypeEscaped = escAttr(schemaType);
+          var schemaTypeHtml = escHtml(schemaType);
           var cardHtml =
             '<div class="gmb-schema-active-card" data-schema-active="' +
-            schemaType +
+        schemaTypeEscaped +
             '">' +
             '<div class="gmb-schema-active-info">' +
             '<span class="gmb-schema-active-icon">' +
             iconSvg +
             "</span>" +
             '<strong class="gmb-schema-active-title">' +
-            schemaType +
+            schemaTypeHtml +
             "</strong>" +
             "</div>" +
             '<div class="gmb-schema-active-actions">' +
@@ -3204,12 +4284,71 @@
     });
 
     // ==========================================
-    // 10. Media Picker (WordPress wp.media)
+    // 10. Media Picker & Social Image Management (WordPress wp.media)
     // ==========================================
-    $(document).on("click", ".gmb-media-upload-btn", function (e) {
+    function updateSocialPreviewImage(targetInputId, imgUrl) {
+      var isFb = (targetInputId === "gmb_seo_fb_image" || targetInputId === "gmb_seo_fb_image_metabox");
+      var isTw = (targetInputId === "gmb_seo_tw_image" || targetInputId === "gmb_seo_tw_image_metabox");
+
+      if (isFb) {
+        // The snippet modal and Social tab use separate fields. Keep both
+        // previews in sync regardless of which field initiated the change.
+        var $generalFbPreview = $("#gmb_seo_fb_image_preview");
+        var $generalFbImg = $generalFbPreview.find("img");
+        if ($generalFbImg.length) {
+          $generalFbImg.attr("src", imgUrl || "");
+          $generalFbPreview.toggleClass("is-active", !!imgUrl);
+        }
+        var $img = $("#gmb-fb-preview-img");
+        var $placeholder = $("#gmb-fb-preview-placeholder");
+        var $clearBtn = $('.gmb-social-clear-img-btn[data-target="' + targetInputId + '"]');
+
+        if (imgUrl) {
+          $img.attr("src", imgUrl).addClass("is-active").show();
+          $placeholder.addClass("is-hidden").hide();
+          $clearBtn.addClass("is-active");
+        } else {
+          $img.attr("src", "").removeClass("is-active").hide();
+          $placeholder.removeClass("is-hidden").show();
+          $clearBtn.removeClass("is-active");
+        }
+      } else if (isTw) {
+        var $generalTwPreview = $("#gmb_seo_tw_image_preview");
+        var $generalTwImg = $generalTwPreview.find("img");
+        if ($generalTwImg.length) {
+          $generalTwImg.attr("src", imgUrl || "");
+          $generalTwPreview.toggleClass("is-active", !!imgUrl);
+        }
+        var $imgTw = $("#gmb-tw-preview-img");
+        var $placeholderTw = $("#gmb-tw-preview-placeholder");
+        var $clearBtnTw = $('.gmb-social-clear-img-btn[data-target="' + targetInputId + '"]');
+
+        if (imgUrl) {
+          $imgTw.attr("src", imgUrl).addClass("is-active").show();
+          $placeholderTw.addClass("is-hidden").hide();
+          $clearBtnTw.addClass("is-active");
+        } else {
+          $imgTw.attr("src", "").removeClass("is-active").hide();
+          $placeholderTw.removeClass("is-hidden").show();
+          $clearBtnTw.removeClass("is-active");
+        }
+      }
+    }
+
+    // Media Picker Click Handler (Buttons & Preview Click Box)
+    $(document).on("click", ".gmb-media-upload-btn, .gmb-media-upload-trigger", function (e) {
       e.preventDefault();
       var targetInputId = $(this).attr("data-target");
-      if (!targetInputId || typeof wp === "undefined" || !wp.media) return;
+      if (!targetInputId) return;
+
+      if (typeof wp === "undefined" || !wp.media) {
+        if (typeof wp !== "undefined" && wp.media && typeof wp.media.editor !== "undefined") {
+          wp.media.editor.open(targetInputId);
+          return;
+        }
+        alert("WordPress Media Library is not available on this screen. Please refresh the page.");
+        return;
+      }
 
       var frame = wp.media({
         title: "Select SEO Social Image",
@@ -3219,36 +4358,39 @@
 
       frame.on("select", function () {
         var attachment = frame.state().get("selection").first().toJSON();
-        $("#" + targetInputId)
-          .val(attachment.url)
-          .trigger("input")
-          .trigger("change");
+        if (attachment && attachment.url) {
+          $("#" + targetInputId)
+            .val(attachment.url)
+            .trigger("input")
+            .trigger("change");
 
-        // If it's Facebook image, update preview
-        if (
-          targetInputId === "gmb_seo_fb_image" ||
-          targetInputId === "gmb_seo_fb_image_metabox"
-        ) {
-          $("#gmb_seo_fb_image_preview")
-            .show()
-            .find("img")
-            .attr("src", attachment.url);
-          $("#gmb-fb-preview-img").attr("src", attachment.url).show();
-          $("#gmb-fb-preview-placeholder").hide();
-        } else if (
-          targetInputId === "gmb_seo_tw_image" ||
-          targetInputId === "gmb_seo_tw_image_metabox"
-        ) {
-          $("#gmb_seo_tw_image_preview")
-            .show()
-            .find("img")
-            .attr("src", attachment.url);
-          $("#gmb-tw-preview-img").attr("src", attachment.url).show();
-          $("#gmb-tw-preview-placeholder").hide();
+          updateSocialPreviewImage(targetInputId, attachment.url);
         }
       });
 
       frame.open();
+    });
+
+    // Handle Manual Input Change for Social Images
+    $(document).on("input change", "#gmb_seo_fb_image_metabox, #gmb_seo_tw_image_metabox, #gmb_seo_fb_image, #gmb_seo_tw_image", function () {
+      var targetInputId = $(this).attr("id");
+      var imgUrl = ($(this).val() || "").trim();
+      if (targetInputId === "gmb_seo_fb_image" || targetInputId === "gmb_seo_fb_image_metabox") {
+        $("#gmb_seo_fb_image, #gmb_seo_fb_image_metabox").not(this).val(imgUrl);
+      } else if (targetInputId === "gmb_seo_tw_image" || targetInputId === "gmb_seo_tw_image_metabox") {
+        $("#gmb_seo_tw_image, #gmb_seo_tw_image_metabox").not(this).val(imgUrl);
+      }
+      updateSocialPreviewImage(targetInputId, imgUrl);
+    });
+
+    // Handle Clear / Remove Image Button
+    $(document).on("click", ".gmb-social-clear-img-btn", function (e) {
+      e.preventDefault();
+      var targetInputId = $(this).attr("data-target");
+      if (targetInputId) {
+        $("#" + targetInputId).val("").trigger("input").trigger("change");
+        updateSocialPreviewImage(targetInputId, "");
+      }
     });
   });
 })(jQuery);

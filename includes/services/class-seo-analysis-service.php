@@ -61,6 +61,9 @@ if (!class_exists('GMB_Ranker_SEO_Analysis_Service')) {
 
             // Persist diagnostic score for caching & UI sorting
             update_post_meta($clean_id, '_gmb_ranker_seo_score', $final_score);
+            $analysis_hash = $this->build_analysis_hash($context);
+            update_post_meta($clean_id, '_gmb_ranker_seo_analysis_hash', $analysis_hash);
+            update_post_meta($clean_id, '_gmb_ranker_seo_analysis_at', current_time('mysql', true));
 
             return array(
                 'score'       => $final_score,
@@ -85,8 +88,28 @@ if (!class_exists('GMB_Ranker_SEO_Analysis_Service')) {
                     'permalink'   => $context['permalink'],
                     'is_elementor'=> $context['is_elementor'],
                     'has_blocks'  => $context['has_blocks'],
+                    'analysis_hash' => $analysis_hash,
+                    'analyzed_at'   => get_post_meta($clean_id, '_gmb_ranker_seo_analysis_at', true),
                 ),
             );
+        }
+
+        /**
+         * Build a fingerprint for the inputs used by the persisted audit.
+         *
+         * @param array $context
+         * @return string
+         */
+        protected function build_analysis_hash(array $context) {
+            return hash('sha256', wp_json_encode(array(
+                'title'       => $context['title'],
+                'raw_content' => $context['raw_content'],
+                'meta_title'  => $context['meta_title'],
+                'meta_desc'   => $context['meta_desc'],
+                'focus_kw'    => $context['focus_kw'],
+                'canonical'   => $context['canonical'],
+                'robots'      => $context['robots'],
+            )));
         }
 
         /**
@@ -136,6 +159,11 @@ if (!class_exists('GMB_Ranker_SEO_Analysis_Service')) {
                 $focus_kw = get_post_meta($post_id, '_yoast_wpseo_focuskw', true) 
                     ?: (get_post_meta($post_id, 'rank_math_focus_keyword', true) ?: '');
             }
+
+            // The editor supports multiple keyword pills, but the analysis
+            // engine evaluates one primary focus phrase.
+            $focus_kw_parts = array_values(array_filter(array_map('trim', explode(',', (string) $focus_kw))));
+            $focus_kw = !empty($focus_kw_parts) ? $focus_kw_parts[0] : '';
 
             $canonical = get_post_meta($post_id, '_gmb_ranker_seo_canonical', true) 
                 ?: (get_post_meta($post_id, '_yoast_wpseo_canonical', true) 
@@ -966,7 +994,8 @@ if (!class_exists('GMB_Ranker_SEO_Analysis_Service')) {
         public static function check_keyword_cannibalization($focus_kw, $exclude_post_id = 0) {
             global $wpdb;
 
-            $kw = mb_strtolower(trim($focus_kw));
+            $kw_parts = array_values(array_filter(array_map('trim', explode(',', (string) $focus_kw))));
+            $kw = mb_strtolower(!empty($kw_parts) ? $kw_parts[0] : '');
             if (empty($kw)) {
                 return array(
                     'is_cannibalized' => false,
@@ -1040,4 +1069,3 @@ if (!class_exists('GMB_Ranker_SEO_Analysis_Service')) {
         }
     }
 }
-

@@ -63,6 +63,14 @@ class GMB_Ranker_SEO_Metadata {
         return defined('WPSEO_VERSION');
     }
 
+    public function is_aioseo_active() {
+        return defined('AIOSEO_VERSION') || function_exists('aioseo');
+    }
+
+    public function is_seopress_active() {
+        return defined('SEOPRESS_VERSION') || function_exists('seopress_init');
+    }
+
     public function start_buffer() {
         if (!is_admin() && !wp_is_json_request() && !is_feed() && !is_robots()) {
             if (ob_get_level() === 0 || !in_array('buffer_callback', (array) ob_list_handlers(), true)) {
@@ -605,7 +613,7 @@ class GMB_Ranker_SEO_Metadata {
 
     public function filter_seo_meta_tags() {
         // Skip direct echo output if a major SEO plugin is already doing it.
-        if ($this->is_rank_math_active() || $this->is_yoast_active()) {
+        if ($this->is_rank_math_active() || $this->is_yoast_active() || $this->is_aioseo_active() || $this->is_seopress_active()) {
             return;
         }
 
@@ -625,7 +633,7 @@ class GMB_Ranker_SEO_Metadata {
         if (!empty($robots)) {
             $robots_arr = array_map('trim', explode(',', strtolower($robots)));
             if (!in_array('noindex', $robots_arr)) {
-                $max_image = !empty($post_id) ? get_post_meta($post_id, '_gmb_ranker_max_image', true) : '';
+                    $max_image = !empty($post_id) ? (get_post_meta($post_id, '_gmb_ranker_seo_max_image', true) ?: get_post_meta($post_id, '_gmb_ranker_max_image', true)) : '';
                 if (empty($max_image) && (is_front_page() || is_home())) {
                     $max_image = get_option('gmb_homepage_advanced_max_image', 'large');
                 } elseif (empty($max_image) && is_author()) {
@@ -650,7 +658,7 @@ class GMB_Ranker_SEO_Metadata {
                 }
                 if (empty($max_image)) $max_image = 'large';
 
-                $max_snippet = !empty($post_id) ? get_post_meta($post_id, '_gmb_ranker_max_snippet', true) : '';
+                    $max_snippet = !empty($post_id) ? (get_post_meta($post_id, '_gmb_ranker_seo_max_snippet', true) ?: get_post_meta($post_id, '_gmb_ranker_max_snippet', true)) : '';
                 if (empty($max_snippet) && (is_front_page() || is_home())) {
                     $max_snippet = get_option('gmb_homepage_advanced_max_snippet', '-1');
                 } elseif (empty($max_snippet) && is_author()) {
@@ -675,7 +683,7 @@ class GMB_Ranker_SEO_Metadata {
                 }
                 if (empty($max_snippet)) $max_snippet = '-1';
 
-                $max_video = !empty($post_id) ? get_post_meta($post_id, '_gmb_ranker_max_video', true) : '';
+                    $max_video = !empty($post_id) ? (get_post_meta($post_id, '_gmb_ranker_seo_max_video', true) ?: get_post_meta($post_id, '_gmb_ranker_max_video', true)) : '';
                 if (empty($max_video) && (is_front_page() || is_home())) {
                     $max_video = get_option('gmb_homepage_advanced_max_video', '-1');
                 } elseif (empty($max_video) && is_author()) {
@@ -700,7 +708,19 @@ class GMB_Ranker_SEO_Metadata {
                 }
                 if (empty($max_video)) $max_video = '-1';
 
-                $robots_str = $robots . ', max-image-preview:' . $max_image . ', max-snippet:' . $max_snippet . ', max-video-preview:' . $max_video;
+                $robots_str = $robots;
+                $max_image_enabled = !empty($post_id) ? get_post_meta($post_id, '_gmb_ranker_seo_max_image_enabled', true) : '';
+                $max_snippet_enabled = !empty($post_id) ? get_post_meta($post_id, '_gmb_ranker_seo_max_snippet_enabled', true) : '';
+                $max_video_enabled = !empty($post_id) ? get_post_meta($post_id, '_gmb_ranker_seo_max_video_enabled', true) : '';
+                if ($max_image_enabled !== '0') {
+                    $robots_str .= ', max-image-preview:' . $max_image;
+                }
+                if ($max_snippet_enabled !== '0') {
+                    $robots_str .= ', max-snippet:' . $max_snippet;
+                }
+                if ($max_video_enabled !== '0') {
+                    $robots_str .= ', max-video-preview:' . $max_video;
+                }
             } else {
                 $robots_str = $robots;
             }

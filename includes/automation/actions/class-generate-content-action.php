@@ -59,6 +59,9 @@ class GMB_Ranker_SEO_Generate_Content_Action implements GMB_Ranker_SEO_Action_In
         }
 
         $clean_topic = sanitize_text_field(wp_unslash($topic));
+        $focus_keyword = !empty($context['keyword'])
+            ? sanitize_text_field(wp_unslash($context['keyword']))
+            : (!empty($params['keyword']) ? sanitize_text_field(wp_unslash($params['keyword'])) : $clean_topic);
 
         // Validate Post Type
         $post_type = !empty($params['post_type']) ? sanitize_key($params['post_type']) : 'post';
@@ -73,18 +76,18 @@ class GMB_Ranker_SEO_Generate_Content_Action implements GMB_Ranker_SEO_Action_In
             $post_status = 'draft';
         }
 
-        $tone     = !empty($params['tone']) ? sanitize_text_field($params['tone']) : 'professional';
+        $tone     = !empty($params['tone']) ? sanitize_text_field($params['tone']) : '';
         $language = !empty($params['language']) ? sanitize_text_field($params['language']) : get_locale();
 
         // Check if AI generation is enabled and provider is available
         $ai_used       = false;
-        $title         = sprintf(__('Comprehensive Guide: %s', 'gmb-ranker-seo-automation'), $clean_topic);
+        $title         = $clean_topic;
         $content       = '';
         $meta_desc     = '';
 
         if (class_exists('GMB_Ranker_SEO_AI_Provider')) {
-            $system_prompt = "You are an expert SEO content strategist. Write a comprehensive, well-structured article in Gutenberg block format (using <!-- wp:heading --> and <!-- wp:paragraph --> comments). Focus on providing valuable, original insights for the given topic. Language: {$language}. Tone: {$tone}.";
-            $user_prompt   = "Topic: {$clean_topic}\n\nPlease generate a full draft article including:\n1. A clear Title\n2. Key H2 section headings\n3. Detailed body paragraphs\n4. A 150-character SEO meta description.";
+            $system_prompt = "You are an expert SEO content strategist. Write a comprehensive, well-structured article in Gutenberg block format (using <!-- wp:heading --> and <!-- wp:paragraph --> comments). Focus on providing valuable, original insights for the given topic. Unless a shorter format is explicitly requested, produce at least 800 meaningful words, at least 5 relevant H2 headings, at least 2 useful H3 headings, and use the focus keyword naturally in the opening and throughout without stuffing. Never invent contact details, prices, testimonials, credentials, guarantees, or unsupported business claims. Language: {$language}. Tone: {$tone}.";
+            $user_prompt   = "Topic: {$clean_topic}\nFocus keyword: {$focus_keyword}\n\nPlease generate a full draft article including:\n1. A clear Title\n2. Key H2 and H3 section headings\n3. Detailed body paragraphs\n4. A 150-character SEO meta description.";
 
             $messages = array(
                 array('role' => 'system', 'content' => $system_prompt),
@@ -107,15 +110,15 @@ class GMB_Ranker_SEO_Generate_Content_Action implements GMB_Ranker_SEO_Action_In
             }
         }
 
-        // Fallback content structure if AI was disabled or unavailable
         if (empty($content)) {
-            $content  = sprintf("<!-- wp:paragraph -->\n<p>%s</p>\n<!-- /wp:paragraph -->\n\n", sprintf(__('An in-depth analysis and complete guide covering %s.', 'gmb-ranker-seo-automation'), esc_html($clean_topic)));
-            $content .= sprintf("<!-- wp:heading {\"level\":2} -->\n<h2>%s</h2>\n<!-- /wp:heading -->\n\n", sprintf(__('Understanding %s', 'gmb-ranker-seo-automation'), esc_html($clean_topic)));
-            $content .= sprintf("<!-- wp:paragraph -->\n<p>%s</p>\n<!-- /wp:paragraph -->", __('Key strategies and insights for optimizing your search visibility and audience engagement.', 'gmb-ranker-seo-automation'));
-        }
-
-        if (empty($meta_desc)) {
-            $meta_desc = wp_strip_all_tags(mb_substr($clean_topic . ' - ' . __('Learn key strategies and best practices in this comprehensive guide.', 'gmb-ranker-seo-automation'), 0, 160));
+            return array(
+                'success' => false,
+                'message' => __('AI generation did not return usable content, so no draft was created.', 'gmb-ranker-seo-automation'),
+                'data'    => array(
+                    'ai_used' => false,
+                    'title'   => $title,
+                ),
+            );
         }
 
         // Create the Post
@@ -137,9 +140,16 @@ class GMB_Ranker_SEO_Generate_Content_Action implements GMB_Ranker_SEO_Action_In
             );
         }
 
-        // Provision SEO Meta Description
-        update_post_meta($post_id, '_gmb_seo_description', sanitize_text_field($meta_desc));
+        if (!empty($meta_desc)) {
+            update_post_meta($post_id, '_gmb_seo_description', sanitize_text_field($meta_desc));
+        }
         update_post_meta($post_id, '_gmb_seo_ai_generated', $ai_used ? '1' : '0');
+        update_post_meta($post_id, '_gmb_ranker_focus_keyword', $focus_keyword);
+
+        // Populate the canonical score immediately so the editor and Posts list agree.
+        if (class_exists('GMB_Ranker_SEO_Analysis_Service')) {
+            (new GMB_Ranker_SEO_Analysis_Service())->audit_post($post_id);
+        }
 
         return array(
             'success' => true,

@@ -21,6 +21,7 @@ if ($current_page === 'gmb-ranker-integrations') :
     $ai       = isset($vm['ai']) ? $vm['ai'] : array();
     $indexnow = isset($vm['indexnow']) ? $vm['indexnow'] : array();
     $webhooks = isset($vm['webhooks']) ? $vm['webhooks'] : array();
+    $provider_chain = class_exists('GMB_Ranker_SEO_Integration_Registry') ? GMB_Ranker_SEO_Integration_Registry::get_ai_provider_chain() : array();
 
     $workspace = isset($cloud['workspace']) ? $cloud['workspace'] : array();
 ?>
@@ -154,11 +155,45 @@ if ($current_page === 'gmb-ranker-integrations') :
                                 <p class="gmb-text-muted"><?php esc_html_e('Powers automated SEO meta generation, focus keyword suggestions, and local content optimization using customizable AI providers.', 'gmb-ranker-seo-automation'); ?></p>
                             </div>
                         </div>
+                        <button type="button" class="gmb-btn gmb-btn-secondary gmb-ai-open-config" data-provider="">
+                            <span aria-hidden="true">+</span> <?php esc_html_e('Connect Providers', 'gmb-ranker-seo-automation'); ?>
+                        </button>
                     </div>
 
                     <div class="gmb-mb-16">
-                        <label for="gmb_ai_provider_select" class="gmb-form-label"><?php esc_html_e('Active AI Provider', 'gmb-ranker-seo-automation'); ?></label>
-                        <select id="gmb_ai_provider_select" name="gmb_ai_provider" class="gmb-integration-select gmb-integration-select-ai">
+                        <input type="hidden" id="gmb_ai_provider_chain" name="gmb_ai_provider_chain" value="<?php echo esc_attr(wp_json_encode($provider_chain)); ?>" />
+                        <h4 class="gmb-heading-4"><?php esc_html_e('AI Provider Priority', 'gmb-ranker-seo-automation'); ?></h4>
+                        <p class="gmb-form-help"><?php esc_html_e('Providers are attempted from top to bottom. Drag rows to reorder, or use the priority buttons. Credentials remain server-side.', 'gmb-ranker-seo-automation'); ?></p>
+                        <div class="gmb-ai-provider-table-head" aria-hidden="true">
+                            <span><?php esc_html_e('Priority', 'gmb-ranker-seo-automation'); ?></span>
+                            <span><?php esc_html_e('Provider', 'gmb-ranker-seo-automation'); ?></span>
+                            <span><?php esc_html_e('Model', 'gmb-ranker-seo-automation'); ?></span>
+                            <span><?php esc_html_e('Status', 'gmb-ranker-seo-automation'); ?></span>
+                            <span><?php esc_html_e('Enabled', 'gmb-ranker-seo-automation'); ?></span>
+                            <span><?php esc_html_e('Actions', 'gmb-ranker-seo-automation'); ?></span>
+                        </div>
+                        <div id="gmb-ai-provider-chain" class="gmb-ai-provider-chain" role="list">
+                            <?php foreach ($provider_chain as $chain_index => $chain_entry) :
+                                $chain_pid = $chain_entry['provider'];
+                                if (!isset($ai['providers'][$chain_pid])) continue;
+                                $chain_info = $ai['providers'][$chain_pid];
+                                $chain_def = $chain_info['definition'];
+                            ?>
+                                <div class="gmb-ai-provider-row" draggable="true" role="listitem" data-provider-id="<?php echo esc_attr($chain_pid); ?>">
+                                    <span class="gmb-ai-provider-drag" aria-hidden="true">&#9776;</span>
+                                    <span class="gmb-ai-provider-order-controls"><button type="button" class="button-link gmb-ai-provider-up" aria-label="<?php esc_attr_e('Move provider up', 'gmb-ranker-seo-automation'); ?>">&#9650;</button><button type="button" class="button-link gmb-ai-provider-down" aria-label="<?php esc_attr_e('Move provider down', 'gmb-ranker-seo-automation'); ?>">&#9660;</button></span>
+                                    <strong class="gmb-ai-provider-priority">#<?php echo esc_html($chain_index + 1); ?></strong>
+                                    <span class="gmb-ai-provider-name"><?php echo esc_html($chain_def['name']); ?></span>
+                                    <span class="gmb-ai-provider-model"><?php echo !empty($chain_info['model']) ? esc_html($chain_info['model']) : esc_html__('Model required', 'gmb-ranker-seo-automation'); ?></span>
+                                    <span class="gmb-ai-provider-status <?php echo !empty($chain_info['configured']) ? 'is-configured' : 'is-unconfigured'; ?>"><?php echo !empty($chain_info['configured']) ? esc_html__('Configured', 'gmb-ranker-seo-automation') : esc_html__('Configuration required', 'gmb-ranker-seo-automation'); ?></span>
+                                    <label class="gmb-checkbox-label"><input type="checkbox" class="gmb-ai-provider-enabled" <?php checked(1, $chain_entry['enabled']); ?> /> <?php esc_html_e('Enabled', 'gmb-ranker-seo-automation'); ?></label>
+                                    <button type="button" class="button gmb-ai-open-config" data-provider="<?php echo esc_attr($chain_pid); ?>"><?php esc_html_e('Configure', 'gmb-ranker-seo-automation'); ?></button>
+                                    <button type="button" class="button gmb-btn-test-ai-provider" data-provider="<?php echo esc_attr($chain_pid); ?>"><?php esc_html_e('Test Connection', 'gmb-ranker-seo-automation'); ?></button>
+                                    <span class="gmb-ai-provider-test-result" aria-live="polite"></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <select id="gmb_ai_provider_select" name="gmb_ai_provider" class="gmb-screen-reader-only" aria-hidden="true" tabindex="-1">
                             <?php foreach ($ai['providers'] as $pid => $pinfo) : 
                                 $def = $pinfo['definition'];
                             ?>
@@ -169,12 +204,30 @@ if ($current_page === 'gmb-ranker-integrations') :
                         </select>
                     </div>
 
-                    <!-- Dynamic AI Provider Subsections -->
+                    <!-- Provider configuration drawer. Legacy fields remain available to the settings API,
+                         but are not rendered as a tall stack in the primary workflow. -->
+                    <div id="gmb-ai-provider-config" class="gmb-ai-provider-modal" hidden role="dialog" aria-modal="true" aria-labelledby="gmb-ai-provider-modal-title">
+                        <div class="gmb-ai-provider-modal-backdrop" data-ai-modal-close="1"></div>
+                        <div class="gmb-ai-provider-modal-panel">
+                            <div class="gmb-ai-provider-modal-header">
+                                <div>
+                                    <h4 id="gmb-ai-provider-modal-title" class="gmb-heading-4"><?php esc_html_e('Connect AI Providers', 'gmb-ranker-seo-automation'); ?></h4>
+                                    <p class="gmb-form-help"><?php esc_html_e('Configure one or more providers. Credentials stay masked and are never exposed to the browser.', 'gmb-ranker-seo-automation'); ?></p>
+                                </div>
+                                <button type="button" class="gmb-ai-modal-close" data-ai-modal-close="1" aria-label="<?php esc_attr_e('Close provider settings', 'gmb-ranker-seo-automation'); ?>">&times;</button>
+                            </div>
+                            <div class="gmb-ai-provider-config-list">
                     <?php foreach ($ai['providers'] as $pid => $pinfo) : 
                         $def = $pinfo['definition'];
                         $is_active = ($pid === $ai['active_provider']);
                     ?>
-                        <div id="ai-section-<?php echo esc_attr($pid); ?>" class="gmb-ai-section <?php echo $is_active ? 'is-active' : ''; ?>">
+                        <div id="ai-section-<?php echo esc_attr($pid); ?>" class="gmb-ai-section <?php echo $is_active ? 'is-selected' : ''; ?>" data-provider-config="<?php echo esc_attr($pid); ?>">
+                            <div class="gmb-ai-config-heading">
+                                <strong><?php echo esc_html($def['name']); ?></strong>
+                                <span class="gmb-ai-config-state <?php echo !empty($pinfo['configured']) ? 'is-configured' : ''; ?>">
+                                    <?php echo !empty($pinfo['configured']) ? esc_html__('Configured', 'gmb-ranker-seo-automation') : esc_html__('Not configured', 'gmb-ranker-seo-automation'); ?>
+                                </span>
+                            </div>
                             <div class="gmb-grid-2">
                                 <?php if (!empty($def['is_local'])) : ?>
                                     <div>
@@ -191,7 +244,8 @@ if ($current_page === 'gmb-ranker-integrations') :
                                             <span class="gmb-ai-icon-badge"><img src="<?php echo esc_url(GMB_Ranker_SEO_Helpers::asset_url($def['icon'])); ?>" alt="<?php echo esc_attr($def['name']); ?>" /></span>
                                             <?php printf(esc_html__('%s API Key', 'gmb-ranker-seo-automation'), esc_html($def['name'])); ?>
                                         </label>
-                                        <input type="password" id="gmb_ai_<?php echo esc_attr($pid); ?>_key" name="gmb_ai_<?php echo esc_attr($pid); ?>_key" value="<?php echo esc_attr($pinfo['key']); ?>" placeholder="<?php echo esc_attr($def['key_placeholder']); ?>" class="gmb-integration-input" autocomplete="off" />
+                                        <input type="password" id="gmb_ai_<?php echo esc_attr($pid); ?>_key" name="gmb_ai_<?php echo esc_attr($pid); ?>_key" value="" placeholder="<?php echo !empty($pinfo['key']) ? esc_attr__('Key saved; leave blank to keep', 'gmb-ranker-seo-automation') : esc_attr($def['key_placeholder']); ?>" class="gmb-integration-input" autocomplete="off" />
+                                        <?php if (!empty($pinfo['key'])) : ?><input type="hidden" name="gmb_ai_<?php echo esc_attr($pid); ?>_key_keep" value="1" /><?php endif; ?>
                                         <p class="gmb-form-help"><?php esc_html_e('Get your API key at', 'gmb-ranker-seo-automation'); ?> <a href="<?php echo esc_url($def['doc_url']); ?>" target="_blank" rel="noopener noreferrer" class="gmb-help-link"><?php echo esc_html(wp_parse_url($def['doc_url'], PHP_URL_HOST)); ?></a>.</p>
                                     </div>
                                 <?php endif; ?>
@@ -208,6 +262,13 @@ if ($current_page === 'gmb-ranker-integrations') :
                             </div>
                         </div>
                     <?php endforeach; ?>
+                            </div>
+                            <div class="gmb-ai-provider-modal-footer">
+                                <button type="button" class="gmb-btn gmb-btn-secondary" data-ai-modal-close="1"><?php esc_html_e('Cancel', 'gmb-ranker-seo-automation'); ?></button>
+                                <button type="button" class="gmb-btn gmb-btn-primary gmb-ai-modal-save"><?php esc_html_e('Save All Providers', 'gmb-ranker-seo-automation'); ?></button>
+                            </div>
+                    </div>
+                </div>
                 </div>
 
                 <!-- Card 3: IndexNow & Search Engine Instant APIs -->

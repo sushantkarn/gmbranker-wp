@@ -12,6 +12,19 @@ class GMB_Ranker_SEO_Analysis {
             return array('score' => 0, 'results' => array());
         }
 
+        // Keep legacy callers on the canonical evidence-based score contract.
+        if (class_exists('GMB_Ranker_SEO_Analysis_Service')) {
+            $audit = (new GMB_Ranker_SEO_Analysis_Service())->audit_post($post_id);
+            $legacy_results = array();
+            foreach ((array) ($audit['results'] ?? array()) as $result) {
+                $legacy_results[] = isset($result['msg']) ? $result['msg'] : (string) $result;
+            }
+            return array(
+                'score'   => isset($audit['score']) ? (int) $audit['score'] : 0,
+                'results' => $legacy_results,
+            );
+        }
+
         $title = $post->post_title;
         $content = $post->post_content;
         if (empty($content) || strlen(trim(wp_strip_all_tags($content))) < 20) {
@@ -215,4 +228,3 @@ class GMB_Ranker_SEO_Analysis {
         );
     }
 }
-

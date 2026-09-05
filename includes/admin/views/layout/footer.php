@@ -245,9 +245,10 @@ foreach ($all_roles as $role_slug => $role_obj) {
                         <div class="gmb-form-group gmb-mb-16">
                             <label class="gmb-label gmb-form-label" for="gmb-ai-provider-select"><?php esc_html_e('Active AI Provider', 'gmb-ranker-seo-automation'); ?></label>
                             <select name="gmb_ai_provider" id="gmb-ai-provider-select" class="gmb-select">
-                                <option value="openrouter" <?php selected(get_option('gmb_ai_provider', 'openrouter'), 'openrouter'); ?>><?php esc_html_e('OpenRouter', 'gmb-ranker-seo-automation'); ?></option>
-                                <option value="groq" <?php selected(get_option('gmb_ai_provider', 'openrouter'), 'groq'); ?>><?php esc_html_e('Groq', 'gmb-ranker-seo-automation'); ?></option>
-                                <option value="ollama" <?php selected(get_option('gmb_ai_provider', 'openrouter'), 'ollama'); ?>><?php esc_html_e('Ollama (Local AI)', 'gmb-ranker-seo-automation'); ?></option>
+                                <option value="openrouter" <?php selected(get_option('gmb_ai_provider', ''), 'openrouter'); ?>><?php esc_html_e('OpenRouter', 'gmb-ranker-seo-automation'); ?></option>
+                                <option value="groq" <?php selected(get_option('gmb_ai_provider', ''), 'groq'); ?>><?php esc_html_e('Groq', 'gmb-ranker-seo-automation'); ?></option>
+                                <option value="ollama" <?php selected(get_option('gmb_ai_provider', ''), 'ollama'); ?>><?php esc_html_e('Ollama (Local AI)', 'gmb-ranker-seo-automation'); ?></option>
+                                <option value="nvidia" <?php selected(get_option('gmb_ai_provider', ''), 'nvidia'); ?>><?php esc_html_e('NVIDIA NIM', 'gmb-ranker-seo-automation'); ?></option>
                             </select>
                         </div>
 
@@ -255,11 +256,12 @@ foreach ($all_roles as $role_slug => $role_obj) {
                         <div class="ai-provider-section gmb-mb-16" id="ai-section-openrouter">
                             <div class="gmb-form-group gmb-mb-12">
                                 <label class="gmb-label gmb-form-label" for="gmb_ai_openrouter_key"><?php esc_html_e('OpenRouter API Key', 'gmb-ranker-seo-automation'); ?></label>
-                                <input type="password" id="gmb_ai_openrouter_key" name="gmb_ai_openrouter_key" value="<?php echo esc_attr(get_option('gmb_ai_openrouter_key', '')); ?>" class="gmb-input-full-pad" autocomplete="off" />
+                                <input type="password" id="gmb_ai_openrouter_key" name="gmb_ai_openrouter_key" value="" placeholder="<?php echo !empty(get_option('gmb_ai_openrouter_key', '')) ? esc_attr__('Key saved; leave blank to keep', 'gmb-ranker-seo-automation') : ''; ?>" class="gmb-input-full-pad" autocomplete="off" />
+                                <?php if (!empty(get_option('gmb_ai_openrouter_key', ''))) : ?><input type="hidden" name="gmb_ai_openrouter_key_keep" value="1" /><?php endif; ?>
                             </div>
                             <div class="gmb-form-group">
                                 <label class="gmb-label gmb-form-label" for="gmb_ai_openrouter_model"><?php esc_html_e('OpenRouter Model', 'gmb-ranker-seo-automation'); ?></label>
-                                <input type="text" id="gmb_ai_openrouter_model" name="gmb_ai_openrouter_model" value="<?php echo esc_attr(get_option('gmb_ai_openrouter_model', 'meta-llama/llama-3.1-8b-instruct:free')); ?>" class="gmb-input-full-pad" />
+                                <input type="text" id="gmb_ai_openrouter_model" name="gmb_ai_openrouter_model" value="<?php echo esc_attr(get_option('gmb_ai_openrouter_model', '')); ?>" class="gmb-input-full-pad" />
                             </div>
                         </div>
 
@@ -267,11 +269,12 @@ foreach ($all_roles as $role_slug => $role_obj) {
                         <div class="ai-provider-section gmb-mb-16" id="ai-section-groq">
                             <div class="gmb-form-group gmb-mb-12">
                                 <label class="gmb-label gmb-form-label" for="gmb_ai_groq_key"><?php esc_html_e('Groq API Key', 'gmb-ranker-seo-automation'); ?></label>
-                                <input type="password" id="gmb_ai_groq_key" name="gmb_ai_groq_key" value="<?php echo esc_attr(get_option('gmb_ai_groq_key', '')); ?>" class="gmb-input-full-pad" autocomplete="off" />
+                                <input type="password" id="gmb_ai_groq_key" name="gmb_ai_groq_key" value="" placeholder="<?php echo !empty(get_option('gmb_ai_groq_key', '')) ? esc_attr__('Key saved; leave blank to keep', 'gmb-ranker-seo-automation') : ''; ?>" class="gmb-input-full-pad" autocomplete="off" />
+                                <?php if (!empty(get_option('gmb_ai_groq_key', ''))) : ?><input type="hidden" name="gmb_ai_groq_key_keep" value="1" /><?php endif; ?>
                             </div>
                             <div class="gmb-form-group">
                                 <label class="gmb-label gmb-form-label" for="gmb_ai_groq_model"><?php esc_html_e('Groq Model', 'gmb-ranker-seo-automation'); ?></label>
-                                <input type="text" id="gmb_ai_groq_model" name="gmb_ai_groq_model" value="<?php echo esc_attr(get_option('gmb_ai_groq_model', 'llama-3.1-8b-instant')); ?>" class="gmb-input-full-pad" />
+                                <input type="text" id="gmb_ai_groq_model" name="gmb_ai_groq_model" value="<?php echo esc_attr(get_option('gmb_ai_groq_model', '')); ?>" class="gmb-input-full-pad" />
                             </div>
                         </div>
 
@@ -279,12 +282,19 @@ foreach ($all_roles as $role_slug => $role_obj) {
                         <div class="ai-provider-section gmb-mb-16" id="ai-section-ollama">
                             <div class="gmb-form-group gmb-mb-12">
                                 <label class="gmb-label gmb-form-label" for="gmb_ai_ollama_url"><?php esc_html_e('Ollama Base URL', 'gmb-ranker-seo-automation'); ?></label>
-                                <input type="text" id="gmb_ai_ollama_url" name="gmb_ai_ollama_url" value="<?php echo esc_attr(get_option('gmb_ai_ollama_url', 'http://localhost:11434')); ?>" class="gmb-input-full-pad" />
+                                <input type="text" id="gmb_ai_ollama_url" name="gmb_ai_ollama_url" value="<?php echo esc_attr(get_option('gmb_ai_ollama_url', '')); ?>" class="gmb-input-full-pad" />
                             </div>
                             <div class="gmb-form-group">
                                 <label class="gmb-label gmb-form-label" for="gmb_ai_ollama_model"><?php esc_html_e('Ollama Model', 'gmb-ranker-seo-automation'); ?></label>
-                                <input type="text" id="gmb_ai_ollama_model" name="gmb_ai_ollama_model" value="<?php echo esc_attr(get_option('gmb_ai_ollama_model', 'llama3')); ?>" class="gmb-input-full-pad" />
+                                <input type="text" id="gmb_ai_ollama_model" name="gmb_ai_ollama_model" value="<?php echo esc_attr(get_option('gmb_ai_ollama_model', '')); ?>" class="gmb-input-full-pad" />
                             </div>
+                        </div>
+                        <div class="ai-provider-section gmb-mb-16" id="ai-section-nvidia">
+                            <label class="gmb-label gmb-form-label" for="gmb_ai_nvidia_key"><?php esc_html_e('NVIDIA API Key', 'gmb-ranker-seo-automation'); ?></label>
+                            <input type="password" id="gmb_ai_nvidia_key" name="gmb_ai_nvidia_key" value="" placeholder="<?php echo !empty(get_option('gmb_ai_nvidia_key', '')) ? esc_attr__('Key saved; leave blank to keep', 'gmb-ranker-seo-automation') : ''; ?>" class="gmb-input-full-pad" autocomplete="off" />
+                            <?php if (!empty(get_option('gmb_ai_nvidia_key', ''))) : ?><input type="hidden" name="gmb_ai_nvidia_key_keep" value="1" /><?php endif; ?>
+                            <label class="gmb-label gmb-form-label" for="gmb_ai_nvidia_model"><?php esc_html_e('NVIDIA Model', 'gmb-ranker-seo-automation'); ?></label>
+                            <input type="text" id="gmb_ai_nvidia_model" name="gmb_ai_nvidia_model" value="<?php echo esc_attr(get_option('gmb_ai_nvidia_model', '')); ?>" class="gmb-input-full-pad" />
                         </div>
                         
                         <div class="gmb-text-right">

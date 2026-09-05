@@ -142,7 +142,7 @@ class GMB_Ranker_SEO_Metabox_Registry {
             if ($score >= 80) {
                 return 'gmb-score-badge--good';
             }
-            if ($score >= 50) {
+            if ($score >= 40) {
                 return 'gmb-score-badge--ok';
             }
             return 'gmb-score-badge--poor';
@@ -151,10 +151,10 @@ class GMB_Ranker_SEO_Metabox_Registry {
         if ($score >= 80) {
             return 'green';
         }
-        if ($score < 60) {
-            return 'red';
+        if ($score >= 40) {
+            return 'orange';
         }
-        return 'orange';
+        return 'red';
     }
 
     /**
@@ -212,12 +212,15 @@ class GMB_Ranker_SEO_Metabox_Registry {
         if (isset($request_data['gmb_seo_max_snippet'])) {
             update_post_meta($post_id, '_gmb_ranker_seo_max_snippet', sanitize_text_field(wp_unslash($request_data['gmb_seo_max_snippet'])));
         }
+        update_post_meta($post_id, '_gmb_ranker_seo_max_snippet_enabled', isset($request_data['gmb_seo_max_snippet_enabled']) ? '1' : '0');
         if (isset($request_data['gmb_seo_max_video'])) {
             update_post_meta($post_id, '_gmb_ranker_seo_max_video', sanitize_text_field(wp_unslash($request_data['gmb_seo_max_video'])));
         }
+        update_post_meta($post_id, '_gmb_ranker_seo_max_video_enabled', isset($request_data['gmb_seo_max_video_enabled']) ? '1' : '0');
         if (isset($request_data['gmb_seo_max_image'])) {
             update_post_meta($post_id, '_gmb_ranker_seo_max_image', sanitize_text_field(wp_unslash($request_data['gmb_seo_max_image'])));
         }
+        update_post_meta($post_id, '_gmb_ranker_seo_max_image_enabled', isset($request_data['gmb_seo_max_image_enabled']) ? '1' : '0');
 
         // Breadcrumb Title Override
         if (isset($request_data['gmb_seo_breadcrumb_title'])) {
@@ -225,6 +228,10 @@ class GMB_Ranker_SEO_Metabox_Registry {
         }
 
         // Page Redirection
+        if (empty($request_data['gmb_seo_redirect_enabled'])) {
+            update_post_meta($post_id, '_gmb_ranker_redirect_url', '');
+            update_post_meta($post_id, '_gmb_ranker_redirect_code', '301');
+        }
         if (isset($request_data['gmb_seo_redirect_url'])) {
             $red_url = filter_var(wp_unslash($request_data['gmb_seo_redirect_url']), FILTER_VALIDATE_URL) ? esc_url_raw(wp_unslash($request_data['gmb_seo_redirect_url'])) : '';
             update_post_meta($post_id, '_gmb_ranker_redirect_url', $red_url);
@@ -243,8 +250,8 @@ class GMB_Ranker_SEO_Metabox_Registry {
         } elseif (isset($request_data['gmb_seo_focus_kw'])) {
             $focus_kw = sanitize_text_field(wp_unslash($request_data['gmb_seo_focus_kw']));
         }
+        update_post_meta($post_id, '_gmb_ranker_focus_keyword', $focus_kw);
         if (!empty($focus_kw)) {
-            update_post_meta($post_id, '_gmb_ranker_focus_keyword', $focus_kw);
             update_post_meta($post_id, '_yoast_wpseo_focuskw', $focus_kw);
             update_post_meta($post_id, 'rank_math_focus_keyword', $focus_kw);
         }
@@ -253,10 +260,8 @@ class GMB_Ranker_SEO_Metabox_Registry {
         $is_pillar = isset($request_data['gmb_seo_is_pillar']) ? '1' : '0';
         update_post_meta($post_id, '_gmb_ranker_seo_is_pillar', $is_pillar);
 
-        // SEO Score (Calculated server side or passed from validated analyzer)
-        if (isset($request_data['gmb_seo_score'])) {
-            update_post_meta($post_id, '_gmb_ranker_seo_score', intval(wp_unslash($request_data['gmb_seo_score'])));
-        }
+        // SEO score is deliberately not accepted from the browser. The
+        // authoritative analysis service recalculates it after the post save.
 
         // Schema JSON-LD & Active Schemas
         if (isset($request_data['gmb_seo_active_schemas'])) {

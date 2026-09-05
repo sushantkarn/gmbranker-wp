@@ -52,6 +52,7 @@ class GMB_Ranker_SEO_Ajax_Admin {
 
         // Schema
         add_action('wp_ajax_gmb_apply_schema_preset', array($this, 'ajax_apply_schema_preset'));
+        add_action('wp_ajax_gmb_save_post_schema', array($this, 'ajax_save_post_schema'));
         add_action('wp_ajax_gmb_save_schema_template', array($this->schema_handler, 'handle_save_schema_template'));
         add_action('wp_ajax_gmb_delete_schema_template', array($this->schema_handler, 'handle_delete_schema_template'));
         add_action('wp_ajax_gmb_toggle_schema_template', array($this->schema_handler, 'handle_toggle_schema_template'));
@@ -72,6 +73,8 @@ class GMB_Ranker_SEO_Ajax_Admin {
         add_action('wp_ajax_gmb_apply_ai_redirects', array($this, 'ajax_apply_ai_redirects'));
         add_action('wp_ajax_gmb_test_outbound_webhook', array($this, 'ajax_test_outbound_webhook'));
         add_action('wp_ajax_gmb_ai_analyze_and_fix_post_seo', array($this, 'ajax_ai_analyze_and_fix_post_seo'));
+        add_action('wp_ajax_gmb_ai_research_progress', array($this, 'ajax_ai_research_progress'));
+        add_action('wp_ajax_gmb_ai_test_provider', array($this, 'ajax_ai_test_provider'));
         add_action('wp_ajax_gmb_quick_save_ai_seo_fields', array($this, 'ajax_quick_save_ai_seo_fields'));
         add_action('wp_ajax_gmb_check_focus_keyword_uniqueness', array($this, 'ajax_check_focus_keyword_uniqueness'));
     }
@@ -686,55 +689,125 @@ class GMB_Ranker_SEO_Ajax_Admin {
     /**
      * AI Analyze and Fix Post SEO
      */
+    public function ajax_ai_test_provider() {
+        $this->enforce_ajax_csrf_protection();
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Administrator capability required.', 'gmb-ranker-seo-automation')), 403);
+        }
+
+        $provider = isset($_POST['provider']) ? sanitize_key(wp_unslash($_POST['provider'])) : '';
+        $known = class_exists('GMB_Ranker_SEO_Integration_Registry') ? array_keys(GMB_Ranker_SEO_Integration_Registry::get_ai_providers()) : array();
+        if (!$provider || !in_array($provider, $known, true)) {
+            wp_send_json_error(array('message' => __('Unknown AI provider.', 'gmb-ranker-seo-automation')), 400);
+        }
+
+        $result = GMB_Ranker_SEO_AI_Provider::test_connection($provider);
+        if (is_wp_error($result)) {
+            wp_send_json_error(array('message' => $result->get_error_message()), 502);
+        }
+        wp_send_json_success(array(
+            'provider'   => sanitize_key($result['provider'] ?? $provider),
+            'model'      => sanitize_text_field($result['model'] ?? ''),
+            'latency_ms' => absint($result['latency_ms'] ?? 0),
+            'message'    => __('Connection test succeeded.', 'gmb-ranker-seo-automation'),
+        ));
+    }
+
+    /**
+     * AI Analyze and Fix Post SEO
+     */
+    public function ajax_ai_research_progress() {
+        $this->enforce_ajax_csrf_protection();
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error(array('message' => __('Unauthorized access.', 'gmb-ranker-seo-automation')), 403);
+        }
+        $token = isset($_POST['progress_token']) ? sanitize_key(wp_unslash($_POST['progress_token'])) : '';
+        if (!$token || !class_exists('GMB_Ranker_SEO_Research_Engine')) {
+            wp_send_json_error(array('message' => __('Research progress is unavailable.', 'gmb-ranker-seo-automation')), 400);
+        }
+        wp_send_json_success(GMB_Ranker_SEO_Research_Engine::get_progress($token));
+    }
+
     public function ajax_ai_analyze_and_fix_post_seo() {
         $this->enforce_ajax_csrf_protection();
 
+        $progress_token = isset($_POST['progress_token']) ? sanitize_key(wp_unslash($_POST['progress_token'])) : '';
+        if ($progress_token && class_exists('GMB_Ranker_SEO_Research_Engine')) {
+            GMB_Ranker_SEO_Research_Engine::begin_progress($progress_token);
+        }
+
         $post_id = isset($_POST['post_id']) ? intval(wp_unslash($_POST['post_id'])) : 0;
-        if (empty($post_id) || !current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => __('Unauthorized access or invalid post ID.', 'gmb-ranker-seo-automation')), 403);
+        $post    = null;
+        if ($post_id > 0) {
+            if (!current_user_can('edit_post', $post_id)) {
+                wp_send_json_error(array('message' => __('Unauthorized access or invalid post ID.', 'gmb-ranker-seo-automation')), 403);
+            }
+            $post = get_post($post_id);
+            if (!$post || in_array($post->post_status, array('trash'), true)) {
+                wp_send_json_error(array('message' => __('Target post not found or invalid status.', 'gmb-ranker-seo-automation')), 404);
+            }
+        } else {
+            if (!current_user_can('edit_posts')) {
+                wp_send_json_error(array('message' => __('Unauthorized access.', 'gmb-ranker-seo-automation')), 403);
+            }
         }
 
-        $post = get_post($post_id);
-        if (!$post || in_array($post->post_status, array('trash', 'auto-draft'), true)) {
-            wp_send_json_error(array('message' => __('Target post not found or invalid status.', 'gmb-ranker-seo-automation')), 404);
-        }
-
-        $focus_kw = isset($_POST['focus_keyword']) ? sanitize_text_field(wp_unslash($_POST['focus_keyword'])) : '';
-        if (empty($focus_kw) && class_exists('GMB_Ranker_SEO_Keyword_Repository')) {
+        $focus_kw = isset($_POST['focus_keyword']) && !empty($_POST['focus_keyword']) ? sanitize_text_field(wp_unslash($_POST['focus_keyword'])) : (isset($_POST['target_query']) && !empty($_POST['target_query']) ? sanitize_text_field(wp_unslash($_POST['target_query'])) : (isset($_POST['keyword']) ? sanitize_text_field(wp_unslash($_POST['keyword'])) : ''));
+        if (empty($focus_kw) && $post_id > 0 && class_exists('GMB_Ranker_SEO_Keyword_Repository')) {
             $kw_repo  = new GMB_Ranker_SEO_Keyword_Repository();
             $focus_kw = $kw_repo->get_focus_keyword($post_id);
         }
-        if (empty($focus_kw)) {
+        if (empty($focus_kw) && $post_id > 0) {
             $focus_kw = get_the_title($post_id);
         }
 
-        $current_title = isset($_POST['seo_title']) ? sanitize_text_field(wp_unslash($_POST['seo_title'])) : get_post_meta($post_id, '_gmb_ranker_seo_title', true);
+        $current_title = isset($_POST['title']) && !empty($_POST['title']) ? sanitize_text_field(wp_unslash($_POST['title'])) : (isset($_POST['article_title']) && !empty($_POST['article_title']) ? sanitize_text_field(wp_unslash($_POST['article_title'])) : (isset($_POST['seo_title']) && !empty($_POST['seo_title']) ? sanitize_text_field(wp_unslash($_POST['seo_title'])) : ''));
+        if (empty($current_title) && $post_id > 0) {
+            $current_title = get_post_meta($post_id, '_gmb_ranker_seo_title', true) ?: get_the_title($post_id);
+        }
         if (empty($current_title)) {
-            $current_title = get_the_title($post_id);
+            $current_title = $focus_kw;
         }
 
-        $current_desc = isset($_POST['meta_description']) ? sanitize_textarea_field(wp_unslash($_POST['meta_description'])) : get_post_meta($post_id, '_gmb_ranker_seo_description', true);
+        $current_desc = isset($_POST['meta_description']) ? sanitize_textarea_field(wp_unslash($_POST['meta_description'])) : ($post_id > 0 ? get_post_meta($post_id, '_gmb_ranker_seo_description', true) : '');
 
+        $pipeline_error = '';
         try {
             if (class_exists('GMB_Ranker_SEO_Research_Engine')) {
                 $args = array(
-                    'post_id'       => $post_id,
-                    'title'         => $current_title,
-                    'content'       => isset($_POST['content']) ? wp_unslash($_POST['content']) : $post->post_content,
-                    'focus_keyword' => $focus_kw,
-                    'country'       => isset($_POST['country']) ? sanitize_text_field(wp_unslash($_POST['country'])) : 'GLOBAL|google.com',
-                    'language'      => isset($_POST['language']) ? sanitize_text_field(wp_unslash($_POST['language'])) : 'en',
-                    'mode'          => isset($_POST['mode']) ? sanitize_text_field(wp_unslash($_POST['mode'])) : 'optimize',
+                    'post_id'           => $post_id,
+                    'title'             => $current_title,
+                    'article_title'     => $current_title,
+                    'content'           => isset($_POST['content']) ? wp_unslash($_POST['content']) : ($post ? $post->post_content : ''),
+                    'focus_keyword'     => $focus_kw,
+                    'target_query'      => $focus_kw,
+                    'country'           => isset($_POST['country']) ? sanitize_text_field(wp_unslash($_POST['country'])) : '',
+                    'language'          => isset($_POST['language']) ? sanitize_text_field(wp_unslash($_POST['language'])) : 'en',
+                    'mode'              => isset($_POST['mode']) ? sanitize_text_field(wp_unslash($_POST['mode'])) : 'optimize',
+                    'tone'              => isset($_POST['tone']) ? sanitize_text_field(wp_unslash($_POST['tone'])) : 'auto',
+                    'intent'            => isset($_POST['intent']) ? sanitize_text_field(wp_unslash($_POST['intent'])) : (isset($_POST['search_intent']) ? sanitize_text_field(wp_unslash($_POST['search_intent'])) : 'auto'),
+                    'user_instructions' => isset($_POST['user_instructions']) ? sanitize_textarea_field(wp_unslash($_POST['user_instructions'])) : '',
                 );
 
+                $args['progress_token'] = $progress_token;
                 $research_data = GMB_Ranker_SEO_Research_Engine::run_research_pipeline($args);
                 if (!empty($research_data) && is_array($research_data)) {
                     wp_send_json_success($research_data);
                 }
+                $pipeline_error = __('Research pipeline returned no result.', 'gmb-ranker-seo-automation');
+            }
+            if (!class_exists('GMB_Ranker_SEO_Research_Engine')) {
+                $pipeline_error = __('Research engine is unavailable.', 'gmb-ranker-seo-automation');
             }
         } catch (\Throwable $e) {
+            $pipeline_error = sprintf(__('Research pipeline failed: %s', 'gmb-ranker-seo-automation'), sanitize_text_field($e->getMessage()));
             error_log('GMB Ranker SEO Research Engine Error: ' . $e->getMessage());
+            if ($progress_token && class_exists('GMB_Ranker_SEO_Research_Engine')) {
+                GMB_Ranker_SEO_Research_Engine::finish_progress('error', $pipeline_error);
+            }
         }
+
+        wp_send_json_error(array('message' => $pipeline_error ?: __('Research pipeline failed without a diagnostic.', 'gmb-ranker-seo-automation')), 502);
 
         // Run canonical SEO audit via analysis service
         $saved_meta_score = get_post_meta($post_id, '_gmb_ranker_seo_score', true);
@@ -946,8 +1019,14 @@ class GMB_Ranker_SEO_Ajax_Admin {
         $this->enforce_ajax_csrf_protection();
 
         $post_id = isset($_POST['post_id']) ? intval(wp_unslash($_POST['post_id'])) : 0;
-        if (empty($post_id) || !current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => __('Unauthorized access or invalid post ID.', 'gmb-ranker-seo-automation')), 403);
+        if ($post_id > 0) {
+            if (!current_user_can('edit_post', $post_id)) {
+                wp_send_json_error(array('message' => __('Unauthorized access or invalid post ID.', 'gmb-ranker-seo-automation')), 403);
+            }
+        } else {
+            if (!current_user_can('edit_posts')) {
+                wp_send_json_error(array('message' => __('Unauthorized access.', 'gmb-ranker-seo-automation')), 403);
+            }
         }
 
         if (isset($_POST['meta_title'])) {
@@ -963,12 +1042,93 @@ class GMB_Ranker_SEO_Ajax_Admin {
             update_post_meta($post_id, 'rank_math_description', $clean_desc);
         }
         if (isset($_POST['focus_keyword']) && class_exists('GMB_Ranker_SEO_Keyword_Repository')) {
+            $focus_keyword = sanitize_text_field(wp_unslash($_POST['focus_keyword']));
+            if (function_exists('mb_strlen') && mb_strlen($focus_keyword) > 200) {
+                wp_send_json_error(array('message' => __('Focus Keyword must be 200 characters or fewer.', 'gmb-ranker-seo-automation')), 400);
+            }
             $kw_repo = new GMB_Ranker_SEO_Keyword_Repository();
-            $kw_repo->set_focus_keyword($post_id, sanitize_text_field(wp_unslash($_POST['focus_keyword'])));
+            $kw_repo->set_focus_keyword($post_id, $focus_keyword);
+        }
+        if (isset($_POST['is_pillar'])) {
+            update_post_meta($post_id, '_gmb_ranker_seo_is_pillar', wp_validate_boolean(wp_unslash($_POST['is_pillar'])) ? '1' : '0');
+        }
+        if (isset($_POST['canonical'])) {
+            $canonical = esc_url_raw(wp_unslash($_POST['canonical']));
+            update_post_meta($post_id, '_gmb_ranker_seo_canonical', $canonical);
+        }
+        if (isset($_POST['facebook_title'])) {
+            update_post_meta($post_id, '_gmb_ranker_facebook_title', sanitize_text_field(wp_unslash($_POST['facebook_title'])));
+        }
+        if (isset($_POST['facebook_desc'])) {
+            update_post_meta($post_id, '_gmb_ranker_facebook_desc', sanitize_textarea_field(wp_unslash($_POST['facebook_desc'])));
+        }
+        if (isset($_POST['facebook_image'])) {
+            update_post_meta($post_id, '_gmb_ranker_facebook_image', esc_url_raw(wp_unslash($_POST['facebook_image'])));
+        }
+        if (isset($_POST['twitter_title'])) {
+            update_post_meta($post_id, '_gmb_ranker_twitter_title', sanitize_text_field(wp_unslash($_POST['twitter_title'])));
+        }
+        if (isset($_POST['twitter_desc'])) {
+            update_post_meta($post_id, '_gmb_ranker_twitter_desc', sanitize_textarea_field(wp_unslash($_POST['twitter_desc'])));
+        }
+        if (isset($_POST['twitter_image'])) {
+            update_post_meta($post_id, '_gmb_ranker_twitter_image', esc_url_raw(wp_unslash($_POST['twitter_image'])));
+        }
+        if (isset($_POST['twitter_card_type'])) {
+            $card_type = sanitize_key(wp_unslash($_POST['twitter_card_type']));
+            if (in_array($card_type, array('summary', 'summary_large_image', 'app', 'player'), true)) {
+                update_post_meta($post_id, '_gmb_ranker_twitter_card_type', $card_type);
+            }
         }
         if (isset($_POST['schema_preset'])) {
             $clean_schema = sanitize_text_field(wp_unslash($_POST['schema_preset']));
-            update_post_meta($post_id, '_gmb_ranker_schema_type', strtolower($clean_schema));
+            $schema_key = sanitize_key($clean_schema);
+            $allowed_schema_types = array(
+                'webpage', 'article', 'aboutpage', 'service', 'localbusiness', 'product',
+                'book', 'course', 'dataset', 'event', 'faqpage', 'factcheck', 'howto',
+                'jobposting', 'movie', 'music', 'person', 'recipe', 'review', 'softwareapplication',
+            );
+            if (in_array($schema_key, $allowed_schema_types, true)) {
+                // The Schema tab renders from _gmb_ranker_active_schemas. Updating only
+                // _gmb_ranker_schema_type made AI fixes disappear from the visible UI.
+                $active_schemas = get_post_meta($post_id, '_gmb_ranker_active_schemas', true);
+                if (is_string($active_schemas)) {
+                    $active_schemas = array_filter(array_map('trim', explode(',', $active_schemas)));
+                }
+                if (!is_array($active_schemas)) {
+                    $active_schemas = array();
+                }
+
+                $schema_label = ucfirst($schema_key);
+                $already_active = false;
+                foreach ($active_schemas as $active_schema) {
+                    if (strtolower((string) $active_schema) === $schema_key) {
+                        $already_active = true;
+                        break;
+                    }
+                }
+                if (!$already_active) {
+                    $active_schemas[] = $schema_label;
+                }
+                $active_schemas = array_values(array_unique(array_map('sanitize_text_field', $active_schemas)));
+                // The AI-selected schema is the primary recommendation, so
+                // keep it first while preserving any other active schemas.
+                $active_schemas = array_values(array_merge(
+                    array($schema_label),
+                    array_filter($active_schemas, function ($active_schema) use ($schema_key) {
+                        return strtolower((string) $active_schema) !== $schema_key;
+                    })
+                ));
+                update_post_meta($post_id, '_gmb_ranker_active_schemas', $active_schemas);
+                update_post_meta($post_id, '_gmb_ranker_schema_type', $schema_label);
+                update_post_meta($post_id, 'rank_math_rich_snippet', $schema_key);
+            }
+        }
+        if (isset($_POST['slug']) && $post_id > 0) {
+            $clean_slug = sanitize_title(wp_unslash($_POST['slug']));
+            if ($clean_slug !== '') {
+                wp_update_post(array('ID' => $post_id, 'post_name' => $clean_slug));
+            }
         }
         if (isset($_POST['table_of_contents']) && $_POST['table_of_contents'] === '1') {
             update_option('gmb_toc_auto_insert', '1');
@@ -979,8 +1139,22 @@ class GMB_Ranker_SEO_Ajax_Admin {
             $existing_post = get_post($post_id);
             if ($existing_post) {
                 $cur_content = $existing_post->post_content;
-                if (stripos($cur_content, mb_substr(wp_strip_all_tags($clean_intro), 0, 50)) === false) {
+                $content_mode = isset($_POST['content_mode']) ? sanitize_key(wp_unslash($_POST['content_mode'])) : 'prepend';
+                if ($content_mode === 'replace_intro') {
+                    // Keep direct AJAX callers from inserting unwrapped text into post_content.
+                    if (strpos(trim($clean_intro), '<') !== 0) {
+                        $clean_intro = '<p>' . esc_html(trim($clean_intro)) . '</p>';
+                    }
+                    $new_content = preg_replace('/<p\b[^>]*>[\s\S]*?<\/p>/i', $clean_intro, $cur_content, 1, $intro_replacements);
+                    if (!$intro_replacements) {
+                        $new_content = $clean_intro . "\n\n" . $cur_content;
+                    }
+                } elseif (stripos($cur_content, mb_substr(wp_strip_all_tags($clean_intro), 0, 50)) === false) {
                     $new_content = $clean_intro . "\n\n" . $cur_content;
+                } else {
+                    $new_content = $cur_content;
+                }
+                if ($new_content !== $cur_content) {
                     wp_update_post(array(
                         'ID'           => $post_id,
                         'post_content' => $new_content,
@@ -1031,5 +1205,78 @@ class GMB_Ranker_SEO_Ajax_Admin {
                 'conflicts'       => array(),
             ));
         }
+    }
+
+    /**
+     * Save Post Schema & Active Schema Cards via AJAX
+     */
+    public function ajax_save_post_schema() {
+        if (!check_ajax_referer('gmb_admin_ajax_nonce', 'nonce', false) && !check_ajax_referer('gmb_seo_save_nonce', 'nonce', false)) {
+            wp_send_json_error(array('message' => __('Security verification failed (invalid nonce).', 'gmb-ranker-seo-automation')));
+        }
+
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'gmb-ranker-seo-automation')));
+        }
+
+        $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+        if (!$post_id || !current_user_can('edit_post', $post_id)) {
+            wp_send_json_error(array('message' => __('Invalid post ID or access denied.', 'gmb-ranker-seo-automation')));
+        }
+
+        $active_schemas_raw = isset($_POST['active_schemas']) ? sanitize_text_field(wp_unslash($_POST['active_schemas'])) : '';
+        $active_schemas_arr = !empty($active_schemas_raw) ? array_filter(array_map('trim', explode(',', $active_schemas_raw))) : array();
+
+        $schema_json = isset($_POST['schema_json']) ? wp_unslash($_POST['schema_json']) : '';
+        if (!empty($schema_json)) {
+            $clean_json = trim($schema_json);
+            if (strpos($clean_json, '<script') !== false) {
+                $clean_json = preg_replace('/<script[^>]*>/i', '', $clean_json);
+                $clean_json = preg_replace('/<\/script>/i', '', $clean_json);
+                $clean_json = trim($clean_json);
+            }
+
+            $decoded_schema = json_decode($clean_json, true);
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded_schema) || empty($decoded_schema)) {
+                wp_send_json_error(array('message' => __('Schema must be valid, non-empty JSON.', 'gmb-ranker-seo-automation')), 400);
+            }
+
+            $has_schema_type = isset($decoded_schema['@type']) || isset($decoded_schema['@graph']);
+            if (!$has_schema_type) {
+                wp_send_json_error(array('message' => __('Schema JSON must include an @type or @graph property.', 'gmb-ranker-seo-automation')), 400);
+            }
+
+            if (isset($decoded_schema['@context']) && !in_array($decoded_schema['@context'], array('https://schema.org', 'http://schema.org'), true)) {
+                wp_send_json_error(array('message' => __('Schema @context must reference schema.org.', 'gmb-ranker-seo-automation')), 400);
+            }
+
+            // Store normalized JSON only; imported content is never executed.
+            $clean_json = wp_json_encode($decoded_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            update_post_meta($post_id, '_gmb_ranker_seo_schema', $clean_json);
+            update_post_meta($post_id, '_gmb_ranker_json_ld', $clean_json);
+        } else {
+            delete_post_meta($post_id, '_gmb_ranker_seo_schema');
+            delete_post_meta($post_id, '_gmb_ranker_json_ld');
+        }
+
+        update_post_meta($post_id, '_gmb_ranker_active_schemas', array_values($active_schemas_arr));
+        if (!empty($active_schemas_arr)) {
+            $primary_schema = reset($active_schemas_arr);
+            update_post_meta($post_id, '_gmb_ranker_schema_type', $primary_schema);
+            update_post_meta($post_id, 'rank_math_rich_snippet', strtolower($primary_schema));
+        } else {
+            update_post_meta($post_id, '_gmb_ranker_schema_type', '');
+        }
+
+        // Re-audit score
+        if (class_exists('GMB_Ranker_SEO_Analysis_Service')) {
+            (new GMB_Ranker_SEO_Analysis_Service())->audit_post($post_id);
+        }
+
+        wp_send_json_success(array(
+            'message'        => __('Schema saved successfully!', 'gmb-ranker-seo-automation'),
+            'active_schemas' => array_values($active_schemas_arr),
+            'schema_json'    => get_post_meta($post_id, '_gmb_ranker_seo_schema', true),
+        ));
     }
 }

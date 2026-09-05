@@ -95,9 +95,12 @@ class GMB_Ranker_SEO_DB_Tools {
 
         // Fetch transient keys to clear from object cache
         $transient_keys = $wpdb->get_col(
-            "SELECT option_name FROM {$wpdb->options} 
-             WHERE option_name LIKE '_transient_%' 
-             AND option_name NOT LIKE '_transient_timeout_%'"
+            "SELECT option_name FROM {$wpdb->options}
+             WHERE option_name NOT LIKE '_transient_timeout_%'
+             AND (option_name LIKE '_transient_gmb_ranker_%'
+               OR option_name LIKE '_transient_gmb_ai_%'
+               OR option_name LIKE '_transient_gmb_google_%'
+               OR option_name LIKE '_transient_gmb_sec_%')"
         );
 
         $count = 0;
@@ -112,9 +115,15 @@ class GMB_Ranker_SEO_DB_Tools {
 
         // Fallback cleanup for orphaned transient timeouts
         $wpdb->query(
-            "DELETE FROM {$wpdb->options} 
-             WHERE option_name LIKE '_transient_timeout_%' 
-             OR option_name LIKE '_site_transient_timeout_%'"
+            "DELETE FROM {$wpdb->options}
+             WHERE option_name LIKE '_transient_timeout_gmb_ranker_%'
+                OR option_name LIKE '_transient_timeout_gmb_ai_%'
+                OR option_name LIKE '_transient_timeout_gmb_google_%'
+                OR option_name LIKE '_transient_timeout_gmb_sec_%'
+                OR option_name LIKE '_site_transient_timeout_gmb_ranker_%'
+                OR option_name LIKE '_site_transient_timeout_gmb_ai_%'
+                OR option_name LIKE '_site_transient_timeout_gmb_google_%'
+                OR option_name LIKE '_site_transient_timeout_gmb_sec_%'"
         );
 
         return $count;

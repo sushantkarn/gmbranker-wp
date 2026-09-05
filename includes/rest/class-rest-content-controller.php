@@ -43,7 +43,22 @@ class GMB_Ranker_SEO_REST_Content_Controller {
      * @return WP_REST_Response
      */
     public function handle_content_ai($request) {
-        $topic = $request->get_param('topic') ?: 'SEO Strategy';
+        $topic = sanitize_text_field((string) $request->get_param('topic'));
+        if (empty($topic)) {
+            $post_id = intval($request->get_param('post_id'));
+            if ($post_id > 0) {
+                $topic = get_the_title($post_id);
+            }
+        }
+
+        if (empty($topic)) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'message' => __('A topic or post ID is required to generate content.', 'gmb-ranker-seo-automation'),
+                'data'    => array(),
+            ), 400);
+        }
+
         $post_type = $request->get_param('post_type') ?: 'post';
 
         $action = new GMB_Ranker_SEO_Generate_Content_Action();
