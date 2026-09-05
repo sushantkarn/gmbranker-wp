@@ -25,6 +25,40 @@
       .replace(/'/g, '&#39;');
   }
 
+  // Keep the Schema Generator controls independent from the larger metabox
+  // initialization below. A failure in another optional metabox feature must
+  // not make these basic modal controls unusable.
+  window.gmbCloseSchemaModal = function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var $modal = window.jQuery && window.jQuery("#gmb-schema-modal");
+    if ($modal && $modal.length) {
+      $modal.removeClass("active is-open is-active").attr("aria-hidden", "true").hide();
+    }
+    return false;
+  };
+
+  window.gmbSwitchSchemaTab = function (targetTab, e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!targetTab || !/^schema-tab-[a-z-]+$/.test(targetTab) || !window.jQuery) return false;
+    var $ = window.jQuery;
+    var $modal = $("#gmb-schema-modal");
+    var $button = $modal.find(".gmb-modal-tab-btn[data-schema-tab='" + targetTab + "']");
+    var $panel = $modal.find("#" + targetTab);
+    if (!$button.length || !$panel.length) return false;
+    $modal.find(".gmb-modal-tab-btn[data-schema-tab]").removeClass("active").attr("aria-selected", "false");
+    $button.addClass("active").attr("aria-selected", "true");
+    $modal.find(".gmb-schema-tab-content").hide().removeClass("active").attr("aria-hidden", "true");
+    $panel.show().addClass("active").attr("aria-hidden", "false");
+    return false;
+  };
+
+  if (window.jQuery) {
+    window.jQuery(document).on("click.gmbSchemaModal", "#gmb-schema-modal-close-btn", window.gmbCloseSchemaModal);
+    window.jQuery(document).on("click.gmbSchemaModal", "#gmb-schema-modal .gmb-modal-tab-btn[data-schema-tab]", function (e) {
+      window.gmbSwitchSchemaTab(window.jQuery(this).attr("data-schema-tab"), e);
+    });
+  }
+
   window.gmbOpenSchemaModal = function (e) {
     if (e && e.preventDefault) e.preventDefault();
     var $modal = $("#gmb-schema-modal");
