@@ -3014,21 +3014,32 @@
       });
     });
 
-    // Schema Generator Tab Switcher
+    // Schema Generator Tab Switcher. Expose a direct function as well as the
+    // delegated handler below so tab switching remains reliable if another
+    // plugin rebinds document click handlers or moves the modal in the DOM.
+    window.gmbSwitchSchemaTab = function (targetTab, e) {
+      if (e && e.preventDefault) e.preventDefault();
+      if (!targetTab || !/^schema-tab-[a-z-]+$/.test(targetTab)) return false;
+
+      var $modal = $("#gmb-schema-modal");
+      var $button = $modal.find(".gmb-modal-tab-btn[data-schema-tab='" + targetTab + "']");
+      var $panel = $modal.find("#" + targetTab);
+      if (!$button.length || !$panel.length) return false;
+
+      $modal.find(".gmb-modal-tab-btn[data-schema-tab]").removeClass("active").attr("aria-selected", "false");
+      $button.addClass("active").attr("aria-selected", "true");
+      $modal.find(".gmb-schema-tab-content").hide().removeClass("active").attr("aria-hidden", "true");
+      $panel.show().addClass("active").attr("aria-hidden", "false");
+      return false;
+    };
+
     $(document).on(
       "click",
       "#gmb-schema-modal .gmb-modal-tab-btn",
       function (e) {
         e.preventDefault();
         var targetTab = $(this).attr("data-schema-tab");
-        if (!targetTab) return;
-
-        $("#gmb-schema-modal .gmb-modal-tab-btn[data-schema-tab]").removeClass("active").attr("aria-selected", "false");
-        $(this).addClass("active");
-        $(this).attr("aria-selected", "true");
-
-        $("#gmb-schema-modal .gmb-schema-tab-content").hide().removeClass("active").attr("aria-hidden", "true");
-        $("#" + targetTab).show().addClass("active").attr("aria-hidden", "false");
+        if (targetTab) window.gmbSwitchSchemaTab(targetTab, e);
       },
     );
 

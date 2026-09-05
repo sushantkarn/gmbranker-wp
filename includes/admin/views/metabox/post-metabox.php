@@ -619,9 +619,9 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                     <span class="gmb-modal-close" id="gmb-schema-modal-close-btn" title="<?php esc_attr_e('Close Modal', 'gmb-ranker-seo-automation'); ?>" role="button" tabindex="0">&#x2715;</span>
                 </div>
                 <div class="gmb-modal-tabs" role="tablist">
-                    <button type="button" class="gmb-modal-tab-btn active" data-schema-tab="schema-tab-templates" role="tab" aria-selected="true" aria-controls="schema-tab-templates"><?php esc_html_e('Schema Templates', 'gmb-ranker-seo-automation'); ?></button>
-                    <button type="button" class="gmb-modal-tab-btn" data-schema-tab="schema-tab-import" role="tab" aria-selected="false" aria-controls="schema-tab-import"><?php esc_html_e('Import', 'gmb-ranker-seo-automation'); ?></button>
-                    <button type="button" class="gmb-modal-tab-btn" data-schema-tab="schema-tab-custom" role="tab" aria-selected="false" aria-controls="schema-tab-custom"><?php esc_html_e('Custom Schema', 'gmb-ranker-seo-automation'); ?></button>
+                    <button type="button" class="gmb-modal-tab-btn active" data-schema-tab="schema-tab-templates" role="tab" aria-selected="true" aria-controls="schema-tab-templates" onclick="return window.gmbSwitchSchemaTab ? window.gmbSwitchSchemaTab('schema-tab-templates', event) : false;"><?php esc_html_e('Schema Templates', 'gmb-ranker-seo-automation'); ?></button>
+                    <button type="button" class="gmb-modal-tab-btn" data-schema-tab="schema-tab-import" role="tab" aria-selected="false" aria-controls="schema-tab-import" onclick="return window.gmbSwitchSchemaTab ? window.gmbSwitchSchemaTab('schema-tab-import', event) : false;"><?php esc_html_e('Import', 'gmb-ranker-seo-automation'); ?></button>
+                    <button type="button" class="gmb-modal-tab-btn" data-schema-tab="schema-tab-custom" role="tab" aria-selected="false" aria-controls="schema-tab-custom" onclick="return window.gmbSwitchSchemaTab ? window.gmbSwitchSchemaTab('schema-tab-custom', event) : false;"><?php esc_html_e('Custom Schema', 'gmb-ranker-seo-automation'); ?></button>
                 </div>
                 <div class="gmb-modal-body gmb-modal-body-scroll">
                     
