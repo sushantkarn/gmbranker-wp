@@ -160,20 +160,26 @@
       }
     });
 
-    // WordPress Media Library Uploader (Safely Validated)
-    $(document).on("click", ".wiz-media-btn", function (e) {
+    // WordPress Media Library Uploader (Safely Validated). Keep one frame per
+    // wizard field and namespace the delegated listener so a custom wizard
+    // render/reinitialization cannot open stacked media dialogs.
+    $(document).off("click.gmbWizardMedia", ".wiz-media-btn").on("click.gmbWizardMedia", ".wiz-media-btn", function (e) {
       e.preventDefault();
+      e.stopImmediatePropagation();
       var targetSelector = $(this).data("target");
       var previewSelector = $(this).data("preview");
 
       if (typeof wp !== "undefined" && wp.media) {
-        var customUploader = wp
-          .media({
+        var frameKey = String(targetSelector || "wizard-media");
+        window.gmbWizardMediaFrames = window.gmbWizardMediaFrames || {};
+        var customUploader = window.gmbWizardMediaFrames[frameKey];
+        if (!customUploader) {
+          customUploader = window.gmbWizardMediaFrames[frameKey] = wp.media({
             title: "Select Image",
             button: { text: "Use Image" },
             multiple: false,
-          })
-          .on("select", function () {
+          });
+          customUploader.on("select", function () {
             var selection = customUploader.state().get("selection");
             if (!selection || !selection.first()) return;
 
@@ -197,8 +203,9 @@
               $(previewSelector).attr("src", attachment.url);
               $(previewSelector).closest(".wiz-preview-box").show();
             }
-          })
-          .open();
+          });
+        }
+        customUploader.open();
       }
     });
 
