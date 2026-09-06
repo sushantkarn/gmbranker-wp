@@ -2245,7 +2245,7 @@ body.post-new-php #wpwrap {
   font-weight: 700;
   color: #64748b;
   margin-bottom: 10px;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.6px;
 }
 
