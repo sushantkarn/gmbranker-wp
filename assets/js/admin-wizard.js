@@ -174,6 +174,9 @@
         window.gmbWizardMediaFrames = window.gmbWizardMediaFrames || {};
         var customUploader = window.gmbWizardMediaFrames[frameKey];
         if (!customUploader) {
+          if (window.gmbRankerActiveMediaFrame && window.gmbRankerActiveMediaFrame.el) {
+            window.gmbRankerActiveMediaFrame.close();
+          }
           customUploader = window.gmbWizardMediaFrames[frameKey] = wp.media({
             title: "Select Image",
             button: { text: "Use Image" },
@@ -204,6 +207,7 @@
               $(previewSelector).closest(".wiz-preview-box").show();
             }
           });
+          window.gmbRankerActiveMediaFrame = customUploader;
         }
         customUploader.open();
       }

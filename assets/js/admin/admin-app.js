@@ -4555,7 +4555,13 @@ function initGmbAdminApp() {
 
   // Universal Smooth Media Uploader (Single Instance Frame)
   (function () {
-    var gmbMediaFrames = {};
+    // This file can be initialized more than once by WordPress admin screen
+    // fragments. Bind the document listener only once and keep its frame cache
+    // on window so duplicate initializations cannot create stacked media boxes.
+    if (window.gmbRankerMediaUploaderBound) return;
+    window.gmbRankerMediaUploaderBound = true;
+    var gmbMediaFrames = window.gmbRankerMediaFrames || {};
+    window.gmbRankerMediaFrames = gmbMediaFrames;
 
     document.addEventListener(
       "click",
@@ -4579,9 +4585,13 @@ function initGmbAdminApp() {
 
         if (gmbMediaFrames[targetId]) {
           gmbMediaFrames[targetId].open();
+          window.gmbRankerActiveMediaFrame = gmbMediaFrames[targetId];
           return;
         }
 
+        if (window.gmbRankerActiveMediaFrame && window.gmbRankerActiveMediaFrame.el) {
+          window.gmbRankerActiveMediaFrame.close();
+        }
         gmbMediaFrames[targetId] = wp.media({
           title: "Select or Upload Image",
           button: {
@@ -4589,6 +4599,7 @@ function initGmbAdminApp() {
           },
           multiple: false,
         });
+        window.gmbRankerActiveMediaFrame = gmbMediaFrames[targetId];
 
         gmbMediaFrames[targetId].on("select", function () {
           var attachment = gmbMediaFrames[targetId]
