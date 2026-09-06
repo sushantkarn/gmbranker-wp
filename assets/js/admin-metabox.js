@@ -233,14 +233,39 @@
     var stepTimer = null;
     var progressPollTimer = null;
     var globalAjaxResultData = null;
+    var aiRequest = null;
     var keywordCannibalizationCache = {};
     var pendingCannibalizationCheck = null;
+
+    // Build a permalink from independently sourced values without creating
+    // malformed URLs such as `https://site.test//post-slug`.
+    function buildAiUrl(baseUrl, path) {
+      var base = String(baseUrl || window.location.origin).trim();
+      var value = String(path || '').trim();
+      if (/^https?:\/\//i.test(value)) return value;
+      base = base.replace(/\/+$/, '');
+      value = value.replace(/^\/+/, '');
+      return base + (value ? '/' + value : '/');
+    }
+
+    function getAiHomeUrl() {
+      return (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.homeUrl)
+        ? gmbMetaboxData.homeUrl
+        : window.location.origin;
+    }
+
+    function getAiPostPath() {
+      var path = $("#post_name").val() || $("#editable-post-name").text() || "";
+      return String(path).trim().replace(/^.*?:\s*/, '');
+    }
 
     function setAiModalStep(step) {
       window.setAiModalStep = setAiModalStep;
       currentAiStep = step;
       $(".gmb-step-badge").removeClass("active");
       $("#gmb-step-badge-" + step).addClass("active");
+      $(".gmb-step-badge").attr("aria-selected", "false");
+      $("#gmb-step-badge-" + step).attr("aria-selected", "true");
 
       $("#gmb-ai-post-modal-setup").addClass("gmb-hidden").attr("style", "display: none !important;");
       $("#gmb-ai-post-modal-loading").addClass("gmb-hidden").attr("style", "display: none !important;");
@@ -312,7 +337,7 @@
       if (badgeId === "gmb-step-badge-1") {
         setAiModalStep(1);
       } else if (badgeId === "gmb-step-badge-2") {
-        setAiModalStep(2);
+        if (currentAiStep >= 2 || globalAjaxResultData) setAiModalStep(2);
       } else if (badgeId === "gmb-step-badge-3") {
         if (globalAjaxResultData) {
           setAiModalStep(3);
@@ -331,7 +356,7 @@
       }
 
       $modal.appendTo("body");
-      $modal.css("display", "flex").addClass("active");
+      $modal.css("display", "flex").addClass("active").attr("aria-hidden", "false");
 
       // Pre-fill setup fields
       var postTitle = $("#title").val() || "";
@@ -346,9 +371,7 @@
       }
       $("#gmb-ai-setup-query").val(curFocus);
 
-      var slug = $("#post_name").val() || $("#editable-post-name").text() || "";
-      var homeUrl = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.homeUrl ? gmbMetaboxData.homeUrl : window.location.origin) + "/";
-      $("#gmb-ai-setup-url").val(homeUrl + slug);
+      $("#gmb-ai-setup-url").val(buildAiUrl(getAiHomeUrl(), getAiPostPath()));
 
       setAiModalStep(1);
     };
@@ -360,15 +383,12 @@
         $("#gmb-ai-setup-instructions").attr("placeholder", "Enter target audience, writing instructions, required subtopics, CTA requirements, or brand guidelines (Optional - AI will research automatically if empty)...");
         var kw = $("#gmb-ai-setup-query").val().trim() || $("#gmb-ai-setup-title").val().trim();
         if (kw) {
-          var homeUrl = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.homeUrl ? gmbMetaboxData.homeUrl : window.location.origin) + "/";
           var proposedSlug = kw.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
-          $("#gmb-ai-setup-url").val(homeUrl + proposedSlug);
+          $("#gmb-ai-setup-url").val(buildAiUrl(getAiHomeUrl(), proposedSlug));
         }
       } else {
         $("#gmb-ai-setup-url").prop("readonly", true);
-        var slug = $("#post_name").val() || $("#editable-post-name").text() || "";
-        var homeUrl = (typeof gmbMetaboxData !== "undefined" && gmbMetaboxData.homeUrl ? gmbMetaboxData.homeUrl : window.location.origin) + "/";
-        $("#gmb-ai-setup-url").val(homeUrl + slug);
+        $("#gmb-ai-setup-url").val(buildAiUrl(getAiHomeUrl(), getAiPostPath()));
         $("#gmb-ai-setup-instructions").attr("placeholder", "e.g. Focus on key benefits, specific target audience credentials, subtopics, or custom call-to-action requirements...");
       }
     });
@@ -402,13 +422,23 @@
         return;
       }
 
+      if (!postTitle) {
+        alert("Please enter an article title before starting the analysis.");
+        $("#gmb-ai-setup-title").focus();
+        return;
+      }
+
+      if (typeof gmbMetaboxData === "undefined" || !gmbMetaboxData.ajaxUrl || !gmbMetaboxData.nonce) {
+        alert("AI analysis is not available on this screen. Please refresh the editor and try again.");
+        return;
+      }
+
       setAiModalStep(2);
 
       // Populate Overview Panel & SERP Top Bar
       $("#gmb-serp-kw-pill").text(targetQuery);
       $("#gmb-overview-query").text(targetQuery);
-      var currentSlug = $("#post_name").val() || $("#editable-post-name").text() || "";
-      var fullUrl = $("#gmb-ai-setup-url").val() || (window.location.origin + "/" + currentSlug);
+      var fullUrl = $("#gmb-ai-setup-url").val() || buildAiUrl(getAiHomeUrl(), getAiPostPath());
       $("#gmb-overview-url").attr("href", fullUrl).text(fullUrl.length > 30 ? fullUrl.substring(0, 28) + "..." : fullUrl);
       $("#gmb-overview-country").text(countryText);
       $("#gmb-overview-language").text($("#gmb-ai-setup-language option:selected").text());
@@ -755,7 +785,10 @@
       var tone = $("#gmb-ai-setup-tone").length ? $("#gmb-ai-setup-tone").val() : "auto";
       var intent = $("#gmb-ai-setup-intent").length ? $("#gmb-ai-setup-intent").val() : "auto";
 
-      $.ajax({
+      if (aiRequest && aiRequest.readyState !== 4) {
+        aiRequest.abort();
+      }
+      aiRequest = $.ajax({
         url: gmbMetaboxData.ajaxUrl,
         type: "POST",
         data: {
@@ -794,6 +827,7 @@
           populateAndShowStep3(ajaxFinishedData);
         },
         error: function (xhr, status, err) {
+          if (status === "abort") return;
           if (stepTimer) clearInterval(stepTimer);
           if (progressPollTimer) clearTimeout(progressPollTimer);
           applyProgressState({ step: 1, status: "error", activity: "Analysis failed", message: err || "The research request failed.", progress: null, elapsed: 0 });
@@ -822,13 +856,28 @@
       closeAiSeoModal();
     });
 
+    $(document).on("click", "#gmb-ai-post-seo-modal", function (e) {
+      if (e.target === this) closeAiSeoModal(e);
+    });
+
+    $(document).on("keydown", function (e) {
+      if (e.key === "Escape" && $("#gmb-ai-post-seo-modal").hasClass("active")) {
+        closeAiSeoModal(e);
+      }
+    });
+
     // Helper: Close AI SEO Modal safely
     function closeAiSeoModal() {
+      if (stepTimer) clearInterval(stepTimer);
+      if (progressPollTimer) clearTimeout(progressPollTimer);
+      if (aiRequest && aiRequest.readyState !== 4) aiRequest.abort();
+      aiRequest = null;
       $("#gmb-ai-post-seo-modal")
         .attr("style", "display: none !important;")
         .removeClass("active is-active")
         .attr("aria-hidden", "true");
     }
+    window.gmbCloseAiPostModal = closeAiSeoModal;
 
     // Apply Selected Recommendations Button Handler
     $(document).on("click", "#gmb-ai-post-apply-btn", function (e) {

@@ -3326,6 +3326,10 @@ body.post-new-php #wpwrap {
 }
 
 .gmb-step-badge {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  font: inherit;
   padding: 4px 10px;
   border-radius: 9999px;
   background: #f1f5f9;

@@ -29,11 +29,11 @@ $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : '
                     <p class="gmb-modal-subtitle"><?php esc_html_e('Data-driven SEO research. Real insights. Better rankings.', 'gmb-ranker-seo-automation'); ?></p>
                 </div>
                 <div class="gmb-modal-stepper">
-                    <span class="gmb-step-badge active" id="gmb-step-badge-1"><?php esc_html_e('1. Query Setup', 'gmb-ranker-seo-automation'); ?></span>
+                    <button type="button" class="gmb-step-badge active" id="gmb-step-badge-1" aria-selected="true" aria-controls="gmb-ai-post-modal-setup"><?php esc_html_e('1. Query Setup', 'gmb-ranker-seo-automation'); ?></button>
                     <span class="gmb-step-arrow">&rarr;</span>
-                    <span class="gmb-step-badge" id="gmb-step-badge-2"><?php esc_html_e('2. AI Research', 'gmb-ranker-seo-automation'); ?></span>
+                    <button type="button" class="gmb-step-badge" id="gmb-step-badge-2" aria-selected="false" aria-controls="gmb-ai-post-modal-loading"><?php esc_html_e('2. AI Research', 'gmb-ranker-seo-automation'); ?></button>
                     <span class="gmb-step-arrow">&rarr;</span>
-                    <span class="gmb-step-badge" id="gmb-step-badge-3"><?php esc_html_e('3. Optimization', 'gmb-ranker-seo-automation'); ?></span>
+                    <button type="button" class="gmb-step-badge" id="gmb-step-badge-3" aria-selected="false" aria-controls="gmb-ai-post-modal-content"><?php esc_html_e('3. Optimization', 'gmb-ranker-seo-automation'); ?></button>
                 </div>
             </div>
             <button type="button" class="gmb-modal-close" id="gmb-ai-post-modal-close" aria-label="<?php esc_attr_e('Close Modal', 'gmb-ranker-seo-automation'); ?>">&times;</button>
