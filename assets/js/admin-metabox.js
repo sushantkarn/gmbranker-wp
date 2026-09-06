@@ -57,6 +57,35 @@
     window.jQuery(document).on("click.gmbSchemaModal", "#gmb-schema-modal .gmb-modal-tab-btn[data-schema-tab]", function (e) {
       window.gmbSwitchSchemaTab(window.jQuery(this).attr("data-schema-tab"), e);
     });
+
+    // Bind the WordPress media picker before the rest of the metabox starts.
+    // This keeps image selection usable even if an unrelated optional module
+    // fails during the larger ready callback below.
+    window.jQuery(document).on("click.gmbMediaPicker", ".gmb-media-upload-btn, .gmb-media-upload-trigger", function (e) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var targetInputId = window.jQuery(this).attr("data-target");
+      if (!targetInputId) return false;
+      if (typeof window.wp === "undefined" || !window.wp.media) {
+        alert("WordPress Media Library is not available on this screen. Please refresh the page.");
+        return false;
+      }
+
+      var frame = window.wp.media({
+        title: "Select SEO Social Image",
+        button: { text: "Use Image" },
+        multiple: false
+      });
+      frame.on("select", function () {
+        var selection = frame.state().get("selection");
+        var attachment = selection && selection.first() ? selection.first().toJSON() : null;
+        if (attachment && attachment.url) {
+          window.jQuery("#" + targetInputId).val(attachment.url).trigger("input").trigger("change");
+        }
+      });
+      frame.open();
+      return false;
+    });
   }
 
   window.gmbOpenSchemaModal = function (e) {
