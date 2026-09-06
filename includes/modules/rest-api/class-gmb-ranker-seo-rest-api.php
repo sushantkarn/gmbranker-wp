@@ -15,7 +15,7 @@ class GMB_Ranker_SEO_REST_API {
 
         register_rest_route('gmb-ranker/v1', '/snapshot', array(
             'methods' => 'GET',
-            'callback' => array($this, 'handle_handshake'),
+            'callback' => array($this, 'handle_snapshot'),
             'permission_callback' => array($this, 'authenticate_request'),
         ));
 
@@ -173,11 +173,15 @@ class GMB_Ranker_SEO_REST_API {
                 'schema.sync',
                 'schema.generate_faq',
                 'links.inject',
+                'media.scan',
+                'media.update_alt',
                 'images.optimize_alt',
                 'toc.generate',
                 'indexing.submit',
                 'health.audit',
                 'config.sync',
+                'redirects.get_404_logs',
+                'redirects.add_rule',
             ),
             'timestamp'            => time(),
         ), 200);
@@ -266,12 +270,81 @@ class GMB_Ranker_SEO_REST_API {
             case 'schema.sync':
                 if (isset($payload['local_seo']) && is_array($payload['local_seo'])) {
                     $lseo = $payload['local_seo'];
-                    if (!empty($lseo['category'])) update_option('gmb_seo_local_business_type', sanitize_text_field($lseo['category']));
-                    if (!empty($lseo['streetAddress'])) update_option('gmb_seo_local_address_street', sanitize_text_field($lseo['streetAddress']));
-                    if (!empty($lseo['locality'])) update_option('gmb_seo_local_address_locality', sanitize_text_field($lseo['locality']));
-                    if (!empty($lseo['phone'])) update_option('gmb_seo_local_phone', sanitize_text_field($lseo['phone']));
+                    $local_map = array(
+                        'category'       => 'gmb_local_seo_business_subtype',
+                        'businessName'   => 'gmb_local_seo_name',
+                        'streetAddress'  => 'gmb_local_seo_address_street',
+                        'locality'       => 'gmb_local_seo_address_locality',
+                        'region'         => 'gmb_local_seo_address_region',
+                        'postalCode'     => 'gmb_local_seo_address_postal',
+                        'country'        => 'gmb_local_seo_address_country',
+                        'phone'          => 'gmb_local_seo_phone',
+                        'websiteUrl'     => 'gmb_local_seo_url',
+                        'latitude'       => 'gmb_local_business_lat',
+                        'longitude'      => 'gmb_local_business_lng',
+                    );
+                    foreach ($local_map as $source => $option_key) {
+                        if (array_key_exists($source, $lseo)) {
+                            $raw_value = is_scalar($lseo[$source]) ? (string) $lseo[$source] : '';
+                            $value = in_array($source, array('latitude', 'longitude'), true)
+                                ? (is_numeric($raw_value) ? $raw_value : '')
+                                : ($source === 'websiteUrl' ? esc_url_raw($raw_value) : sanitize_text_field($raw_value));
+                            update_option($option_key, $value);
+                        }
+                    }
+                    if (!empty($lseo['serviceTypes']) && is_array($lseo['serviceTypes'])) {
+                        update_option('gmb_local_business_service_types', array_values(array_filter(array_map(function ($value) { return is_scalar($value) ? sanitize_text_field((string) $value) : ''; }, $lseo['serviceTypes']))));
+                    }
+                    if (!empty($lseo['serviceAreas']) && is_array($lseo['serviceAreas'])) {
+                        update_option('gmb_local_business_service_areas', array_values(array_filter(array_map(function ($value) { return is_scalar($value) ? sanitize_text_field((string) $value) : ''; }, $lseo['serviceAreas']))));
+                    }
                 }
-                $result = array('schema_synced' => true);
+                if (isset($payload['schema']) && is_array($payload['schema'])) {
+                    update_option('gmb_local_business_custom_schema', wp_json_encode($payload['schema'], JSON_UNESCAPED_SLASHES));
+                }
+                $result = array('schema_synced' => true, 'fields_updated' => count($payload['local_seo'] ?? array()));
+                break;
+
+            case 'schema.generate_faq':
+                $post_id = intval($payload['post_id'] ?? $payload['wpPostId'] ?? 0);
+                $items = isset($payload['items']) && is_array($payload['items']) ? $payload['items'] : array();
+                if (!$post_id || !get_post($post_id) || empty($items)) {
+                    return new WP_Error('invalid_faq_payload', 'post_id and a non-empty items array are required.', array('status' => 400));
+                }
+                if (is_user_logged_in() && !current_user_can('edit_post', $post_id)) {
+                    return new WP_Error('forbidden', 'You are not allowed to modify this post.', array('status' => 403));
+                }
+                $entities = array();
+                foreach ($items as $item) {
+                    $question = sanitize_text_field($item['question'] ?? $item['name'] ?? '');
+                    $answer = wp_kses_post($item['answer'] ?? $item['text'] ?? '');
+                    if ($question !== '' && $answer !== '') {
+                        $entities[] = array('@type' => 'Question', 'name' => $question, 'acceptedAnswer' => array('@type' => 'Answer', 'text' => wp_strip_all_tags($answer)));
+                    }
+                }
+                if (empty($entities)) return new WP_Error('invalid_faq_items', 'No valid FAQ items were supplied.', array('status' => 400));
+                $faq_schema = array('@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $entities);
+                update_post_meta($post_id, '_gmb_ranker_json_ld', wp_json_encode($faq_schema, JSON_UNESCAPED_SLASHES));
+                $result = array('post_id' => $post_id, 'schema_type' => 'FAQPage', 'item_count' => count($entities));
+                break;
+
+            case 'media.scan':
+                $media = get_posts(array('post_type' => 'attachment', 'post_mime_type' => 'image', 'post_status' => 'inherit', 'posts_per_page' => 100, 'fields' => 'ids'));
+                $items = array();
+                foreach ($media as $media_id) {
+                    $alt = get_post_meta($media_id, '_wp_attachment_image_alt', true);
+                    if ($alt === '') $items[] = array('media_id' => $media_id, 'wpMediaId' => $media_id, 'image_url' => wp_get_attachment_url($media_id), 'imageUrl' => wp_get_attachment_url($media_id), 'title' => get_the_title($media_id), 'current_alt' => '');
+                }
+                $result = array('items' => $items, 'missing_alt_count' => count($items));
+                break;
+
+            case 'media.update_alt':
+            case 'images.optimize_alt':
+                $media_id = intval($payload['media_id'] ?? $payload['wpMediaId'] ?? 0);
+                $alt_text = sanitize_text_field($payload['alt_text'] ?? $payload['altText'] ?? '');
+                if (!$media_id || get_post_type($media_id) !== 'attachment' || $alt_text === '') return new WP_Error('invalid_media_payload', 'media_id and alt_text are required.', array('status' => 400));
+                update_post_meta($media_id, '_wp_attachment_image_alt', $alt_text);
+                $result = array('media_id' => $media_id, 'updated' => true, 'alt_text' => $alt_text);
                 break;
 
             case 'links.inject':
@@ -316,6 +389,63 @@ class GMB_Ranker_SEO_REST_API {
                 );
                 break;
 
+            case 'redirects.get_404_logs':
+                $logs = get_option('gmb_ranker_404_logs', array());
+                $result = array('logs' => is_array($logs) ? array_values($logs) : array());
+                break;
+
+            case 'redirects.add_rule':
+                $source_path = sanitize_text_field($payload['source_path'] ?? '');
+                $target_url = esc_url_raw($payload['target_url'] ?? '');
+                $status_code = intval($payload['status_code'] ?? 301);
+                if ($source_path === '' || $target_url === '' || !in_array($status_code, array(301, 302), true)) return new WP_Error('invalid_redirect_payload', 'source_path, target_url, and a 301/302 status_code are required.', array('status' => 400));
+                $rule = array('id' => 'api_' . substr(md5($source_path . $target_url), 0, 12), 'source' => '/' . ltrim($source_path, '/'), 'destination' => $target_url, 'code' => $status_code, 'match_type' => 'exact', 'status' => 'active', 'hits' => 0, 'last_accessed' => 0);
+                $redirect_repository = new GMB_Ranker_SEO_Redirect_Repository();
+                $redirect_repository->save_rule($rule);
+                $result = array('source_path' => $rule['source'], 'target_url' => $target_url, 'status_code' => $status_code, 'created' => true, 'rule_id' => $rule['id']);
+                break;
+
+            case 'toc.generate':
+                $post_id = intval($payload['post_id'] ?? $payload['wpPostId'] ?? 0);
+                $post = $post_id ? get_post($post_id) : null;
+                if (!$post) return new WP_Error('invalid_post_id', 'Valid post_id is required.', array('status' => 400));
+                if (is_user_logged_in() && !current_user_can('edit_post', $post_id)) return new WP_Error('forbidden', 'You are not allowed to modify this post.', array('status' => 403));
+                if (stripos($post->post_content, 'gmb-toc-box') !== false) {
+                    $result = array('post_id' => $post_id, 'generated' => false, 'message' => 'A table of contents already exists.');
+                    break;
+                }
+                preg_match_all('/<h([23])([^>]*)>(.*?)<\/h[23]>/is', $post->post_content, $heading_matches, PREG_SET_ORDER);
+                if (count($heading_matches) < 2) return new WP_Error('insufficient_headings', 'At least two H2/H3 headings are required to generate a table of contents.', array('status' => 400));
+                $content = $post->post_content;
+                $toc_items = array();
+                foreach ($heading_matches as $index => $heading) {
+                    $label = trim(wp_strip_all_tags($heading[3]));
+                    if ($label === '') continue;
+                    $id = 'gmb-toc-' . ($index + 1);
+                    $replacement = '<h' . $heading[1] . $heading[2] . ' id="' . esc_attr($id) . '">' . $heading[3] . '</h' . $heading[1] . '>';
+                    $content = str_replace($heading[0], $replacement, $content);
+                    $toc_items[] = '<li class="level-' . absint($heading[1]) . '"><a href="#' . esc_attr($id) . '">' . esc_html($label) . '</a></li>';
+                }
+                if (empty($toc_items)) return new WP_Error('invalid_headings', 'No usable headings were found.', array('status' => 400));
+                $toc_markup = '<div class="gmb-toc-box"><div class="gmb-toc-header"><strong>' . esc_html(get_option('gmb_toc_title', __('Table of Contents', 'gmb-ranker-seo-automation'))) . '</strong></div><ul class="gmb-toc-list">' . implode('', $toc_items) . '</ul></div>';
+                $updated = wp_update_post(array('ID' => $post_id, 'post_content' => $toc_markup . $content), true);
+                if (is_wp_error($updated)) return $updated;
+                $result = array('post_id' => $post_id, 'generated' => true, 'heading_count' => count($toc_items));
+                break;
+
+            case 'config.sync':
+                $settings = isset($payload['settings']) && is_array($payload['settings']) ? $payload['settings'] : array();
+                $allowed_prefixes = array('gmb_ranker_module_', 'gmb_toc_', 'gmb_local_seo_', 'gmb_local_business_');
+                $updated = array();
+                foreach ($settings as $key => $value) {
+                    $key = sanitize_key($key);
+                    $allowed = false;
+                    foreach ($allowed_prefixes as $prefix) if (strpos($key, $prefix) === 0) { $allowed = true; break; }
+                    if ($allowed) { update_option($key, is_scalar($value) ? sanitize_text_field($value) : $value); $updated[] = $key; }
+                }
+                $result = array('updated' => $updated, 'updated_count' => count($updated));
+                break;
+
             case 'health.audit':
                 $posts_count = wp_count_posts('post');
                 $pages_count = wp_count_posts('page');
@@ -343,6 +473,57 @@ class GMB_Ranker_SEO_REST_API {
         ), 200);
     }
 
+    /**
+     * Return the normalized site snapshot consumed by the cloud automation brain.
+     */
+    public function handle_snapshot($request) {
+        $seo_request = new WP_REST_Request('GET', '/gmb-ranker/v1/seo-data');
+        $seo_request->set_param('post_type', 'all');
+        $seo_request->set_param('status', 'publish');
+        $seo_request->set_param('per_page', 100);
+        $seo_response = $this->handle_get_seo_data($seo_request);
+        $seo_data = $seo_response instanceof WP_REST_Response ? $seo_response->get_data() : array();
+        $seo_items = (is_array($seo_data) && isset($seo_data['posts']) && is_array($seo_data['posts'])) ? $seo_data['posts'] : $seo_data;
+        $items = array();
+        foreach (is_array($seo_items) ? $seo_items : array() as $item) {
+            $items[] = array(
+                'id' => intval($item['wpPostId'] ?? 0),
+                'title' => (string) ($item['title'] ?? ''),
+                'post_type' => (string) ($item['postType'] ?? ''),
+                'url' => (string) ($item['url'] ?? ''),
+                'seo_title' => (string) ($item['metaTitle'] ?? ''),
+                'seo_desc' => (string) ($item['metaDescription'] ?? ''),
+                'word_count' => str_word_count(wp_strip_all_tags((string) ($item['content'] ?? ''))),
+                'focus_keyword' => (string) ($item['focusKeyword'] ?? ''),
+                'onpage_score' => isset($item['onpageSeoScore']) ? $item['onpageSeoScore'] : null,
+                'last_modified' => (string) ($item['dateModified'] ?? ''),
+            );
+        }
+        $attachments = get_posts(array('post_type' => 'attachment', 'post_mime_type' => 'image', 'post_status' => 'inherit', 'posts_per_page' => 100, 'fields' => 'ids'));
+        $missing_alt = array();
+        foreach ($attachments as $attachment_id) {
+            if (get_post_meta($attachment_id, '_wp_attachment_image_alt', true) === '') {
+                $missing_alt[] = array('id' => $attachment_id, 'title' => get_the_title($attachment_id), 'mime' => get_post_mime_type($attachment_id));
+            }
+        }
+        $logs = get_option('gmb_ranker_404_logs', array());
+        $redirect_repository = new GMB_Ranker_SEO_Redirect_Repository();
+        $rules = $redirect_repository->get_all_rules();
+        return new WP_REST_Response(array(
+            'success' => true,
+            'snapshot' => array(
+                'site_url' => home_url('/'),
+                'counts' => array('posts' => count(array_filter($items, function ($item) { return $item['post_type'] === 'post'; })), 'pages' => count(array_filter($items, function ($item) { return $item['post_type'] === 'page'; })), 'attachments' => count($attachments)),
+                'items' => $items,
+                'missing_alt_items' => $missing_alt,
+                'trapped_404_logs' => is_array($logs) ? array_values($logs) : array(),
+                'active_redirect_rules' => is_array($rules) ? count($rules) : 0,
+                'last_indexed_at' => (string) get_option('gmb_ranker_last_indexed_at', ''),
+            ),
+            'timestamp' => time(),
+        ), 200);
+    }
+
     public function handle_get_page_content($request) {
         $id = intval($request->get_param('id'));
         if (empty($id)) {
@@ -352,15 +533,30 @@ class GMB_Ranker_SEO_REST_API {
         if (!$post) {
             return new WP_Error('not_found', 'Post not found', array('status' => 404));
         }
+        $seo_title = get_post_meta($post->ID, '_gmb_ranker_seo_title', true) ?: $post->post_title;
+        $seo_desc = get_post_meta($post->ID, '_gmb_ranker_seo_description', true) ?: $post->post_excerpt;
+        $focus_keyword = get_post_meta($post->ID, '_gmb_ranker_focus_keyword', true);
         return new WP_REST_Response(array(
             'id' => $post->ID,
+            'post_id' => $post->ID,
+            'title' => $post->post_title,
+            'slug' => $post->post_name,
+            'url' => get_permalink($post->ID),
+            'post_type' => $post->post_type,
             'content' => $post->post_content,
+            'meta_title' => $seo_title,
+            'meta_description' => $seo_desc,
+            'focus_keyword' => $focus_keyword,
+            'canonical_url' => get_post_meta($post->ID, '_gmb_ranker_seo_canonical', true) ?: get_permalink($post->ID),
+            'last_modified' => get_post_modified_time('c', true, $post->ID),
         ), 200);
     }
 
     public function handle_get_seo_data($request) {
-        $page = intval($request->get_param('page')) ?: 1;
-        $per_page = intval($request->get_param('per_page')) ?: 50;
+        $per_page = intval($request->get_param('per_page')) ?: intval($request->get_param('limit')) ?: 50;
+        $offset = max(0, intval($request->get_param('offset')));
+        $page = intval($request->get_param('page')) ?: (int) floor($offset / max(1, $per_page)) + 1;
+        $per_page = min(100, max(1, $per_page));
 
         $requested_type = $request->get_param('post_type');
         if (!empty($requested_type) && $requested_type !== 'all') {
@@ -565,7 +761,16 @@ class GMB_Ranker_SEO_REST_API {
         $response = new WP_REST_Response($result, 200);
         $response->header('X-WP-Total', (int) $query->found_posts);
         $response->header('X-WP-TotalPages', (int) $query->max_num_pages);
-        return $response;
+        return new WP_REST_Response(array(
+            'posts' => $result,
+            'total' => (int) $query->found_posts,
+            'page' => $page,
+            'per_page' => $per_page,
+            'total_pages' => (int) $query->max_num_pages,
+        ), 200, array(
+            'X-WP-Total' => (int) $query->found_posts,
+            'X-WP-TotalPages' => (int) $query->max_num_pages,
+        ));
     }
 
     public function handle_update_seo($request) {
