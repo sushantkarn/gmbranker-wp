@@ -1132,11 +1132,12 @@
     $(document).on("change", "#gmb_enable_redirect_toggle", function () {
       var $box = $("#gmb-redirect-details-box");
       if ($(this).is(":checked")) {
-        $box.slideDown(150);
+        $box.removeClass("is-hidden").stop(true, true).slideDown(150).css("display", "flex");
       } else {
         $box.slideUp(150, function () {
-          $(this).hide();
+          $(this).addClass("is-hidden").hide();
         });
+        $("#gmb_seo_redirect_url").val("");
       }
     });
 
