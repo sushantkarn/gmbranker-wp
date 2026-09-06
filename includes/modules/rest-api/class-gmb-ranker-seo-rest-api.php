@@ -158,6 +158,38 @@ class GMB_Ranker_SEO_REST_API {
         if (get_option('gmb_ranker_module_llmstxt', '1') === '1') $active_modules[] = 'llmstxt';
         if (get_option('gmb_ranker_module_woocommerce', '1') === '1') $active_modules[] = 'woocommerce';
 
+        $supported_actions = array(
+            'metadata.update',
+            'metadata.apply_winner',
+            'health.audit',
+            'config.sync',
+        );
+        if (in_array('schema', $active_modules, true)) {
+            $supported_actions[] = 'schema.sync';
+            $supported_actions[] = 'schema.generate_faq';
+        }
+        if (in_array('links', $active_modules, true)) {
+            $supported_actions[] = 'links.inject';
+        }
+        if (in_array('image_seo', $active_modules, true)) {
+            $supported_actions[] = 'media.scan';
+            $supported_actions[] = 'media.update_alt';
+            $supported_actions[] = 'images.optimize_alt';
+        }
+        if (in_array('toc', $active_modules, true)) {
+            $supported_actions[] = 'toc.generate';
+        }
+        if (in_array('instant_indexing', $active_modules, true)) {
+            $supported_actions[] = 'indexing.submit';
+        }
+        if (in_array('redirects', $active_modules, true)) {
+            $supported_actions[] = 'redirects.get_404_logs';
+            $supported_actions[] = 'redirects.add_rule';
+        }
+        if (in_array('sitemaps', $active_modules, true) || in_array('llmstxt', $active_modules, true)) {
+            $supported_actions[] = 'sitemaps.generate';
+        }
+
         return new WP_REST_Response(array(
             'success'              => true,
             'plugin_version'       => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '2.1.2',
@@ -167,22 +199,7 @@ class GMB_Ranker_SEO_REST_API {
             'home_url'             => home_url(),
             'active_modules'       => $active_modules,
             'supported_post_types' => array_values($allowed),
-            'supported_actions'    => array(
-                'metadata.update',
-                'metadata.apply_winner',
-                'schema.sync',
-                'schema.generate_faq',
-                'links.inject',
-                'media.scan',
-                'media.update_alt',
-                'images.optimize_alt',
-                'toc.generate',
-                'indexing.submit',
-                'health.audit',
-                'config.sync',
-                'redirects.get_404_logs',
-                'redirects.add_rule',
-            ),
+            'supported_actions'    => array_values(array_unique($supported_actions)),
             'timestamp'            => time(),
         ), 200);
     }
@@ -390,8 +407,20 @@ class GMB_Ranker_SEO_REST_API {
                 break;
 
             case 'redirects.get_404_logs':
-                $logs = get_option('gmb_ranker_404_logs', array());
-                $result = array('logs' => is_array($logs) ? array_values($logs) : array());
+                $raw_logs = get_option('gmb_ranker_404_logs', array());
+                $logs = array();
+                foreach (is_array($raw_logs) ? $raw_logs : array() as $log) {
+                    if (!is_array($log)) continue;
+                    $path = (string) ($log['path'] ?? $log['requestedUrl'] ?? $log['uri'] ?? '');
+                    $logs[] = array(
+                        'id' => (string) ($log['id'] ?? md5($path)),
+                        'requestedUrl' => (string) ($log['requestedUrl'] ?? $log['url'] ?? $path),
+                        'path' => $path,
+                        'hitCount' => intval($log['hitCount'] ?? $log['hits'] ?? $log['count'] ?? 0),
+                        'lastHitAt' => (string) ($log['lastHitAt'] ?? $log['last_accessed'] ?? $log['lastSeen'] ?? ''),
+                    );
+                }
+                $result = array('logs' => $logs);
                 break;
 
             case 'redirects.add_rule':
@@ -446,6 +475,23 @@ class GMB_Ranker_SEO_REST_API {
                 $result = array('updated' => $updated, 'updated_count' => count($updated));
                 break;
 
+            case 'sitemaps.generate':
+                $llms_content = $payload['llms_txt'] ?? $payload['llmsTxtContent'] ?? '';
+                if (!is_string($llms_content) || trim($llms_content) === '') {
+                    return new WP_Error('invalid_llms_content', 'llms_txt content is required.', array('status' => 400));
+                }
+                // Markdown is intentionally preserved because headings and links are
+                // consumed by the /llms.txt renderer. Strip executable markup only.
+                $llms_content = wp_kses($llms_content, array());
+                update_option('gmb_llms_additional_content', $llms_content);
+                $result = array(
+                    'llms_saved' => true,
+                    'llms_url' => home_url('/llms.txt'),
+                    'sitemap_url' => home_url('/sitemap_index.xml'),
+                    'content_length' => strlen($llms_content),
+                );
+                break;
+
             case 'health.audit':
                 $posts_count = wp_count_posts('post');
                 $pages_count = wp_count_posts('page');
@@ -480,25 +526,32 @@ class GMB_Ranker_SEO_REST_API {
         $seo_request = new WP_REST_Request('GET', '/gmb-ranker/v1/seo-data');
         $seo_request->set_param('post_type', 'all');
         $seo_request->set_param('status', 'publish');
-        $seo_request->set_param('per_page', 100);
-        $seo_response = $this->handle_get_seo_data($seo_request);
-        $seo_data = $seo_response instanceof WP_REST_Response ? $seo_response->get_data() : array();
-        $seo_items = (is_array($seo_data) && isset($seo_data['posts']) && is_array($seo_data['posts'])) ? $seo_data['posts'] : $seo_data;
         $items = array();
-        foreach (is_array($seo_items) ? $seo_items : array() as $item) {
-            $items[] = array(
-                'id' => intval($item['wpPostId'] ?? 0),
-                'title' => (string) ($item['title'] ?? ''),
-                'post_type' => (string) ($item['postType'] ?? ''),
-                'url' => (string) ($item['url'] ?? ''),
-                'seo_title' => (string) ($item['metaTitle'] ?? ''),
-                'seo_desc' => (string) ($item['metaDescription'] ?? ''),
-                'word_count' => str_word_count(wp_strip_all_tags((string) ($item['content'] ?? ''))),
-                'focus_keyword' => (string) ($item['focusKeyword'] ?? ''),
-                'onpage_score' => isset($item['onpageSeoScore']) ? $item['onpageSeoScore'] : null,
-                'last_modified' => (string) ($item['dateModified'] ?? ''),
-            );
-        }
+        $page = 1;
+        $total_pages = 1;
+        do {
+            $seo_request->set_param('per_page', 100);
+            $seo_request->set_param('page', $page);
+            $seo_response = $this->handle_get_seo_data($seo_request);
+            $seo_data = $seo_response instanceof WP_REST_Response ? $seo_response->get_data() : array();
+            $seo_items = (is_array($seo_data) && isset($seo_data['posts']) && is_array($seo_data['posts'])) ? $seo_data['posts'] : array();
+            foreach ($seo_items as $item) {
+                $items[] = array(
+                    'id' => intval($item['wpPostId'] ?? $item['id'] ?? 0),
+                    'title' => (string) ($item['title'] ?? ''),
+                    'post_type' => (string) ($item['postType'] ?? $item['post_type'] ?? ''),
+                    'url' => (string) ($item['url'] ?? ''),
+                    'seo_title' => (string) ($item['metaTitle'] ?? $item['meta_title'] ?? ''),
+                    'seo_desc' => (string) ($item['metaDescription'] ?? $item['meta_description'] ?? ''),
+                    'word_count' => str_word_count(wp_strip_all_tags((string) ($item['content'] ?? ''))),
+                    'focus_keyword' => (string) ($item['focusKeyword'] ?? $item['focus_keyword'] ?? ''),
+                    'onpage_score' => isset($item['onpageSeoScore']) ? $item['onpageSeoScore'] : null,
+                    'last_modified' => (string) ($item['dateModified'] ?? $item['last_modified'] ?? ''),
+                );
+            }
+            $total_pages = isset($seo_data['total_pages']) ? max(1, intval($seo_data['total_pages'])) : 1;
+            $page++;
+        } while ($page <= $total_pages && $page <= 100);
         $attachments = get_posts(array('post_type' => 'attachment', 'post_mime_type' => 'image', 'post_status' => 'inherit', 'posts_per_page' => 100, 'fields' => 'ids'));
         $missing_alt = array();
         foreach ($attachments as $attachment_id) {
@@ -506,17 +559,34 @@ class GMB_Ranker_SEO_REST_API {
                 $missing_alt[] = array('id' => $attachment_id, 'title' => get_the_title($attachment_id), 'mime' => get_post_mime_type($attachment_id));
             }
         }
-        $logs = get_option('gmb_ranker_404_logs', array());
+        $raw_logs = get_option('gmb_ranker_404_logs', array());
+        $logs = array();
+        foreach (is_array($raw_logs) ? $raw_logs : array() as $log) {
+            if (!is_array($log)) continue;
+            $path = (string) ($log['path'] ?? $log['requestedUrl'] ?? $log['uri'] ?? '');
+            $logs[] = array(
+                'id' => (string) ($log['id'] ?? md5($path)),
+                'requestedUrl' => (string) ($log['requestedUrl'] ?? $log['url'] ?? $path),
+                'path' => $path,
+                'hitCount' => intval($log['hitCount'] ?? $log['hits'] ?? $log['count'] ?? 0),
+                'lastHitAt' => (string) ($log['lastHitAt'] ?? $log['last_accessed'] ?? $log['lastSeen'] ?? ''),
+            );
+        }
         $redirect_repository = new GMB_Ranker_SEO_Redirect_Repository();
         $rules = $redirect_repository->get_all_rules();
+        $post_counts = array('post' => 0, 'page' => 0);
+        foreach (array_keys($post_counts) as $post_type) {
+            $counts = wp_count_posts($post_type);
+            $post_counts[$post_type] = isset($counts->publish) ? intval($counts->publish) : 0;
+        }
         return new WP_REST_Response(array(
             'success' => true,
             'snapshot' => array(
                 'site_url' => home_url('/'),
-                'counts' => array('posts' => count(array_filter($items, function ($item) { return $item['post_type'] === 'post'; })), 'pages' => count(array_filter($items, function ($item) { return $item['post_type'] === 'page'; })), 'attachments' => count($attachments)),
+                'counts' => array('posts' => $post_counts['post'], 'pages' => $post_counts['page'], 'attachments' => count($attachments)),
                 'items' => $items,
                 'missing_alt_items' => $missing_alt,
-                'trapped_404_logs' => is_array($logs) ? array_values($logs) : array(),
+                'trapped_404_logs' => $logs,
                 'active_redirect_rules' => is_array($rules) ? count($rules) : 0,
                 'last_indexed_at' => (string) get_option('gmb_ranker_last_indexed_at', ''),
             ),
@@ -722,20 +792,29 @@ class GMB_Ranker_SEO_REST_API {
 
             $result[] = array(
                 'wpPostId'         => $post->ID,
+                'id'               => $post->ID,
+                'post_id'          => $post->ID,
                 'postType'         => $post->post_type,
+                'post_type'        => $post->post_type,
                 'title'            => $post->post_title,
                 'slug'             => $post->post_name,
                 'url'              => get_permalink($post->ID),
                 'metaTitle'        => $meta_title,
+                'meta_title'       => $meta_title,
                 'metaDescription'  => $meta_desc,
+                'meta_description' => $meta_desc,
                 'focusKeyword'     => $focus_keyword,
+                'focus_keyword'    => $focus_keyword,
                 'canonical'        => $canonical,
+                'canonical_url'    => $canonical,
                 'status'           => $post->post_status,
+                'post_status'      => $post->post_status,
                 'content'          => $post->post_content,
                 'featuredImage'    => $featured_image,
                 'author'           => $author_name,
                 'datePublished'    => get_the_date('c', $post->ID),
                 'dateModified'     => get_the_modified_date('c', $post->ID),
+                'last_modified'    => get_the_modified_date('c', $post->ID),
                 'isElementor'      => $is_elementor,
                 'wcPrice'          => $wc_price,
                 'wcStock'          => $wc_stock,

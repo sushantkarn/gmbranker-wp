@@ -27,6 +27,19 @@ class GMB_Ranker_SEO_Local {
             return;
         }
 
+        // The master GMB Ranker can provide a richer, reviewed JSON-LD graph than
+        // the basic settings form. Prefer that graph when it is valid, while still
+        // allowing the normal local-business builder to act as a safe fallback.
+        $custom_schema_raw = get_option('gmb_local_business_custom_schema', '');
+        if (is_string($custom_schema_raw) && $custom_schema_raw !== '') {
+            $custom_schema = json_decode($custom_schema_raw, true);
+            if (is_array($custom_schema) && !empty($custom_schema)) {
+                echo "\n<!-- GMB Ranker Local Business Schema -->\n";
+                echo '<script type="application/ld+json">' . wp_json_encode($custom_schema, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>' . "\n";
+                return;
+            }
+        }
+
         $use_multiple = get_option('gmb_local_use_multiple_locations', '0');
         $schemas = array();
 
