@@ -295,7 +295,7 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                                 <label for="gmb_seo_fb_image" class="gmb-field-label"><?php esc_html_e('Facebook Image', 'gmb-ranker-seo-automation'); ?></label>
                                 <div class="gmb-image-upload-row">
                                     <input type="text" id="gmb_seo_fb_image" value="<?php echo esc_attr(get_post_meta($post->ID, '_gmb_ranker_facebook_image', true)); ?>" class="gmb-field-input" placeholder="<?php esc_attr_e('No image selected...', 'gmb-ranker-seo-automation'); ?>" />
-                                    <button type="button" class="button button-secondary gmb-media-upload-btn" data-target="gmb_seo_fb_image"><?php esc_html_e('Select Image', 'gmb-ranker-seo-automation'); ?></button>
+                                    <button type="button" class="button button-secondary gmb-media-upload-btn" data-target="gmb_seo_fb_image" onclick="return window.gmbOpenSocialMediaPicker ? window.gmbOpenSocialMediaPicker('gmb_seo_fb_image', event) : false;"><?php esc_html_e('Select Image', 'gmb-ranker-seo-automation'); ?></button>
                                 </div>
                                 <div class="gmb-social-image-preview <?php echo !empty(get_post_meta($post->ID, '_gmb_ranker_facebook_image', true)) ? 'is-active' : ''; ?>" id="gmb_seo_fb_image_preview">
                                     <img src="<?php echo esc_url(get_post_meta($post->ID, '_gmb_ranker_facebook_image', true)); ?>" class="gmb-img-preview-sm" alt="" />
@@ -320,7 +320,7 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                                 <label for="gmb_seo_tw_image" class="gmb-field-label"><?php esc_html_e('Twitter Image', 'gmb-ranker-seo-automation'); ?></label>
                                 <div class="gmb-image-upload-row">
                                     <input type="text" id="gmb_seo_tw_image" value="<?php echo esc_attr(get_post_meta($post->ID, '_gmb_ranker_twitter_image', true)); ?>" class="gmb-field-input" placeholder="<?php esc_attr_e('No image selected...', 'gmb-ranker-seo-automation'); ?>" />
-                                    <button type="button" class="button button-secondary gmb-media-upload-btn" data-target="gmb_seo_tw_image"><?php esc_html_e('Select Image', 'gmb-ranker-seo-automation'); ?></button>
+                                    <button type="button" class="button button-secondary gmb-media-upload-btn" data-target="gmb_seo_tw_image" onclick="return window.gmbOpenSocialMediaPicker ? window.gmbOpenSocialMediaPicker('gmb_seo_tw_image', event) : false;"><?php esc_html_e('Select Image', 'gmb-ranker-seo-automation'); ?></button>
                                 </div>
                                 <div class="gmb-social-image-preview <?php echo !empty(get_post_meta($post->ID, '_gmb_ranker_twitter_image', true)) ? 'is-active' : ''; ?>" id="gmb_seo_tw_image_preview">
                                     <img src="<?php echo esc_url(get_post_meta($post->ID, '_gmb_ranker_twitter_image', true)); ?>" class="gmb-img-preview-sm" alt="" />
@@ -954,7 +954,7 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                     $fb_title_val   = get_post_meta($post->ID, '_gmb_ranker_facebook_title', true) ?: ($meta_title ?: $post->post_title);
                     $fb_desc_val    = get_post_meta($post->ID, '_gmb_ranker_facebook_desc', true) ?: ($meta_desc ?: esc_html__('Learn about our trusted page and read full information.', 'gmb-ranker-seo-automation'));
                     ?>
-                    <div id="gmb-fb-preview-img-box" class="gmb-social-image-box gmb-media-upload-trigger" data-target="gmb_seo_fb_image_metabox" title="<?php esc_attr_e('Click to upload or change Facebook image', 'gmb-ranker-seo-automation'); ?>">
+                    <div id="gmb-fb-preview-img-box" class="gmb-social-image-box gmb-media-upload-trigger" data-target="gmb_seo_fb_image_metabox" onclick="return window.gmbOpenSocialMediaPicker ? window.gmbOpenSocialMediaPicker('gmb_seo_fb_image_metabox', event) : false;" title="<?php esc_attr_e('Click to upload or change Facebook image', 'gmb-ranker-seo-automation'); ?>">
                         <img id="gmb-fb-preview-img" src="<?php echo esc_url($current_fb_img); ?>" class="gmb-social-img-element <?php echo !empty($current_fb_img) ? 'is-active' : ''; ?>" alt="<?php esc_attr_e('Facebook Preview', 'gmb-ranker-seo-automation'); ?>" />
                         <div id="gmb-fb-preview-placeholder" class="gmb-social-image-placeholder <?php echo !empty($current_fb_img) ? 'is-hidden' : ''; ?>">
                             <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" ry="3"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
@@ -994,7 +994,7 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                 <label for="gmb_seo_fb_image_metabox" class="gmb-field-label"><?php esc_html_e('Facebook Image (1200 × 630 px)', 'gmb-ranker-seo-automation'); ?></label>
                 <div class="gmb-image-upload-row">
                     <input type="text" id="gmb_seo_fb_image_metabox" name="gmb_seo_facebook_image" value="<?php echo esc_attr(get_post_meta($post->ID, '_gmb_ranker_facebook_image', true)); ?>" class="gmb-field-input" placeholder="<?php echo !empty($feat_img_val) ? esc_url($feat_img_val) : ''; ?>" />
-                    <button type="button" class="button button-secondary gmb-media-upload-btn" data-target="gmb_seo_fb_image_metabox"><?php esc_html_e('Select Image', 'gmb-ranker-seo-automation'); ?></button>
+                    <button type="button" class="button button-secondary gmb-media-upload-btn" data-target="gmb_seo_fb_image_metabox" onclick="return window.gmbOpenSocialMediaPicker ? window.gmbOpenSocialMediaPicker('gmb_seo_fb_image_metabox', event) : false;"><?php esc_html_e('Select Image', 'gmb-ranker-seo-automation'); ?></button>
                     <button type="button" class="button button-link-delete gmb-social-clear-img-btn <?php echo !empty($fb_img_val) ? 'is-active' : ''; ?>" data-target="gmb_seo_fb_image_metabox"><?php esc_html_e('Remove', 'gmb-ranker-seo-automation'); ?></button>
                 </div>
             </div>
@@ -1012,7 +1012,7 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                 $tw_card_type   = get_post_meta($post->ID, '_gmb_ranker_twitter_card_type', true) ?: 'summary_large_image';
                 ?>
                 <div class="gmb-tw-preview-card <?php echo ($tw_card_type === 'summary') ? 'gmb-tw-card--summary' : 'gmb-tw-card--large'; ?>" id="gmb-tw-card-container">
-                    <div id="gmb-tw-preview-img-box" class="gmb-social-image-box gmb-media-upload-trigger" data-target="gmb_seo_tw_image_metabox" title="<?php esc_attr_e('Click to upload or change Twitter image', 'gmb-ranker-seo-automation'); ?>">
+                    <div id="gmb-tw-preview-img-box" class="gmb-social-image-box gmb-media-upload-trigger" data-target="gmb_seo_tw_image_metabox" onclick="return window.gmbOpenSocialMediaPicker ? window.gmbOpenSocialMediaPicker('gmb_seo_tw_image_metabox', event) : false;" title="<?php esc_attr_e('Click to upload or change Twitter image', 'gmb-ranker-seo-automation'); ?>">
                         <img id="gmb-tw-preview-img" src="<?php echo esc_url($current_tw_img); ?>" class="gmb-social-img-element <?php echo !empty($current_tw_img) ? 'is-active' : ''; ?>" alt="<?php esc_attr_e('Twitter Preview', 'gmb-ranker-seo-automation'); ?>" />
                         <div id="gmb-tw-preview-placeholder" class="gmb-social-image-placeholder <?php echo !empty($current_tw_img) ? 'is-hidden' : ''; ?>">
                             <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" ry="3"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
@@ -1062,7 +1062,7 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                 <label for="gmb_seo_tw_image_metabox" class="gmb-field-label"><?php esc_html_e('Twitter Image', 'gmb-ranker-seo-automation'); ?></label>
                 <div class="gmb-image-upload-row">
                     <input type="text" id="gmb_seo_tw_image_metabox" name="gmb_seo_twitter_image" value="<?php echo esc_attr(get_post_meta($post->ID, '_gmb_ranker_twitter_image', true)); ?>" class="gmb-field-input" placeholder="<?php echo !empty($current_tw_img) ? esc_url($current_tw_img) : ''; ?>" />
-                    <button type="button" class="button button-secondary gmb-media-upload-btn" data-target="gmb_seo_tw_image_metabox"><?php esc_html_e('Select Image', 'gmb-ranker-seo-automation'); ?></button>
+                    <button type="button" class="button button-secondary gmb-media-upload-btn" data-target="gmb_seo_tw_image_metabox" onclick="return window.gmbOpenSocialMediaPicker ? window.gmbOpenSocialMediaPicker('gmb_seo_tw_image_metabox', event) : false;"><?php esc_html_e('Select Image', 'gmb-ranker-seo-automation'); ?></button>
                     <button type="button" class="button button-link-delete gmb-social-clear-img-btn <?php echo !empty($tw_img_val) ? 'is-active' : ''; ?>" data-target="gmb_seo_tw_image_metabox"><?php esc_html_e('Remove', 'gmb-ranker-seo-automation'); ?></button>
                 </div>
             </div>

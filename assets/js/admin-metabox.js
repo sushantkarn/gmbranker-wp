@@ -37,6 +37,36 @@
     return false;
   };
 
+  window.gmbOpenSocialMediaPicker = function (targetInputId, e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!targetInputId || !window.wp || !window.wp.media) {
+      alert("WordPress Media Library is not available on this screen. Please refresh the page.");
+      return false;
+    }
+    var frame = window.wp.media({
+      title: "Select SEO Social Image",
+      button: { text: "Use Image" },
+      multiple: false
+    });
+    frame.on("select", function () {
+      var selection = frame.state().get("selection");
+      var attachment = selection && selection.first() ? selection.first().toJSON() : null;
+      if (!attachment || !attachment.url) return;
+      var $ = window.jQuery;
+      $("#" + targetInputId).val(attachment.url).trigger("input").trigger("change");
+      if (targetInputId.indexOf("fb_image") !== -1) {
+        $("#gmb-fb-preview-img").attr("src", attachment.url).addClass("is-active").show();
+        $("#gmb-fb-preview-placeholder").hide();
+      } else if (targetInputId.indexOf("tw_image") !== -1) {
+        $("#gmb-tw-preview-img").attr("src", attachment.url).addClass("is-active").show();
+        $("#gmb-tw-preview-placeholder").hide();
+      }
+    });
+    frame.open();
+    return false;
+  };
+
   window.gmbSwitchSchemaTab = function (targetTab, e) {
     if (e && e.preventDefault) e.preventDefault();
     if (!targetTab || !/^schema-tab-[a-z-]+$/.test(targetTab) || !window.jQuery) return false;
@@ -66,25 +96,7 @@
       e.stopImmediatePropagation();
       var targetInputId = window.jQuery(this).attr("data-target");
       if (!targetInputId) return false;
-      if (typeof window.wp === "undefined" || !window.wp.media) {
-        alert("WordPress Media Library is not available on this screen. Please refresh the page.");
-        return false;
-      }
-
-      var frame = window.wp.media({
-        title: "Select SEO Social Image",
-        button: { text: "Use Image" },
-        multiple: false
-      });
-      frame.on("select", function () {
-        var selection = frame.state().get("selection");
-        var attachment = selection && selection.first() ? selection.first().toJSON() : null;
-        if (attachment && attachment.url) {
-          window.jQuery("#" + targetInputId).val(attachment.url).trigger("input").trigger("change");
-        }
-      });
-      frame.open();
-      return false;
+      return window.gmbOpenSocialMediaPicker(targetInputId, e);
     });
   }
 
