@@ -322,6 +322,8 @@ class GMB_Ranker_SEO_Admin {
         $assets_dir = dirname(dirname(dirname(__FILE__))) . '/assets/';
         $base_url   = plugins_url('assets/', dirname(dirname(__FILE__)));
         $js_ver     = file_exists($assets_dir . 'js/admin-dashboard.js') ? filemtime($assets_dir . 'js/admin-dashboard.js') : $ver;
+        $app_js_ver = file_exists($assets_dir . 'js/admin/admin-app.js') ? filemtime($assets_dir . 'js/admin/admin-app.js') : $ver;
+        $wizard_js_ver = file_exists($assets_dir . 'js/admin-wizard.js') ? filemtime($assets_dir . 'js/admin-wizard.js') : $ver;
         $css_ver    = file_exists($assets_dir . 'css/admin-dashboard.css') ? filemtime($assets_dir . 'css/admin-dashboard.css') : $ver;
 
         // 1. Master Design Tokens
@@ -355,8 +357,8 @@ class GMB_Ranker_SEO_Admin {
         wp_enqueue_style('gmb-ranker-wizard', $base_url . 'css/pages/wizard.css', array('gmb-ranker-tokens'), $css_ver);
 
         wp_enqueue_script('gmb-ranker-admin-js', $base_url . 'js/admin-dashboard.js', array('jquery'), $js_ver, true);
-        wp_enqueue_script('gmb-ranker-admin-app-js', $base_url . 'js/admin/admin-app.js', array('jquery', 'gmb-ranker-admin-js'), $js_ver, true);
-        wp_enqueue_script('gmb-ranker-wizard-js', $base_url . 'js/admin-wizard.js', array('jquery', 'gmb-ranker-admin-js'), $js_ver, true);
+        wp_enqueue_script('gmb-ranker-admin-app-js', $base_url . 'js/admin/admin-app.js', array('jquery', 'gmb-ranker-admin-js'), $app_js_ver, true);
+        wp_enqueue_script('gmb-ranker-wizard-js', $base_url . 'js/admin-wizard.js', array('jquery', 'gmb-ranker-admin-js'), $wizard_js_ver, true);
         
         $localized_data = array(
             'ajax_url'            => admin_url('admin-ajax.php'),
