@@ -3,7 +3,7 @@
  * Plugin Name:       GMB Ranker SEO Automation
  * Plugin URI:        https://github.com/sushantkarn/gmbranker-wp
  * Description:       Enterprise-grade WordPress SEO Automation & Intelligence Engine. Connects WordPress site content and SEO metadata for automated optimization.
- * Version:           2.3.0
+ * Version:           1.0.0
  * Author:            Sushant Karn
  * Author URI:        https://gmbranker.org
  * License:           GPLv2 or later
@@ -25,7 +25,7 @@ if (!defined('GMB_RANKER_SEO_FILE')) {
     define('GMB_RANKER_SEO_FILE', __FILE__);
 }
 if (!defined('GMB_RANKER_SEO_VERSION')) {
-    define('GMB_RANKER_SEO_VERSION', '2.3.0');
+    define('GMB_RANKER_SEO_VERSION', '1.0.0');
 }
 if (!defined('GMB_RANKER_SEO_PATH')) {
     define('GMB_RANKER_SEO_PATH', plugin_dir_path(__FILE__));

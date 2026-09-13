@@ -254,7 +254,7 @@ class GMB_Ranker_SEO_MCP_Tools {
             'site_id' => hash('sha256', untrailingslashit(home_url())),
             'site_url' => home_url('/'),
             'site_name' => get_bloginfo('name'),
-            'plugin_version' => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '2.3.0',
+            'plugin_version' => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '1.0.0',
             'agent_role' => 'wordpress_site_agent',
             'authority' => 'FIRST_PARTY_SITE',
             'fetched_at' => gmdate('c'),

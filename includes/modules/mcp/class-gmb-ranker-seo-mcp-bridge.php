@@ -135,7 +135,7 @@ class GMB_Ranker_SEO_MCP_Bridge {
             'site_id' => hash('sha256', untrailingslashit(home_url())),
             'site_url' => home_url('/'),
             'site_name' => get_bloginfo('name'),
-            'plugin_version' => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '2.3.0',
+            'plugin_version' => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '1.0.0',
             'agent_role' => 'wordpress_site_agent',
             'public_mcp' => false,
             'capabilities' => array(
@@ -290,7 +290,7 @@ class GMB_Ranker_SEO_MCP_Bridge {
                 'serverInfo' => array(
                     'name' => 'gmb-ranker-wordpress-agent',
                     'title' => 'GMB Ranker WordPress Agent',
-                    'version' => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '2.3.0',
+                    'version' => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '1.0.0',
                 ),
                 'instructions' => 'This is a scoped WordPress site agent. Use the cloud GMB Ranker MCP server for GBP, Search Console, Analytics, rankings, and multi-source local SEO data.',
             ));

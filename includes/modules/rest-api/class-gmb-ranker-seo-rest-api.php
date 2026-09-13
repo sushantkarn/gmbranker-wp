@@ -179,7 +179,7 @@ class GMB_Ranker_SEO_REST_API {
         return new WP_REST_Response(array(
             'status' => 'connected',
             'site_url' => home_url(),
-            'version' => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '2.3.0',
+            'version' => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '1.0.0',
             'modules' => $modules,
         ), 200);
     }
@@ -274,7 +274,7 @@ class GMB_Ranker_SEO_REST_API {
 
         return new WP_REST_Response(array(
             'success'              => true,
-            'plugin_version'       => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '2.3.0',
+            'plugin_version'       => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '1.0.0',
             'wordpress_version'    => get_bloginfo('version'),
             'php_version'          => PHP_VERSION,
             'site_name'            => get_bloginfo('name'),
