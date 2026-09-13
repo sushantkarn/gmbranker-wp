@@ -20,7 +20,7 @@ $lang_options   = class_exists('GMB_Ranker_SEO_Metabox_Registry') ? GMB_Ranker_S
 $site_locale    = function_exists('get_locale') ? substr(get_locale(), 0, 2) : 'en';
 ?>
 <!-- Single Page AI SEO Optimizer Modal (NeuronWriter-Style 3-Step Flow) -->
-<div id="gmb-ai-post-seo-modal" class="gmb-modal-overlay" role="dialog" aria-labelledby="gmb-ai-modal-title" aria-hidden="true">
+<div id="gmb-ai-post-seo-modal" class="gmb-modal-overlay gmb-hidden" style="display: none;" role="dialog" aria-labelledby="gmb-ai-modal-title" aria-hidden="true">
     <div class="gmb-modal-container gmb-modal-lg">
         <div class="gmb-modal-header">
             <div class="gmb-modal-header-flex">

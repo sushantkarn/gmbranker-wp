@@ -12,14 +12,15 @@ if (!defined('ABSPATH')) {
 require_once dirname(__FILE__) . '/class-gmb-ranker-seo-autoloader.php';
 require_once dirname(__FILE__) . '/class-gmb-ranker-seo-helpers.php';
 
-class GMB_Ranker_SEO_Core {
+if (!class_exists('GMB_Ranker_SEO_Core')) {
+    class GMB_Ranker_SEO_Core {
 
-    /**
-     * Module instances container
-     *
-     * @var array
-     */
-    public $modules = array();
+        /**
+         * Module instances container
+         *
+         * @var array
+         */
+        public $modules = array();
 
     /**
      * Constructor
@@ -149,6 +150,9 @@ class GMB_Ranker_SEO_Core {
         // REST API Engine (always initialized)
         $this->modules['rest_api'] = new GMB_Ranker_SEO_REST_API();
 
+        // MCP & OpenAI Bridge (always initialized)
+        $this->modules['mcp_bridge'] = new GMB_Ranker_SEO_MCP_Bridge();
+
         // Register recurring jobs from the active bootstrap. Previously the
         // scheduler class existed but was never instantiated, so automation
         // queues and daily reports could remain permanently idle.
@@ -217,4 +221,5 @@ class GMB_Ranker_SEO_Core {
             }
         }
     }
+}
 }

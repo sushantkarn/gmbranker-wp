@@ -595,13 +595,13 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                                 <strong class="gmb-schema-active-title"><?php echo esc_html($s_type); ?></strong>
                             </div>
                             <div class="gmb-schema-active-actions">
-                                <button type="button" class="gmb-schema-action-btn gmb-schema-edit-btn" data-type="<?php echo esc_attr($s_type); ?>" title="<?php esc_attr_e('Edit Schema', 'gmb-ranker-seo-automation'); ?>">
+                                <button type="button" class="gmb-schema-action-btn gmb-schema-edit-btn" data-type="<?php echo esc_attr($s_type); ?>" title="<?php esc_attr_e('Edit Schema', 'gmb-ranker-seo-automation'); ?>" onclick="return window.gmbEditSchema ? window.gmbEditSchema('<?php echo esc_attr($s_type); ?>', event) : false;">
                                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                 </button>
-                                <button type="button" class="gmb-schema-action-btn gmb-schema-code-btn" data-type="<?php echo esc_attr($s_type); ?>" title="<?php esc_attr_e('Code Validation', 'gmb-ranker-seo-automation'); ?>">
+                                <button type="button" class="gmb-schema-action-btn gmb-schema-code-btn" data-type="<?php echo esc_attr($s_type); ?>" title="<?php esc_attr_e('Code Validation', 'gmb-ranker-seo-automation'); ?>" onclick="return window.gmbValidateSchema ? window.gmbValidateSchema('<?php echo esc_attr($s_type); ?>', event) : false;">
                                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                 </button>
-                                <button type="button" class="gmb-schema-action-btn gmb-remove-schema-btn" data-type="<?php echo esc_attr($s_type); ?>" title="<?php esc_attr_e('Delete Schema', 'gmb-ranker-seo-automation'); ?>">
+                                <button type="button" class="gmb-schema-action-btn gmb-remove-schema-btn" data-type="<?php echo esc_attr($s_type); ?>" title="<?php esc_attr_e('Delete Schema', 'gmb-ranker-seo-automation'); ?>" onclick="return window.gmbDeleteSchema ? window.gmbDeleteSchema('<?php echo esc_attr($s_type); ?>', event) : false;">
                                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                 </button>
                             </div>
@@ -846,12 +846,12 @@ $robots_array     = array_map('trim', explode(',', strtolower($robots)));
                     <div class="gmb-flex-center-gap-sm">
                         <span class="gmb-modal-title"><?php esc_html_e('Schema Builder', 'gmb-ranker-seo-automation'); ?></span>
                     </div>
-                    <span class="gmb-modal-close" id="gmb-schema-builder-close-btn" title="<?php esc_attr_e('Close Modal', 'gmb-ranker-seo-automation'); ?>" role="button" tabindex="0">&#x2715;</span>
+                    <span class="gmb-modal-close" id="gmb-schema-builder-close-btn" title="<?php esc_attr_e('Close Modal', 'gmb-ranker-seo-automation'); ?>" role="button" tabindex="0" onclick="return window.gmbCloseSchemaModal ? window.gmbCloseSchemaModal(event) : false;">&#x2715;</span>
                 </div>
                 <div class="gmb-builder-subtabs-bar">
                     <div class="gmb-builder-tabs-nav" role="tablist">
-                        <button type="button" class="gmb-modal-tab-btn active" id="gmb-builder-tab-btn-edit" data-builder-tab="edit" role="tab"><?php esc_html_e('Edit', 'gmb-ranker-seo-automation'); ?></button>
-                        <button type="button" class="gmb-modal-tab-btn" id="gmb-builder-tab-btn-validation" data-builder-tab="validation" role="tab"><?php esc_html_e('Code Validation', 'gmb-ranker-seo-automation'); ?></button>
+                        <button type="button" class="gmb-modal-tab-btn active" id="gmb-builder-tab-btn-edit" data-builder-tab="edit" role="tab" onclick="return window.gmbSwitchBuilderTab ? window.gmbSwitchBuilderTab('edit', event) : false;"><?php esc_html_e('Edit', 'gmb-ranker-seo-automation'); ?></button>
+                        <button type="button" class="gmb-modal-tab-btn" id="gmb-builder-tab-btn-validation" data-builder-tab="validation" role="tab" onclick="return window.gmbSwitchBuilderTab ? window.gmbSwitchBuilderTab('validation', event) : false;"><?php esc_html_e('Code Validation', 'gmb-ranker-seo-automation'); ?></button>
                     </div>
                     <span class="gmb-builder-info-icon" title="<?php esc_attr_e('Customize Schema properties for this post', 'gmb-ranker-seo-automation'); ?>"></span>
                 </div>

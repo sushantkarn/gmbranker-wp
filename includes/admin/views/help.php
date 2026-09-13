@@ -15,8 +15,8 @@ if (!defined('ABSPATH')) {
 $current_page = isset($current_page) ? $current_page : (isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '');
 
 // Fetch canonical resource metadata
-$support_url    = class_exists('GMB_Ranker_SEO_Help_Registry') ? GMB_Ranker_SEO_Help_Registry::get_support_url() : 'https://gmbranker.org/support';
-$docs_url       = class_exists('GMB_Ranker_SEO_Help_Registry') ? GMB_Ranker_SEO_Help_Registry::get_documentation_url() : 'https://gmbranker.org/docs';
+$support_url    = class_exists('GMB_Ranker_SEO_Help_Registry') ? GMB_Ranker_SEO_Help_Registry::get_support_url() : 'https://gmbranker.org/contact';
+$docs_url       = class_exists('GMB_Ranker_SEO_Help_Registry') ? GMB_Ranker_SEO_Help_Registry::get_documentation_url() : 'https://gmbranker.org';
 $community_url  = class_exists('GMB_Ranker_SEO_Help_Registry') ? GMB_Ranker_SEO_Help_Registry::get_community_url() : 'https://gmbranker.org/community';
 $wizard_url     = class_exists('GMB_Ranker_SEO_Help_Registry') ? GMB_Ranker_SEO_Help_Registry::get_wizard_url() : admin_url('admin.php?page=gmb-ranker-wizard');
 $lic_status     = class_exists('GMB_Ranker_SEO_Help_Registry') ? GMB_Ranker_SEO_Help_Registry::get_licensing_status() : array('label' => __('Standard Support', 'gmb-ranker-seo-automation'), 'class' => 'gmb-status-pill--info', 'active' => false, 'details' => __('Standard Support Available.', 'gmb-ranker-seo-automation'));

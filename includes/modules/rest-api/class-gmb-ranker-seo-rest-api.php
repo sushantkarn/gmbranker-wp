@@ -85,6 +85,18 @@ class GMB_Ranker_SEO_REST_API {
             'permission_callback' => array($this, 'authenticate_request'),
         ));
 
+        register_rest_route('gmb-ranker/v1', '/modules', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'handle_module_update'),
+            'permission_callback' => array($this, 'authenticate_request'),
+        ));
+
+        register_rest_route('gmb-ranker-seo/v1', '/modules', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'handle_module_update'),
+            'permission_callback' => array($this, 'authenticate_request'),
+        ));
+
         register_rest_route('gmb-ranker/v1', '/automation/dispatch', array(
             'methods' => 'POST',
             'callback' => array($this, 'handle_automation_dispatch'),
@@ -138,7 +150,77 @@ class GMB_Ranker_SEO_REST_API {
     }
 
     public function handle_handshake() {
-        return new WP_REST_Response(array('status' => 'connected'), 200);
+        $module_options = array(
+            'metadata' => 'gmb_ranker_module_metadata',
+            'sitemaps' => 'gmb_ranker_module_sitemaps',
+            'redirects' => 'gmb_ranker_module_redirects',
+            'schema' => 'gmb_ranker_module_schema',
+            'preferred_source' => 'gmb_ranker_module_preferred_source',
+            'image_seo' => 'gmb_ranker_module_image_seo',
+            'links' => 'gmb_ranker_module_links',
+            'db_tools' => 'gmb_ranker_module_db_tools',
+            'role_manager' => 'gmb_ranker_module_role_manager',
+            'instant_indexing' => 'gmb_ranker_module_instant_indexing',
+            'local_seo' => 'gmb_ranker_module_local_seo',
+            'seo_analysis' => 'gmb_ranker_module_seo_analysis',
+            'security' => 'gmb_ranker_module_security',
+            'llmstxt' => 'gmb_ranker_module_llmstxt',
+            'ai_provider' => 'gmb_ranker_module_ai_provider',
+            'toc' => 'gmb_ranker_module_toc',
+            'media_formats' => 'gmb_ranker_module_media_formats',
+            'analytics' => 'gmb_ranker_module_analytics',
+            'woocommerce' => 'gmb_ranker_module_woocommerce',
+        );
+        $modules = array();
+        foreach ($module_options as $module => $option) {
+            $modules[$module] = get_option($option, '1') !== '0';
+        }
+
+        return new WP_REST_Response(array(
+            'status' => 'connected',
+            'site_url' => home_url(),
+            'version' => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '2.3.0',
+            'modules' => $modules,
+        ), 200);
+    }
+
+    public function handle_module_update($request) {
+        $module_options = array(
+            'metadata' => 'gmb_ranker_module_metadata',
+            'sitemaps' => 'gmb_ranker_module_sitemaps',
+            'redirects' => 'gmb_ranker_module_redirects',
+            'schema' => 'gmb_ranker_module_schema',
+            'preferred_source' => 'gmb_ranker_module_preferred_source',
+            'image_seo' => 'gmb_ranker_module_image_seo',
+            'links' => 'gmb_ranker_module_links',
+            'db_tools' => 'gmb_ranker_module_db_tools',
+            'role_manager' => 'gmb_ranker_module_role_manager',
+            'instant_indexing' => 'gmb_ranker_module_instant_indexing',
+            'local_seo' => 'gmb_ranker_module_local_seo',
+            'seo_analysis' => 'gmb_ranker_module_seo_analysis',
+            'security' => 'gmb_ranker_module_security',
+            'llmstxt' => 'gmb_ranker_module_llmstxt',
+            'ai_provider' => 'gmb_ranker_module_ai_provider',
+            'toc' => 'gmb_ranker_module_toc',
+            'media_formats' => 'gmb_ranker_module_media_formats',
+            'analytics' => 'gmb_ranker_module_analytics',
+            'woocommerce' => 'gmb_ranker_module_woocommerce',
+        );
+        $module = sanitize_key((string) $request->get_param('module'));
+        if (!isset($module_options[$module])) {
+            return new WP_Error('invalid_module', 'Unknown module.', array('status' => 400));
+        }
+
+        $enabled = filter_var($request->get_param('enabled'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if ($enabled === null) {
+            return new WP_Error('invalid_enabled', 'The enabled value must be boolean.', array('status' => 400));
+        }
+
+        update_option($module_options[$module], $enabled ? '1' : '0');
+        return new WP_REST_Response(array(
+            'module' => $module,
+            'enabled' => $enabled,
+        ), 200);
     }
 
     public function handle_capabilities($request) {
@@ -192,7 +274,7 @@ class GMB_Ranker_SEO_REST_API {
 
         return new WP_REST_Response(array(
             'success'              => true,
-            'plugin_version'       => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '2.1.2',
+            'plugin_version'       => defined('GMB_RANKER_SEO_VERSION') ? GMB_RANKER_SEO_VERSION : '2.3.0',
             'wordpress_version'    => get_bloginfo('version'),
             'php_version'          => PHP_VERSION,
             'site_name'            => get_bloginfo('name'),

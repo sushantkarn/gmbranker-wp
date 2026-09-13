@@ -308,6 +308,7 @@ if (!class_exists('GMB_Ranker_SEO_Settings_Registry')) {
                 'gmb_integration_indexnow_auto'  => 'sanitize_text_field',
                 'gmb_integration_webhook_url'    => 'esc_url_raw',
                 'gmb_integration_webhook_secret' => 'sanitize_text_field',
+                'gmb_openai_apps_challenge_token'=> 'sanitize_text_field',
             );
 
             $groups = array('gmb_ranker_settings_group', 'gmb_ranker_integrations_group');

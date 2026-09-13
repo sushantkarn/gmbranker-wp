@@ -218,7 +218,7 @@ class GMB_Ranker_SEO_Security {
      */
     public function render_profile_username_changer_script() {
         $screen = function_exists('get_current_screen') ? get_current_screen() : null;
-        if (!$screen || !in_array($screen->id, array('profile', 'user-edit', 'user-edit-network'), true)) {
+        if (!$screen || !isset($screen->id) || !in_array($screen->id, array('profile', 'user-edit', 'user-edit-network'), true)) {
             return;
         }
 

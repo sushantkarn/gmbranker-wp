@@ -118,11 +118,11 @@
 }
 
 .gmb-kpi-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: #475569;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .gmb-kpi-delta {

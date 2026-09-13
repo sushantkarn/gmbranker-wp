@@ -211,4 +211,42 @@ class GMB_Ranker_SEO_GSC_Client {
 
         return $last_error ?: new WP_Error('gsc_query_failed', __('Failed to retrieve Search Analytics data from Google Search Console.', 'gmb-ranker-seo-automation'));
     }
+
+    /**
+     * List all verified properties accessible by the access token
+     *
+     * @param string $token
+     * @return array|WP_Error
+     */
+    public function list_properties($token) {
+        $clean_token = self::sanitize_token($token);
+        if (empty($clean_token)) {
+            return new WP_Error('missing_token', __('No valid access token available.', 'gmb-ranker-seo-automation'));
+        }
+
+        $endpoint = self::GSC_API_BASE_LEGACY . '/sites';
+
+        $response = wp_remote_get($endpoint, array(
+            'headers'   => array(
+                'Authorization' => 'Bearer ' . $clean_token,
+                'Accept'        => 'application/json',
+            ),
+            'timeout'   => 15,
+            'sslverify' => true,
+        ));
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $code = (int) wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+
+        if ($code !== 200) {
+            return new WP_Error('gsc_sites_error', sprintf(__('Failed to fetch site list (%d)', 'gmb-ranker-seo-automation'), $code));
+        }
+
+        $data = json_decode($body, true);
+        return (is_array($data) && isset($data['siteEntry'])) ? $data['siteEntry'] : array();
+    }
 }

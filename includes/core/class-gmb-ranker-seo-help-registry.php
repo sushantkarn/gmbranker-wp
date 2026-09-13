@@ -35,7 +35,7 @@ class GMB_Ranker_SEO_Help_Registry {
      * @return string
      */
     public static function get_support_url() {
-        return self::get_canonical_url('support');
+        return self::get_canonical_url('contact');
     }
 
     /**
@@ -44,7 +44,7 @@ class GMB_Ranker_SEO_Help_Registry {
      * @return string
      */
     public static function get_documentation_url() {
-        return self::get_canonical_url('docs');
+        return self::get_canonical_url('');
     }
 
     /**

@@ -50,22 +50,13 @@ body.post-new-php #wpwrap {
   to { background-position: -200% 0; }
 }
 
-#wpfooter {
-  position: relative !important;
-  clear: both !important;
-  display: block !important;
-  margin: 40px 0 0 0 !important;
-  padding: 15px 20px !important;
-  width: auto !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-}
-
+/* Clearfix for Post Editor Containers */
 #wpbody-content::after,
 #poststuff::after,
 #post-body::after,
 #postbox-container-1::after,
 #postbox-container-2::after,
+#gmb_ranker_seo_box::after,
 .metabox-holder::after {
   content: "";
   display: table;
@@ -1183,7 +1174,7 @@ body.post-new-php #wpwrap {
   visibility: hidden;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
-  z-index: 999999;
+  z-index: 99950;
   text-align: center;
 }
 
@@ -1200,7 +1191,7 @@ body.post-new-php #wpwrap {
   opacity: 0;
   visibility: hidden;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 999999;
+  z-index: 99950;
 }
 
 .gmb-help-tip:hover[data-gmb-tooltip]::after,
@@ -2501,7 +2492,7 @@ body.post-new-php #wpwrap {
   width: 100vw !important;
   height: 100vh !important;
   background: rgba(15, 23, 42, 0.65) !important;
-  z-index: 999999 !important;
+  z-index: 99900 !important;
   display: none;
   align-items: center !important;
   justify-content: center !important;
@@ -3069,7 +3060,7 @@ body.post-new-php #wpwrap {
   background: rgba(15, 23, 42, 0.75) !important;
   backdrop-filter: blur(4px) !important;
   -webkit-backdrop-filter: blur(4px) !important;
-  z-index: 999999 !important;
+  z-index: 99900 !important;
   align-items: center !important;
   justify-content: center !important;
   padding: 20px !important;

@@ -726,4 +726,30 @@
     e.preventDefault();
     window.gmbClearIndexNowHistory();
   });
+
+  $(document).on("click", "#gmb-sync-analytics-btn", function (e) {
+    e.preventDefault();
+    var btn = $(this);
+    var label = $("#gmb-sync-btn-label");
+    var origText = label.text();
+    btn.prop("disabled", true);
+    label.text("Auditing...");
+
+    $.post(getAjaxUrl(), {
+      action: "gmb_refresh_analytics",
+      nonce: getNonce()
+    }, function (response) {
+      btn.prop("disabled", false);
+      label.text(origText);
+      if (response && response.success) {
+        window.location.reload();
+      } else {
+        alert("Failed to complete SEO audit.");
+      }
+    }).fail(function () {
+      btn.prop("disabled", false);
+      label.text(origText);
+      alert("Network error audit failed.");
+    });
+  });
 })(jQuery);

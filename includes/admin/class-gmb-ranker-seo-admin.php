@@ -44,9 +44,7 @@ class GMB_Ranker_SEO_Admin {
         if (defined('DOING_AJAX') && DOING_AJAX) {
             $action = isset($_REQUEST['action']) ? sanitize_text_field(wp_unslash($_REQUEST['action'])) : '';
             if (is_string($action) && strpos($action, 'gmb_') === 0) {
-                if ($action !== 'gmb_toggle_dashboard_module') {
-                    add_action('admin_init', array($this, 'enforce_ajax_csrf_protection'), 1);
-                }
+                add_action('admin_init', array($this, 'enforce_ajax_csrf_protection'), 1);
             }
         }
 

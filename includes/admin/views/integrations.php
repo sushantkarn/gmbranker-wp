@@ -341,6 +341,55 @@ if ($current_page === 'gmb-ranker-integrations') :
                     </div>
                 </div>
 
+                <!-- Card 5: Model Context Protocol (MCP) & OpenAI Plugin Hub -->
+                <div class="gmb-integration-card">
+                    <div class="gmb-integration-card-header">
+                        <div class="gmb-integration-card-header-left">
+                            <div class="gmb-integration-icon-badge gmb-integration-badge-success">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L5.6 15.12a2 2 0 01-1.166-.967l-1.2-2.4a2 2 0 01.257-2.368l1.7-1.7a2 2 0 012.368-.257l2.4 1.2a2 2 0 01.967 1.166l.477 2.387a6 6 0 00.517 3.86l.158.318a6 6 0 003.86.517l2.387-.477a2 2 0 001.166-.967l1.2-2.4a2 2 0 00-.257-2.368l-1.7-1.7" /></svg>
+                            </div>
+                            <div>
+                                <h3 class="gmb-heading-3"><?php esc_html_e('GMB Ranker AI site agent', 'gmb-ranker-seo-automation'); ?></h3>
+                                <p class="gmb-text-muted"><?php esc_html_e('This WordPress agent supplies first-party site data to the GMB Ranker cloud MCP. Connect ChatGPT through GMB Ranker so GBP, Search Console, Analytics, rankings, and WordPress data stay in one secure context.', 'gmb-ranker-seo-automation'); ?></p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="gmb-status-pill gmb-status-pill--success">
+                                <span class="gmb-status-dot"></span>
+                                <?php esc_html_e('Site agent available', 'gmb-ranker-seo-automation'); ?>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="gmb-grid-2 gmb-mb-16">
+                        <div>
+                            <label for="gmb_mcp_rpc_url" class="gmb-form-label"><?php esc_html_e('Internal site-agent endpoint', 'gmb-ranker-seo-automation'); ?></label>
+                            <input type="text" id="gmb_mcp_rpc_url" readonly value="<?php echo esc_url(rest_url('gmb-ranker/v1/mcp/rpc')); ?>" class="gmb-integration-input gmb-integration-input-readonly" />
+                            <p class="gmb-form-help"><?php esc_html_e('Used by the connected GMB Ranker cloud service. Do not publish this URL as a standalone ChatGPT connection.', 'gmb-ranker-seo-automation'); ?></p>
+                        </div>
+                        <div>
+                            <label for="gmb_mcp_manifest_url" class="gmb-form-label"><?php esc_html_e('Legacy compatibility manifest', 'gmb-ranker-seo-automation'); ?></label>
+                            <input type="text" id="gmb_mcp_manifest_url" readonly value="<?php echo esc_url(rest_url('gmb-ranker/v1/mcp/manifest')); ?>" class="gmb-integration-input gmb-integration-input-readonly" />
+                            <p class="gmb-form-help"><?php esc_html_e('Retained for existing integrations. New OpenAI connections should use the cloud GMB Ranker MCP OAuth flow.', 'gmb-ranker-seo-automation'); ?></p>
+                        </div>
+                    </div>
+
+                    <div class="gmb-grid-2 gmb-mb-16">
+                        <div>
+                            <label for="gmb_openai_apps_challenge_token" class="gmb-form-label"><?php esc_html_e('OpenAI Domain Challenge Token', 'gmb-ranker-seo-automation'); ?></label>
+                            <?php $challenge_token = get_option('gmb_openai_apps_challenge_token', ''); ?>
+                            <input type="text" id="gmb_openai_apps_challenge_token" name="gmb_openai_apps_challenge_token" value="<?php echo esc_attr($challenge_token); ?>" placeholder="<?php esc_attr_e('Paste token from OpenAI submission portal...', 'gmb-ranker-seo-automation'); ?>" class="gmb-integration-input" />
+                            <p class="gmb-form-help"><?php esc_html_e('Serves at', 'gmb-ranker-seo-automation'); ?> <code>/.well-known/openai-apps-challenge</code> <?php esc_html_e('for domain verification.', 'gmb-ranker-seo-automation'); ?></p>
+                        </div>
+                        <div class="gmb-webhook-row">
+                            <label class="gmb-form-label"><?php esc_html_e('OpenAI Submission Kit', 'gmb-ranker-seo-automation'); ?></label>
+                            <a href="<?php echo esc_url(rest_url('gmb-ranker/v1/mcp/submission-package')); ?>" target="_blank" class="gmb-btn gmb-btn-secondary" style="display:inline-block; padding:8px 14px; text-decoration:none;">
+                                &darr; <?php esc_html_e('View Submission Package (Test Cases & Prompts)', 'gmb-ranker-seo-automation'); ?>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Form Footer Actions -->
                 <div class="gmb-integrations-footer">
                     <button type="submit" class="gmb-btn gmb-btn-primary gmb-btn--primary">

@@ -30,9 +30,9 @@
   // not make these basic modal controls unusable.
   window.gmbCloseSchemaModal = function (e) {
     if (e && e.preventDefault) e.preventDefault();
-    var $modal = window.jQuery && window.jQuery("#gmb-schema-modal");
-    if ($modal && $modal.length) {
-      $modal.removeClass("active is-open is-active").attr("aria-hidden", "true").hide();
+    var $ = window.jQuery;
+    if ($) {
+      $("#gmb-schema-modal, #gmb-schema-builder-modal").removeClass("active is-open is-active").attr("aria-hidden", "true").hide();
     }
     return false;
   };
@@ -82,6 +82,47 @@
     return false;
   };
 
+  window.gmbSwitchBuilderTab = function (tab, e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var $ = window.jQuery;
+    if ($) {
+      if (tab === "validation") {
+        $("#gmb-builder-tab-btn-edit").removeClass("active");
+        $("#gmb-builder-tab-btn-validation").addClass("active");
+        $("#gmb-builder-panel-edit").hide();
+        $("#gmb-builder-panel-validation").fadeIn(150);
+      } else {
+        $("#gmb-builder-tab-btn-validation").removeClass("active");
+        $("#gmb-builder-tab-btn-edit").addClass("active");
+        $("#gmb-builder-panel-validation").hide();
+        $("#gmb-builder-panel-edit").fadeIn(150);
+      }
+    }
+    return false;
+  };
+
+  window.gmbOpenSchemaBuilder = function (schemaType, activeTab) {
+    schemaType = schemaType || "Article";
+    activeTab = activeTab || "edit";
+    var $ = window.jQuery;
+    if ($) {
+      if (typeof window.gmbDoOpenSchemaBuilder === "function") {
+        return window.gmbDoOpenSchemaBuilder(schemaType, activeTab);
+      }
+      if (typeof window.renderSchemaBuilderFields === "function") {
+        window.renderSchemaBuilderFields(schemaType);
+      }
+      var $builderModal = $("#gmb-schema-builder-modal");
+      if ($builderModal.length) {
+        $("#gmb-builder-schema-type-label").text(schemaType);
+        $builderModal.appendTo("body");
+        $builderModal.attr("aria-hidden", "false").addClass("active is-open is-active").css("display", "flex").show();
+        window.gmbSwitchBuilderTab(activeTab);
+      }
+    }
+    return false;
+  };
+
   if (window.jQuery) {
     window.jQuery(document).on("click.gmbSchemaModal", "#gmb-schema-modal-close-btn", window.gmbCloseSchemaModal);
     window.jQuery(document).on("click.gmbSchemaModal", "#gmb-schema-modal .gmb-modal-tab-btn[data-schema-tab]", function (e) {
@@ -105,7 +146,7 @@
     var $modal = $("#gmb-schema-modal");
     if ($modal.length) {
       $modal.appendTo("body");
-      $modal.addClass("active is-open").css("display", "flex").show();
+      $modal.attr("aria-hidden", "false").addClass("active is-open is-active").css("display", "flex").show();
     }
   };
 
@@ -138,17 +179,17 @@
         '<div class="gmb-schema-active-actions">' +
         '<button type="button" class="gmb-schema-action-btn gmb-schema-edit-btn" data-type="' +
         schemaTypeEscaped +
-        '" title="Edit Schema">' +
+        '" title="Edit Schema" onclick="return window.gmbEditSchema ? window.gmbEditSchema(\'' + schemaTypeEscaped + '\', event) : false;">' +
         '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>' +
         "</button>" +
         '<button type="button" class="gmb-schema-action-btn gmb-schema-code-btn" data-type="' +
         schemaTypeEscaped +
-        '" title="Code Validation">' +
+        '" title="Code Validation" onclick="return window.gmbValidateSchema ? window.gmbValidateSchema(\'' + schemaTypeEscaped + '\', event) : false;">' +
         '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>' +
         "</button>" +
         '<button type="button" class="gmb-schema-action-btn gmb-remove-schema-btn" data-type="' +
         schemaTypeEscaped +
-        '" title="Delete Schema">' +
+        '" title="Delete Schema" onclick="return window.gmbDeleteSchema ? window.gmbDeleteSchema(\'' + schemaTypeEscaped + '\', event) : false;">' +
         '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
         "</button>" +
         "</div>" +
@@ -169,17 +210,79 @@
     }
   };
 
+  window.gmbEditSchema = function (schemaType, e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!schemaType && window.jQuery) {
+      var $card = window.jQuery(e ? e.target : null).closest(".gmb-schema-active-card, [data-type], [data-schema-active]");
+      schemaType = $card.attr("data-type") || $card.attr("data-schema-active");
+    }
+    schemaType = schemaType || "Article";
+    if (typeof window.gmbOpenSchemaBuilder === "function") {
+      window.gmbOpenSchemaBuilder(schemaType, "edit");
+    }
+    return false;
+  };
+
+  window.gmbValidateSchema = function (schemaType, e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!schemaType && window.jQuery) {
+      var $card = window.jQuery(e ? e.target : null).closest(".gmb-schema-active-card, [data-type], [data-schema-active]");
+      schemaType = $card.attr("data-type") || $card.attr("data-schema-active");
+    }
+    schemaType = schemaType || "Article";
+    if (typeof window.gmbOpenSchemaBuilder === "function") {
+      window.gmbOpenSchemaBuilder(schemaType, "validation");
+    }
+    return false;
+  };
+
+  window.gmbDeleteSchema = function (schemaType, e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+    var $ = window.jQuery;
+    if ($) {
+      var $card = null;
+      if (e && e.target) {
+        $card = $(e.target).closest(".gmb-schema-active-card");
+      }
+      if ((!$card || !$card.length) && schemaType) {
+        $card = $('#gmb-schema-in-use-list .gmb-schema-active-card[data-schema-active="' + schemaType + '"]');
+      }
+      if ($card && $card.length) {
+        $card.remove();
+        var active = [];
+        $("#gmb-schema-in-use-list .gmb-schema-active-card").each(function () {
+          var t = $(this).attr("data-schema-active");
+          if (t) active.push(t);
+        });
+        $("#gmb_seo_active_schemas").val(active.join(","));
+        if (active.length === 0) {
+          $("#gmb-no-active-schema-notice").show();
+        }
+      }
+    }
+    return false;
+  };
+
   $(document).on("click", "#gmb-schema-generator-open-btn", function (e) {
     window.gmbOpenSchemaModal(e);
   });
 
-  $(document).on("click", ".gmb-schema-edit-btn, .gmb-schema-code-btn", function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    var type = $(this).attr("data-type");
-    if (type && typeof window.gmbOpenSchemaBuilder === "function") {
-      window.gmbOpenSchemaBuilder(type, $(this).hasClass("gmb-schema-code-btn") ? "validation" : "edit");
-    }
+  $(document).on("click", ".gmb-schema-edit-btn", function (e) {
+    var type = $(this).attr("data-type") || $(this).closest("[data-type], [data-schema-active]").attr("data-type") || $(this).closest("[data-schema-active]").attr("data-schema-active");
+    return window.gmbEditSchema(type, e);
+  });
+
+  $(document).on("click", ".gmb-schema-code-btn", function (e) {
+    var type = $(this).attr("data-type") || $(this).closest("[data-type], [data-schema-active]").attr("data-type") || $(this).closest("[data-schema-active]").attr("data-schema-active");
+    return window.gmbValidateSchema(type, e);
+  });
+
+  $(document).on("click", ".gmb-remove-schema-btn", function (e) {
+    var type = $(this).attr("data-type") || $(this).closest("[data-type], [data-schema-active]").attr("data-type") || $(this).closest("[data-schema-active]").attr("data-schema-active");
+    return window.gmbDeleteSchema(type, e);
   });
 
   window.gmbOpenSnippetModal = function (e) {
@@ -3854,6 +3957,7 @@
       // Update live validation JSON
       updateValidationCode();
     }
+    window.renderSchemaBuilderFields = renderSchemaBuilderFields;
 
     // ==========================================
     // ADVANCED PROPERTY TREE & JSON-LD SYNC ENGINE
@@ -4045,17 +4149,19 @@
       }
     }
 
-    window.gmbOpenSchemaBuilder = function (schemaType, activeTab) {
+    window.gmbDoOpenSchemaBuilder = function (schemaType, activeTab) {
       renderSchemaBuilderFields(schemaType || "Article");
 
       if (currentBuilderMode === "advanced") {
-        $("#gmb-schema-builder-modal .gmb-modal-box-builder").addClass(
-          "is-advanced",
-        );
+        $("#gmb-schema-builder-modal .gmb-modal-box-builder").addClass("is-advanced");
+        $("#gmb-builder-simple-mode-container").hide();
+        $("#gmb-builder-advanced-mode-container").show();
+        $("#gmb-builder-toggle-mode-btn").text("Standard Editor");
       } else {
-        $("#gmb-schema-builder-modal .gmb-modal-box-builder").removeClass(
-          "is-advanced",
-        );
+        $("#gmb-schema-builder-modal .gmb-modal-box-builder").removeClass("is-advanced");
+        $("#gmb-builder-simple-mode-container").show();
+        $("#gmb-builder-advanced-mode-container").hide();
+        $("#gmb-builder-toggle-mode-btn").text("Advanced Editor");
       }
 
       if (activeTab === "validation") {
@@ -4073,9 +4179,11 @@
       var $builderModal = $("#gmb-schema-builder-modal");
       if ($builderModal.length) {
         $builderModal.appendTo("body");
-        $builderModal.addClass("active is-open").css("display", "flex").show();
+        $builderModal.attr("aria-hidden", "false").addClass("active is-open is-active").css("display", "flex").show();
       }
     };
+
+    window.gmbOpenSchemaBuilder = window.gmbDoOpenSchemaBuilder;
 
     function openSchemaBuilder(schemaType, activeTab) {
       window.gmbOpenSchemaBuilder(schemaType, activeTab);

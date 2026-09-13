@@ -320,7 +320,7 @@ class GMB_Ranker_SEO_Metabox {
         }
 
         $screen = function_exists('get_current_screen') ? get_current_screen() : null;
-        if ($screen && $screen->base !== 'post') {
+        if (!$screen || !isset($screen->base) || $screen->base !== 'post') {
             return;
         }
 

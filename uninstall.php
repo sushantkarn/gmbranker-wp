@@ -5,7 +5,7 @@
  * Cleans up options, transients, and metadata created by the plugin.
  *
  * @package GMB_Ranker_SEO_Automation
- * @since   2.2.0
+ * @since   1.0.0
  */
 
 // If uninstall not called from WordPress, exit.
